@@ -1,0 +1,26 @@
+# Dependencies
+node_modules/
+
+# Next.js build output
+.next/
+out/
+
+# Deploy artifacts (built standalone + node_modules)
+deploy/
+
+# Runtime / logs
+runtime/
+logs/
+*.log
+
+# Environment
+.env
+.env.*
+!.env.example
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Sentry
+.sentryclirc

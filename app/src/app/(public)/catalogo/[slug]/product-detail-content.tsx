@@ -243,6 +243,11 @@ export default function ProductDetailPage() {
                   {product.category}
                 </span>
               )}
+              {product.sku && (
+                <span className="text-[10px] font-mono text-muted-foreground/60">
+                  {product.sku}
+                </span>
+              )}
               {product.tier && (
                 <Badge variant={tierVariant(product.tier)}>{product.tier}</Badge>
               )}
@@ -369,7 +374,7 @@ export default function ProductDetailPage() {
             )}
 
             {/* CTA */}
-            <div className="mt-8 flex flex-col gap-3 sm:flex-row">
+            <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
               <Button
                 size="lg"
                 rounded="full"

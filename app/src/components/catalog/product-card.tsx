@@ -84,11 +84,18 @@ export function ProductCard({ product }: { product: Product }) {
           </div>
         </div>
         <CardContent className="p-4">
-          {product.category && (
-            <p className="mb-1 text-xs font-medium uppercase tracking-wide text-muted">
-              {product.category}
-            </p>
-          )}
+          <div className="mb-1 flex items-center gap-2">
+            {product.category && (
+              <p className="text-xs font-medium uppercase tracking-wide text-muted">
+                {product.category}
+              </p>
+            )}
+            {product.sku && (
+              <p className="text-[10px] text-muted-foreground/60 font-mono">
+                {product.sku}
+              </p>
+            )}
+          </div>
           <h3 className="line-clamp-2 text-sm font-semibold leading-snug group-hover:text-primary">
             {product.name}
           </h3>

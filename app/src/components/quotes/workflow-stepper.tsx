@@ -7,9 +7,9 @@ import type { QuoteStage } from "@/lib/constants";
 const VISUAL_STEPS = [
   { key: "Borrador", label: "Borrador" },
   { key: "Enviada", label: "Enviada" },
-  { key: "En Revision", label: "En Revisión" },
-  { key: "Aprobada", label: "Aprobada" },
-  { key: "Aceptada", label: "Aceptada" },
+  { key: "En Revision", label: "Subir Documentos" },
+  { key: "Aprobada", label: "En Revision" },
+  { key: "Aceptada", label: "Orden Creada" },
 ] as const;
 
 type VisualStepKey = (typeof VISUAL_STEPS)[number]["key"];

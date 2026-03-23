@@ -13,7 +13,7 @@ export const metadata: Metadata = {
   },
 };
 
-const LAST_UPDATED = "13 de marzo de 2026";
+const LAST_UPDATED = "23 de marzo de 2026";
 
 interface PolicySection {
   title: string;
@@ -125,7 +125,28 @@ const SECTIONS: PolicySection[] = [
     ],
   },
   {
-    title: "14. Contacto",
+    title: "14. Tiempo de Espera en Entrega",
+    content: [
+      "El tiempo de espera incluido en la entrega es de hasta 15 minutos. Pasado ese tiempo, se aplicará un cargo adicional de RD$100 por logística, gestión y tiempo.",
+      "Si la entrega se realiza antes de los 15 minutos, este cargo puede ser reembolsable. Luego de ese período, no es reembolsable.",
+    ],
+  },
+  {
+    title: "15. Disponibilidad de Lazos",
+    content: [
+      "Los lazos están sujetos a disponibilidad de colores. Si desea un color específico, debe gestionar su orden con un mínimo de 15 días de anticipación e indicar el color solicitado.",
+      "De lo contrario, se trabajará con la disponibilidad existente al momento.",
+    ],
+  },
+  {
+    title: "16. Documentación para Registro de Proveedor",
+    content: [
+      "Para fines de validación y registro como proveedor, podemos suministrar documentación genérica disponible. Si la empresa requiere documentos emitidos específicamente a su nombre, debe indicarlo previamente al momento de solicitar la información y asumir el costo correspondiente.",
+      "Algunas certificaciones, como las bancarias, requieren gestión presencial y tienen un costo de RD$250.",
+    ],
+  },
+  {
+    title: "17. Contacto",
     content: [
       "Para consultas sobre estos Términos y Condiciones, puede contactarnos:",
       "• Correo electrónico: info@merkleydetails.com\n• WhatsApp: Disponible en nuestra página de contacto\n• Dirección: Santo Domingo, República Dominicana\n• Horario de atención: Lunes a viernes, 9:00 AM a 6:00 PM",

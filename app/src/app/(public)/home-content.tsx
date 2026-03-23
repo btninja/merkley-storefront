@@ -172,14 +172,90 @@ export default function HomePage() {
                 asChild
                 onClick={() => trackCtaClick("crear_cuenta", "hero")}
               >
-                <Link href="/auth/registro">Crear Cuenta</Link>
+                <Link href="/auth/registro">
+                  Crear Cuenta Gratis
+                  <ArrowRight className="ml-2 h-4 w-4" />
+                </Link>
               </Button>
             </div>
-            {categoryCount > 0 && (
-              <p className="mt-6 text-sm text-muted">
-                {categoryCount} categorías disponibles &middot; Precios exclusivos para empresas
-              </p>
-            )}
+            <p className="mt-5 flex flex-wrap items-center justify-center gap-x-4 gap-y-1 text-sm text-muted">
+              <span>Sin compromiso</span>
+              <span className="hidden sm:inline">&middot;</span>
+              <span>Sin mínimo de compra</span>
+              <span className="hidden sm:inline">&middot;</span>
+              <span>Respuesta en 24h</span>
+            </p>
+          </div>
+        </Container>
+      </section>
+
+      {/* ── Testimonials (moved up for early trust) ── */}
+      <section className="border-t border-border bg-white py-20">
+        <Container>
+          <div className="mb-12 text-center">
+            <h2 className="text-3xl font-bold tracking-tight">
+              Lo que dicen nuestros clientes
+            </h2>
+            <p className="mt-3 text-muted">
+              Empresas de toda República Dominicana confían en nosotros para sus detalles corporativos.
+            </p>
+          </div>
+          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+            {[
+              {
+                role: "Coordinadora de Compras",
+                company: "Firma de Abogados",
+                text: "Llegó el pedido y todo está hermoso. El tiempo de espera fue excelente.",
+                rating: 5,
+              },
+              {
+                role: "Encargada de Eventos",
+                company: "Club Social",
+                text: "Excelente, les encantó el detalle, mil gracias por su buen trabajo.",
+                rating: 5,
+              },
+              {
+                role: "Asistente Administrativa",
+                company: "Zona Franca",
+                text: "Por eso es que pongo en las manos de ustedes mis regalos. Ustedes son los mejores.",
+                rating: 5,
+              },
+              {
+                role: "Gerente de RRHH",
+                company: "Empresa de Seguros",
+                text: "Hermoso! Tú hermosa orden, estamos encantados.",
+                rating: 5,
+              },
+              {
+                role: "Encargada de Compras",
+                company: "Empresa de Servicios",
+                text: "Ya recibí, muchas gracias, están hermosos.",
+                rating: 5,
+              },
+              {
+                role: "Coordinadora de Finanzas",
+                company: "Firma Legal",
+                text: "Muchísimas gracias. Todo bello.",
+                rating: 5,
+              },
+            ].map((t, idx) => (
+              <Card key={idx} className="border-border/60">
+                <CardContent className="p-6">
+                  <div className="mb-3 flex gap-0.5">
+                    {Array.from({ length: t.rating }).map((_, i) => (
+                      <Star key={i} className="h-4 w-4 fill-amber-400 text-amber-400" />
+                    ))}
+                  </div>
+                  <p className="text-sm leading-relaxed text-muted">
+                    &ldquo;{t.text}&rdquo;
+                  </p>
+                  <div className="mt-4 border-t border-border/40 pt-4">
+                    <p className="text-sm font-semibold">{t.role}</p>
+                    <p className="text-xs text-muted">{t.company}</p>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
           </div>
         </Container>
       </section>
@@ -433,7 +509,7 @@ export default function HomePage() {
                 ))}
               </div>
               <p className="mt-4 text-center text-xs text-muted">
-                Empresas de todos los sectores confían en Merkley Details para sus detalles corporativos
+                Empresas de todos los sectores confían en nosotros para sus detalles corporativos
               </p>
             </>
           )}
@@ -585,77 +661,6 @@ export default function HomePage() {
         </section>
       )}
 
-      {/* ── Testimonials ── */}
-      <section className="border-t border-border bg-white py-20">
-        <Container>
-          <div className="mb-12 text-center">
-            <h2 className="text-3xl font-bold tracking-tight">
-              Lo que dicen nuestros clientes
-            </h2>
-            <p className="mt-3 text-muted">
-              Empresas de toda República Dominicana confían en nosotros para sus detalles corporativos.
-            </p>
-          </div>
-          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-            {[
-              {
-                role: "Coordinadora de Compras",
-                company: "Firma de Abogados",
-                text: "Llegó el pedido y todo está hermoso. El tiempo de espera fue excelente.",
-                rating: 5,
-              },
-              {
-                role: "Encargada de Eventos",
-                company: "Club Social",
-                text: "Excelente, les encantó el detalle, mil gracias por su buen trabajo.",
-                rating: 5,
-              },
-              {
-                role: "Asistente Administrativa",
-                company: "Zona Franca",
-                text: "Por eso es que pongo en las manos de ustedes mis regalos. Ustedes son los mejores.",
-                rating: 5,
-              },
-              {
-                role: "Gerente de RRHH",
-                company: "Empresa de Seguros",
-                text: "Hermoso! Tú hermosa orden, estamos encantados.",
-                rating: 5,
-              },
-              {
-                role: "Encargada de Compras",
-                company: "Empresa de Servicios",
-                text: "Ya recibí, muchas gracias, están hermosos.",
-                rating: 5,
-              },
-              {
-                role: "Coordinadora de Finanzas",
-                company: "Firma Legal",
-                text: "Muchísimas gracias. Todo bello.",
-                rating: 5,
-              },
-            ].map((t, idx) => (
-              <Card key={idx} className="border-border/60">
-                <CardContent className="p-6">
-                  <div className="mb-3 flex gap-0.5">
-                    {Array.from({ length: t.rating }).map((_, i) => (
-                      <Star key={i} className="h-4 w-4 fill-amber-400 text-amber-400" />
-                    ))}
-                  </div>
-                  <p className="text-sm leading-relaxed text-muted">
-                    &ldquo;{t.text}&rdquo;
-                  </p>
-                  <div className="mt-4 border-t border-border/40 pt-4">
-                    <p className="text-sm font-semibold">{t.role}</p>
-                    <p className="text-xs text-muted">{t.company}</p>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        </Container>
-      </section>
-
       {/* ── CTA ── */}
       <section className="border-t border-border bg-gradient-to-r from-primary-soft to-surface-muted py-20">
         <Container size="sm" className="text-center">
@@ -684,15 +689,21 @@ export default function HomePage() {
               </Link>
             </Button>
             <Button
-              variant="ghost"
+              variant="outline"
               size="lg"
               rounded="full"
               asChild
-              onClick={() => trackCtaClick("contactar_ventas", "bottom_cta")}
+              onClick={() => trackCtaClick("ver_catalogo", "bottom_cta")}
             >
-              <Link href="/contacto">Contactar Ventas</Link>
+              <Link href="/catalogo">
+                Ver Catálogo
+                <ArrowRight className="ml-2 h-4 w-4" />
+              </Link>
             </Button>
           </div>
+          <p className="mt-4 text-xs text-muted">
+            Registro gratuito &middot; Sin tarjeta de crédito &middot; Cancela cuando quieras
+          </p>
         </Container>
       </section>
     </>

@@ -47,6 +47,10 @@ function isVerificationResponse(r: RegisterResponse): r is { verification_requir
   return "verification_required" in r && r.verification_required === true;
 }
 
+function isAutoVerifiedResponse(r: RegisterResponse): boolean {
+  return "auto_verified" in r && (r as Record<string, unknown>).auto_verified === true;
+}
+
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [state, setState] = useState<AuthState>({
     isLoading: true,
@@ -83,6 +87,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         joinedExisting: response.joined_existing ?? false,
         companyName: response.company_name,
       };
+    }
+
+    // Auto-verified (customer has invoices) — login automatically
+    if (isAutoVerifiedResponse(response)) {
+      trackRegistration(data.email, data.referral_source);
+      try {
+        const session = await api.login(data.email, data.password);
+        setState(applySession(session));
+      } catch {
+        // Auto-login failed — user can log in manually
+      }
+      return { verificationRequired: false, email: data.email };
     }
 
     setState(applySession(response));

@@ -52,15 +52,44 @@ function FileDropZone({
   onClear: () => void;
 }) {
   const inputRef = useRef<HTMLInputElement>(null);
+  const [isDragging, setIsDragging] = useState(false);
 
-  function handleChange(e: React.ChangeEvent<HTMLInputElement>) {
-    const selected = e.target.files?.[0];
-    if (!selected) return;
+  function validateAndSelect(selected: File) {
     if (selected.size > MAX_FILE_SIZE) {
       alert("El archivo no puede exceder 10 MB.");
       return;
     }
+    const ext = selected.name.split(".").pop()?.toLowerCase() || "";
+    if (!["pdf", "jpg", "jpeg", "png"].includes(ext)) {
+      alert("Solo se aceptan archivos PDF, JPG o PNG.");
+      return;
+    }
     onFileSelect(selected);
+  }
+
+  function handleChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const selected = e.target.files?.[0];
+    if (selected) validateAndSelect(selected);
+  }
+
+  function handleDragOver(e: React.DragEvent) {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(true);
+  }
+
+  function handleDragLeave(e: React.DragEvent) {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+  }
+
+  function handleDrop(e: React.DragEvent) {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+    const dropped = e.dataTransfer.files?.[0];
+    if (dropped) validateAndSelect(dropped);
   }
 
   return (
@@ -88,11 +117,20 @@ function FileDropZone({
         <button
           type="button"
           onClick={() => inputRef.current?.click()}
-          className="flex w-full flex-col items-center gap-2 rounded-lg border-2 border-dashed border-border bg-surface p-6 text-center transition-colors hover:border-primary/40 hover:bg-surface-muted"
+          onDragOver={handleDragOver}
+          onDragLeave={handleDragLeave}
+          onDrop={handleDrop}
+          className={`flex w-full flex-col items-center gap-2 rounded-lg border-2 border-dashed p-6 text-center transition-colors ${
+            isDragging
+              ? "border-primary bg-primary/5"
+              : "border-border bg-surface hover:border-primary/40 hover:bg-surface-muted"
+          }`}
         >
-          <Upload className="h-6 w-6 text-muted" />
+          <Upload className={`h-6 w-6 ${isDragging ? "text-primary" : "text-muted"}`} />
           <span className="text-sm text-muted">
-            Haz clic para seleccionar archivo
+            {isDragging
+              ? "Suelta el archivo aquí"
+              : "Arrastra un archivo o haz clic para seleccionar"}
           </span>
           <span className="text-xs text-muted">PDF, JPG o PNG (máx 10 MB)</span>
         </button>

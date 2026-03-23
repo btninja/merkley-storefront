@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useMemo, useEffect, useCallback } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import {
   UserPlus,
@@ -81,6 +81,7 @@ const WHATSAPP_NUMBER = "18093735131";
 
 export default function RegistroPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { register } = useAuth();
 
   const STORAGE_KEY = "md_registro_form";
@@ -109,7 +110,7 @@ export default function RegistroPage() {
   const [dgiiLoading, setDgiiLoading] = useState(false);
   const [dgiiChecked, setDgiiChecked] = useState(false);
 
-  // Restore form from sessionStorage on mount (client-only)
+  // Restore form from sessionStorage on mount, then overlay URL params
   useEffect(() => {
     try {
       const saved = sessionStorage.getItem(STORAGE_KEY);
@@ -120,7 +121,19 @@ export default function RegistroPage() {
     } catch {
       /* ignore */
     }
-  }, []);
+    // Prefill from URL params (e.g., from invoice email link)
+    const email = searchParams.get("email");
+    const company = searchParams.get("company");
+    const rnc = searchParams.get("rnc");
+    if (email || company || rnc) {
+      setForm((prev) => ({
+        ...prev,
+        ...(email ? { email } : {}),
+        ...(company ? { company_name: company } : {}),
+        ...(rnc ? { rnc } : {}),
+      }));
+    }
+  }, [searchParams]);
 
   // Persist form to sessionStorage (excluding password)
   useEffect(() => {

@@ -10,6 +10,10 @@ import {
   Receipt,
   User,
   Users,
+  Package,
+  History,
+  Download,
+  MessageCircle,
 } from "lucide-react";
 import { useAuth } from "@/context/auth-context";
 import { Header } from "@/components/layout/header";
@@ -24,6 +28,10 @@ const MOBILE_NAV_LINKS = [
   { href: "/cotizaciones", label: "Cotizaciones", icon: FileText },
   { href: "/catalogo-pdf", label: "Catálogo", icon: BookOpen },
   { href: "/facturas", label: "Facturas", icon: Receipt },
+  { href: "/pedidos", label: "Pedidos", icon: Package },
+  { href: "/historial", label: "Historial", icon: History },
+  { href: "/descargas", label: "Descargas", icon: Download },
+  { href: "/soporte", label: "Soporte", icon: MessageCircle },
   { href: "/cuenta/equipo", label: "Equipo", icon: Users, adminOnly: true },
   { href: "/cuenta/perfil", label: "Perfil", icon: User },
 ];

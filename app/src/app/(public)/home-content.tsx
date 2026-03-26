@@ -142,15 +142,15 @@ export default function HomePage() {
           <div className="mx-auto max-w-3xl text-center">
             <div className="mb-6 inline-flex items-center gap-2 rounded-full bg-white/80 px-4 py-1.5 text-sm font-medium text-primary shadow-sm backdrop-blur-sm">
               <Sparkles className="h-3.5 w-3.5" />
-              Detalles que marcan la diferencia
+              Para empresas con RNC
             </div>
             <h1 className="text-4xl font-bold tracking-tight sm:text-5xl md:text-6xl">
-              Detalles corporativos{" "}
-              <span className="text-primary">hechos a tu medida</span>
+              Regalos corporativos y{" "}
+              <span className="text-primary">canastas empresariales</span>
             </h1>
             <p className="mt-6 text-lg leading-8 text-muted">
-              Regalos personalizados, canastas y detalles para empresas en República Dominicana.
-              Desde 12 unidades. Cotización sin compromiso en menos de 24 horas.
+              Proveedor B2B especializado para empresas en República Dominicana.
+              Facturación con RNC, precios corporativos desde 12 unidades, cotización profesional en 24 horas.
             </p>
             <div className="mt-10 flex flex-col items-center gap-4 sm:flex-row sm:justify-center">
               <Button

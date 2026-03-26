@@ -9,6 +9,10 @@ import {
   BookOpen,
   Receipt,
   Users,
+  Package,
+  History,
+  Download,
+  MessageCircle,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/context/auth-context";
@@ -18,6 +22,10 @@ const SIDEBAR_LINKS = [
   { href: "/cotizaciones", label: "Cotizaciones", icon: FileText },
   { href: "/catalogo-pdf", label: "Catálogo PDF", icon: BookOpen },
   { href: "/facturas", label: "Facturas", icon: Receipt },
+  { href: "/pedidos", label: "Pedidos", icon: Package },
+  { href: "/historial", label: "Historial", icon: History },
+  { href: "/descargas", label: "Descargas", icon: Download },
+  { href: "/soporte", label: "Soporte", icon: MessageCircle },
   { href: "/cuenta/equipo", label: "Equipo", icon: Users, adminOnly: true },
   { href: "/cuenta/perfil", label: "Perfil", icon: User },
 ];

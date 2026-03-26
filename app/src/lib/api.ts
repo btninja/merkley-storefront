@@ -613,4 +613,173 @@ export async function getRecentBlogPosts(limit?: number): Promise<RecentBlogPost
   return frappeCall<RecentBlogPostsResponse>("blog.get_recent_blog_posts", limit ? { limit } : undefined, { method: "GET" });
 }
 
+// ── Customer Portal ──
+
+export interface OrderPipelineStep {
+  key: string;
+  label: string;
+  description: string;
+}
+
+export interface OrderPipelineOrder {
+  name: string;
+  doctype: string;
+  date: string;
+  status: string;
+  current_step: string;
+  grand_total: number;
+  currency: string;
+  items: { item_code: string; item_name: string; qty: number; rate: number; amount: number }[];
+  linked_quote: string | null;
+  linked_invoice: string | null;
+}
+
+export interface OrderPipelineResponse {
+  steps: OrderPipelineStep[];
+  orders: OrderPipelineOrder[];
+}
+
+export async function getOrderPipeline(): Promise<OrderPipelineResponse> {
+  return frappeCall<OrderPipelineResponse>("portal.get_order_pipeline", undefined, {
+    method: "GET",
+  });
+}
+
+export interface PurchaseHistoryItem {
+  name: string;
+  doctype: string;
+  date: string;
+  grand_total: number;
+  currency: string;
+  status: string;
+  item_count: number;
+}
+
+export interface MonthlySpending {
+  month: string;
+  label: string;
+  total: number;
+}
+
+export interface TopProduct {
+  item_code: string;
+  item_name: string;
+  total_qty: number;
+  total_amount: number;
+}
+
+export interface PurchaseHistoryResponse {
+  documents: PurchaseHistoryItem[];
+  monthly_spending: MonthlySpending[];
+  top_products: TopProduct[];
+  year: number;
+  available_years: number[];
+}
+
+export async function getPurchaseHistory(params?: {
+  year?: number;
+  page?: number;
+}): Promise<PurchaseHistoryResponse> {
+  return frappeCall<PurchaseHistoryResponse>(
+    "portal.get_purchase_history",
+    params as Record<string, unknown>,
+    { method: "GET" }
+  );
+}
+
+export async function reorderFromDocument(
+  doctype: string,
+  docname: string
+): Promise<{ ok: boolean; quotation_name: string }> {
+  return frappeCall("portal.reorder_from_document", { doctype, docname });
+}
+
+export interface DownloadDocument {
+  name: string;
+  doctype: string;
+  date: string;
+  grand_total: number;
+  currency: string;
+  ncf: string | null;
+  pdf_url: string;
+  month: string;
+  month_label: string;
+}
+
+export interface DownloadCenterResponse {
+  documents: DownloadDocument[];
+  year: number;
+  available_years: number[];
+}
+
+export async function getDownloadCenter(year?: number): Promise<DownloadCenterResponse> {
+  return frappeCall<DownloadCenterResponse>(
+    "portal.get_download_center",
+    year ? { year } : undefined,
+    { method: "GET" }
+  );
+}
+
+export interface SupportMessage {
+  id: string;
+  sender: string;
+  sender_name: string;
+  content: string;
+  timestamp: string;
+  direction: "in" | "out";
+}
+
+export interface SupportConversation {
+  conversation_id: string;
+  subject: string;
+  created_at: string;
+  last_message_at: string;
+  status: string;
+}
+
+export interface SupportMessagesResponse {
+  conversation: SupportConversation;
+  messages: SupportMessage[];
+}
+
+export interface InitiateChatResponse {
+  conversation_id: string;
+  subject: string;
+}
+
+export async function initiateSupportChat(
+  message: string,
+  subject: string
+): Promise<InitiateChatResponse> {
+  return frappeCall("portal.initiate_support_chat", { message, subject });
+}
+
+export async function getSupportMessages(
+  conversationId: string
+): Promise<SupportMessagesResponse> {
+  return frappeCall<SupportMessagesResponse>(
+    "portal.get_support_messages",
+    { conversation_id: conversationId },
+    { method: "GET" }
+  );
+}
+
+export async function sendSupportMessage(
+  conversationId: string,
+  message: string
+): Promise<{ ok: boolean; message: SupportMessage }> {
+  return frappeCall("portal.send_support_message", {
+    conversation_id: conversationId,
+    message,
+  });
+}
+
+export async function getSupportConversations(): Promise<{
+  conversations: SupportConversation[];
+}> {
+  return frappeCall("portal.get_support_conversations", undefined, {
+    method: "GET",
+  });
+}
+
 export { ApiError };

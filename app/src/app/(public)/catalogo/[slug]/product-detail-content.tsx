@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
+import DOMPurify from "isomorphic-dompurify";
 import {
   ArrowLeft,
   Package,
@@ -15,12 +16,13 @@ import {
   AlertCircle,
   Palette,
   Check,
+  MessageCircle,
 } from "lucide-react";
 import { useProductDetail, useBootstrap } from "@/hooks/use-catalog";
 import { useCart } from "@/context/cart-context";
 import { useToast } from "@/hooks/use-toast";
 import { formatCurrency } from "@/lib/format";
-import { trackViewItem } from "@/lib/analytics";
+import { trackViewItem, trackWhatsAppClick } from "@/lib/analytics";
 import { Container } from "@/components/layout/container";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -225,6 +227,7 @@ export default function ProductDetailPage() {
                       src={img.url}
                       alt={img.label || `Imagen ${idx + 1}`}
                       fill
+                      loading="lazy"
                       className="object-cover"
                       sizes="64px"
                     />
@@ -297,7 +300,7 @@ export default function ProductDetailPage() {
                 </h3>
                 <div
                   className="text-sm leading-relaxed text-muted [&_p]:mb-2"
-                  dangerouslySetInnerHTML={{ __html: product.description }}
+                  dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(product.description) }}
                 />
               </div>
             )}
@@ -423,6 +426,27 @@ export default function ProductDetailPage() {
                 </Link>
               </Button>
             </div>
+
+            {/* WhatsApp quick inquiry */}
+            {bootstrap?.contact?.whatsapp && (
+              <div className="mt-4 rounded-xl border border-border bg-surface-muted/50 p-4">
+                <p className="text-sm text-muted mb-2">
+                  ¿Tienes preguntas sobre este producto?
+                </p>
+                <a
+                  href={`https://wa.me/${bootstrap.contact.whatsapp.replace(/\D/g, "")}?text=${encodeURIComponent(
+                    `Hola, me interesa el producto: ${product.name} (${product.sku}). ¿Podrían darme más información?`
+                  )}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  onClick={() => trackWhatsAppClick("product_detail")}
+                  className="inline-flex items-center gap-2 rounded-lg bg-[#25D366] px-4 py-2.5 text-sm font-medium text-white transition-colors hover:bg-[#20bd5a]"
+                >
+                  <MessageCircle className="h-4 w-4" />
+                  Preguntar por WhatsApp
+                </a>
+              </div>
+            )}
           </div>
         </div>
       </Container>

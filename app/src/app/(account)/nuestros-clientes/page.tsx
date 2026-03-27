@@ -1,8 +1,10 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import Image from "next/image";
 import {
+  ArrowRight,
   Building2,
   X,
   ChevronLeft,
@@ -10,7 +12,9 @@ import {
   Images,
 } from "lucide-react";
 import { PageHeader } from "@/components/layout/page-header";
+import { Container } from "@/components/layout/container";
 import { useClientPortfolio } from "@/hooks/use-clients";
+import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -276,6 +280,30 @@ export default function NuestrosClientesPage() {
           onNext={nextImage}
         />
       )}
+
+      {/* CTA */}
+      <section className="mt-8 rounded-xl border border-border bg-gradient-to-r from-primary-soft to-surface-muted py-16">
+        <Container size="sm" className="text-center">
+          <h2 className="text-3xl font-bold tracking-tight">
+            ¿Listo para unirte a nuestros clientes?
+          </h2>
+          <p className="mt-4 text-lg text-muted">
+            Crea tu cuenta y comienza a explorar nuestro catálogo con precios
+            exclusivos para tu empresa.
+          </p>
+          <div className="mt-8 flex flex-col items-center gap-4 sm:flex-row sm:justify-center">
+            <Button size="lg" rounded="full" asChild>
+              <Link href="/auth/registro">
+                Crear Cuenta Gratis
+                <ArrowRight className="ml-2 h-4 w-4" />
+              </Link>
+            </Button>
+            <Button variant="outline" size="lg" rounded="full" asChild>
+              <Link href="/catalogo">Ver Catálogo</Link>
+            </Button>
+          </div>
+        </Container>
+      </section>
     </div>
   );
 }

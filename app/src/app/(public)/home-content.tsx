@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import {
@@ -17,6 +18,8 @@ import {
   Heart,
   PartyPopper,
   Award,
+  ShoppingCart,
+  MessageCircle,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -27,6 +30,30 @@ import { useSeasons } from "@/hooks/use-seasons";
 import { useFeaturedClients } from "@/hooks/use-clients";
 import { useRecentBlogPosts } from "@/hooks/use-blog";
 import { trackCtaClick } from "@/lib/analytics";
+
+/** Hook to defer rendering until element is near the viewport. */
+function useLazySection() {
+  const ref = useRef<HTMLDivElement>(null);
+  const [visible, setVisible] = useState(false);
+
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setVisible(true);
+          observer.disconnect();
+        }
+      },
+      { rootMargin: "200px" }
+    );
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
+
+  return { ref, visible };
+}
 
 const STEPS = [
   {
@@ -105,11 +132,14 @@ const MONTH_NAMES: Record<number, string> = {
 
 export default function HomePage() {
   const { data: bootstrap } = useBootstrap();
+
+  // Defer rendering of heavy below-fold sections until near viewport
+  const categoriesSection = useLazySection();
+
   const { data: seasonsData } = useSeasons();
   const { data: clientsData } = useFeaturedClients();
   const { data: blogData } = useRecentBlogPosts(3);
   const recentPosts = blogData?.posts || [];
-  const categoryCount = bootstrap?.filters?.categories?.length || 0;
   const allSeasons = seasonsData?.seasons || [];
   const activeSeasons = allSeasons.filter((s) => s.is_active);
   const featuredClients = (clientsData?.clients || []).filter((c) => c.logo);
@@ -126,7 +156,7 @@ export default function HomePage() {
   return (
     <>
       {/* ── Hero with Lifestyle Photo ── */}
-      <section className="relative overflow-hidden">
+      <section className="relative min-h-[60vh] overflow-hidden">
         {/* Background: lifestyle photo placeholder with gradient overlay */}
         <div className="absolute inset-0 bg-gradient-to-br from-primary-soft via-white to-surface-muted" />
         {/*
@@ -142,20 +172,20 @@ export default function HomePage() {
           <div className="mx-auto max-w-3xl text-center">
             <div className="mb-6 inline-flex items-center gap-2 rounded-full bg-white/80 px-4 py-1.5 text-sm font-medium text-primary shadow-sm backdrop-blur-sm">
               <Sparkles className="h-3.5 w-3.5" />
-              Para empresas con RNC
+              Proveedor B2B · República Dominicana
             </div>
             <h1 className="text-4xl font-bold tracking-tight sm:text-5xl md:text-6xl">
-              Regalos corporativos y{" "}
-              <span className="text-primary">canastas empresariales</span>
+              Regalos corporativos{" "}
+              <span className="text-primary">sin complicaciones</span>
             </h1>
             <p className="mt-6 text-lg leading-8 text-muted">
-              Proveedor B2B especializado para empresas en República Dominicana.
-              Facturación con RNC, precios corporativos desde 12 unidades, cotización profesional en 24 horas.
+              Pedidos desde 12 unidades, precios por volumen, cotiza al instante sin llamadas ni esperas.
             </p>
             <div className="mt-10 flex flex-col items-center gap-4 sm:flex-row sm:justify-center">
               <Button
                 size="lg"
                 rounded="full"
+                className="w-full sm:w-auto text-base"
                 asChild
                 onClick={() => trackCtaClick("ver_catalogo", "hero")}
               >
@@ -168,7 +198,7 @@ export default function HomePage() {
                 variant="outline"
                 size="lg"
                 rounded="full"
-                className="bg-white/80 backdrop-blur-sm"
+                className="w-full sm:w-auto text-base bg-white/80 backdrop-blur-sm"
                 asChild
                 onClick={() => trackCtaClick("crear_cuenta", "hero")}
               >
@@ -181,9 +211,9 @@ export default function HomePage() {
             <p className="mt-5 flex flex-wrap items-center justify-center gap-x-4 gap-y-1 text-sm text-muted">
               <span>Sin compromiso</span>
               <span className="hidden sm:inline">&middot;</span>
-              <span>Sin mínimo de compra</span>
+              <span>Desde 12 unidades</span>
               <span className="hidden sm:inline">&middot;</span>
-              <span>Respuesta en 24h</span>
+              <span>Cotización al instante</span>
             </p>
           </div>
         </Container>
@@ -263,7 +293,7 @@ export default function HomePage() {
       {/* ── Social Proof Bar ── */}
       <section className="border-y border-border bg-white py-8">
         <Container>
-          <div className="grid grid-cols-2 gap-6 md:grid-cols-4">
+          <div className="grid grid-cols-2 gap-6 md:grid-cols-4 min-h-[88px]">
             {STATS.map((stat) => {
               const Icon = stat.icon;
               return (
@@ -310,6 +340,23 @@ export default function HomePage() {
               );
             })}
           </div>
+          <div className="mt-10 flex flex-col items-center gap-4 sm:flex-row sm:justify-center">
+            <Button size="lg" rounded="full" asChild>
+              <Link href="/cotizaciones/nueva">
+                <ShoppingCart className="mr-2 h-4 w-4" />
+                Empezar cotización
+              </Link>
+            </Button>
+            <a
+              href={`https://wa.me/18093735131?text=${encodeURIComponent("Hola, me gustaría cotizar regalos corporativos.")}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-2 rounded-full border border-border px-6 py-3 text-base font-medium transition-colors hover:bg-surface-muted"
+            >
+              <MessageCircle className="h-4 w-4" />
+              Hablar con un asesor
+            </a>
+          </div>
         </Container>
       </section>
 
@@ -343,6 +390,7 @@ export default function HomePage() {
                             src={ucImage}
                             alt={uc.title}
                             fill
+                            loading="lazy"
                             sizes="(max-width: 640px) 100vw, 50vw"
                             className="object-cover transition-transform duration-300 group-hover:scale-105"
                           />
@@ -368,8 +416,9 @@ export default function HomePage() {
         </Container>
       </section>
 
-      {/* ── Browse by Category ── */}
-      {bootstrap?.filters?.category_tree && bootstrap.filters.category_tree.length > 0 && (
+      {/* ── Browse by Category (lazy) ── */}
+      <div ref={categoriesSection.ref} />
+      {categoriesSection.visible && bootstrap?.filters?.category_tree && bootstrap.filters.category_tree.length > 0 && (
         <section className="border-t border-border bg-white py-20">
           <Container>
             <div className="mb-12 text-center">
@@ -430,8 +479,8 @@ export default function HomePage() {
         </section>
       )}
 
-      {/* ── Client Logos Auto-Slider ── */}
-      <section className="overflow-hidden py-16">
+      {/* ── Client Logos Auto-Slider ── (hidden until logos are uploaded) */}
+      {false && (<section className="overflow-hidden py-16">
         <Container>
           <div className="mb-8 text-center">
             <p className="text-sm font-semibold uppercase tracking-widest text-muted">
@@ -514,7 +563,7 @@ export default function HomePage() {
             </>
           )}
         </Container>
-      </section>
+      </section>)}
 
       {/* ── Active Seasons ── */}
       {activeSeasons.length > 0 && (

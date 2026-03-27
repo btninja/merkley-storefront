@@ -31,6 +31,7 @@
     "@sentry/nextjs": "^10.43.0",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
+    "isomorphic-dompurify": "^3.7.1",
     "lucide-react": "^0.577.0",
     "next": "^15.0.0",
     "react": "^19.0.0",
@@ -45,9 +46,18 @@
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "critters": "^0.0.25",
     "eslint": "^9",
     "eslint-config-next": "^15.0.0",
     "tailwindcss": "^4",
     "typescript": "^5"
-  }
+  },
+  "browserslist": [
+    "chrome >= 96",
+    "firefox >= 95",
+    "safari >= 15",
+    "edge >= 96",
+    "not dead",
+    "> 0.3%"
+  ]
 }

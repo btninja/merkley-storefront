@@ -19,6 +19,7 @@ import {
 import { ProductCard, CatalogSkeleton } from "@/components/catalog/product-card";
 import { CatalogBreadcrumb } from "@/components/catalog/breadcrumb";
 import { FilterSidebar } from "@/components/catalog/filter-sidebar";
+import { CatalogCtaBar } from "@/components/catalog/catalog-cta-bar";
 import { trackViewItemList, trackSearch, trackFilterUsed } from "@/lib/analytics";
 import type { Product, SortOption } from "@/lib/types";
 
@@ -342,7 +343,7 @@ function CatalogoContent() {
         <div className="mt-6 flex gap-8">
           {/* Desktop sidebar */}
           <div className="hidden w-64 shrink-0 lg:block">
-            <div className="sticky top-20">
+            <div className="sticky top-20 space-y-6">
               <FilterSidebar
                 categoryTree={categoryTree}
                 tiers={tiers}
@@ -353,6 +354,7 @@ function CatalogoContent() {
                 onTierChange={handleTierChange}
                 onAvailabilityChange={handleAvailabilityChange}
               />
+              <CatalogCtaBar />
             </div>
           </div>
 
@@ -422,6 +424,11 @@ function CatalogoContent() {
         </div>
       </Container>
       </section>
+
+      {/* Mobile CTA bar — desktop version lives in the sidebar above */}
+      <div className="lg:hidden">
+        <CatalogCtaBar />
+      </div>
     </>
   );
 }

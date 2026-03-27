@@ -22,6 +22,30 @@ interface ProductListResponse {
   };
 }
 
+interface SitemapBlogPost {
+  slug: string;
+  published_on?: string | null;
+}
+
+interface BlogListResponse {
+  posts: SitemapBlogPost[];
+  total_count: number;
+  pagination: {
+    page: number;
+    page_length: number;
+    has_more: boolean;
+  };
+}
+
+interface SitemapSeason {
+  slug: string;
+  season_name: string;
+}
+
+interface SeasonsResponse {
+  seasons: SitemapSeason[];
+}
+
 async function fetchAllProducts(): Promise<SitemapProduct[]> {
   const allProducts: SitemapProduct[] = [];
   let page = 1;
@@ -66,6 +90,84 @@ async function fetchAllProducts(): Promise<SitemapProduct[]> {
   }
 
   return allProducts;
+}
+
+async function fetchAllBlogPosts(): Promise<SitemapBlogPost[]> {
+  const allPosts: SitemapBlogPost[] = [];
+  let page = 1;
+  const pageLength = 100;
+
+  try {
+    while (true) {
+      const url = new URL(
+        `${ERP_BASE}/api/method/merkley_web.api.blog.get_blog_posts`
+      );
+      url.searchParams.set("page", String(page));
+      url.searchParams.set("page_length", String(pageLength));
+
+      const response = await fetch(url.toString(), {
+        method: "GET",
+        headers: { Accept: "application/json" },
+        next: { revalidate: 3600 },
+      });
+
+      if (!response.ok) {
+        console.error(`Sitemap: failed to fetch blog posts page ${page}:`, response.status);
+        break;
+      }
+
+      const data = await response.json();
+      const result: BlogListResponse = data.message;
+
+      if (!result?.posts?.length) break;
+
+      allPosts.push(
+        ...result.posts.map((post) => ({
+          slug: post.slug,
+          published_on: post.published_on,
+        }))
+      );
+
+      if (!result.pagination.has_more) break;
+      page++;
+    }
+  } catch (error) {
+    console.error("Sitemap: error fetching blog posts:", error);
+  }
+
+  return allPosts;
+}
+
+async function fetchAllSeasons(): Promise<SitemapSeason[]> {
+  try {
+    const url = new URL(
+      `${ERP_BASE}/api/method/merkley_web.api.seasons.get_seasons`
+    );
+
+    const response = await fetch(url.toString(), {
+      method: "GET",
+      headers: { Accept: "application/json" },
+      next: { revalidate: 3600 },
+    });
+
+    if (!response.ok) {
+      console.error("Sitemap: failed to fetch seasons:", response.status);
+      return [];
+    }
+
+    const data = await response.json();
+    const result: SeasonsResponse = data.message;
+
+    if (!result?.seasons?.length) return [];
+
+    return result.seasons.map((season) => ({
+      slug: season.slug,
+      season_name: season.season_name,
+    }));
+  } catch (error) {
+    console.error("Sitemap: error fetching seasons:", error);
+    return [];
+  }
 }
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
@@ -135,8 +237,12 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     },
   ];
 
-  // Dynamic product pages
-  const products = await fetchAllProducts();
+  // Dynamic pages (fetch in parallel)
+  const [products, blogPosts, seasons] = await Promise.all([
+    fetchAllProducts(),
+    fetchAllBlogPosts(),
+    fetchAllSeasons(),
+  ]);
 
   const productPages: MetadataRoute.Sitemap = products.map((product) => ({
     url: `${BASE_URL}/catalogo/${product.slug}`,
@@ -145,5 +251,19 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     priority: 0.8,
   }));
 
-  return [...staticPages, ...productPages];
+  const blogPages: MetadataRoute.Sitemap = blogPosts.map((post) => ({
+    url: `${BASE_URL}/blog/${post.slug}`,
+    lastModified: post.published_on ? new Date(post.published_on) : now,
+    changeFrequency: "monthly" as const,
+    priority: 0.6,
+  }));
+
+  const seasonPages: MetadataRoute.Sitemap = seasons.map((season) => ({
+    url: `${BASE_URL}/temporada/${season.slug}`,
+    lastModified: now,
+    changeFrequency: "weekly" as const,
+    priority: 0.7,
+  }));
+
+  return [...staticPages, ...productPages, ...blogPages, ...seasonPages];
 }

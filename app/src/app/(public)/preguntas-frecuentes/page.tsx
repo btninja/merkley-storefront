@@ -15,6 +15,13 @@ export const metadata: Metadata = {
     description:
       "Todo lo que necesitas saber sobre nuestros detalles corporativos: pedidos, envíos, personalización y más.",
   },
+  twitter: {
+    card: "summary_large_image",
+    title: "Preguntas Frecuentes | Merkley Details",
+    description:
+      "Resuelve tus dudas sobre pedidos, envíos, personalización, precios y facturación en Merkley Details. Regalos corporativos para empresas en República Dominicana.",
+    images: ["https://merkleydetails.com/og-image.jpg"],
+  },
 };
 
 const FAQ_SECTIONS = [

@@ -1,5 +1,6 @@
 "use client";
 
+import { memo } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { Package, Plus, Palette } from "lucide-react";
@@ -31,7 +32,7 @@ export function availabilityVariant(label: string) {
   return "secondary" as const;
 }
 
-export function ProductCard({ product }: { product: Product }) {
+export const ProductCard = memo(function ProductCard({ product }: { product: Product }) {
   const mainImage = product.images?.[0];
   const { addItem } = useCart();
   const { toast } = useToast();
@@ -76,7 +77,7 @@ export function ProductCard({ product }: { product: Product }) {
               <Badge variant={tierVariant(product.tier)}>{product.tier}</Badge>
             )}
             {product.is_personalizable && (
-              <Badge variant="info" className="gap-0.5 text-[10px]">
+              <Badge variant="info" className="gap-0.5 text-xs">
                 <Palette className="h-2.5 w-2.5" />
                 Personalizable
               </Badge>
@@ -91,7 +92,7 @@ export function ProductCard({ product }: { product: Product }) {
               </p>
             )}
             {product.sku && (
-              <p className="text-[10px] text-muted-foreground/60 font-mono">
+              <p className="text-xs text-muted-foreground/60 font-mono">
                 {product.sku}
               </p>
             )}
@@ -110,7 +111,7 @@ export function ProductCard({ product }: { product: Product }) {
                 ? formatCurrency(product.price.amount)
                 : "Consultar"}
             </span>
-            <Badge variant={availabilityVariant(product.availability.label)} className="text-[10px]">
+            <Badge variant={availabilityVariant(product.availability.label)} className="text-xs">
               {product.availability.label}
             </Badge>
             <Button
@@ -126,7 +127,7 @@ export function ProductCard({ product }: { product: Product }) {
       </Card>
     </Link>
   );
-}
+});
 
 export function ProductCardSkeleton() {
   return (

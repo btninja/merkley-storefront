@@ -158,6 +158,22 @@ export default function RegistroPage() {
     return BLOCKED_DOMAINS.has(domain);
   }, [form.email]);
 
+  // Step progress calculation
+  const currentStep = useMemo(() => {
+    if (!(dgiiChecked && dgiiResult?.valid)) return 1;
+    // Step 2: all required contact fields filled
+    const contactFilled =
+      form.company_name.trim() &&
+      form.contact_name.trim() &&
+      form.email.trim() &&
+      !emailDomainBlocked &&
+      form.phone.trim() &&
+      form.password.trim() &&
+      form.password.length >= 8;
+    if (!contactFilled) return 2;
+    return 3;
+  }, [dgiiChecked, dgiiResult, form, emailDomainBlocked]);
+
   const whatsappApprovalUrl = useMemo(() => {
     const message = encodeURIComponent(
       `Hola, me gustaría registrarme en Merkley Details pero tengo un correo personal (${form.email}). ¿Podrían aprobar mi cuenta?`
@@ -233,6 +249,14 @@ export default function RegistroPage() {
       setDgiiLoading(false);
     }
   }, [form.rnc]);
+
+  // Auto-validate RNC on blur
+  const handleRncBlur = useCallback(() => {
+    const cleanRnc = form.rnc.replace(/[-\s]/g, "");
+    if (cleanRnc.length >= 9 && !dgiiChecked && !dgiiLoading) {
+      handleValidateRnc();
+    }
+  }, [form.rnc, dgiiChecked, dgiiLoading, handleValidateRnc]);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -442,6 +466,48 @@ export default function RegistroPage() {
               </CardHeader>
 
               <CardContent>
+                {/* ── Step Progress Bar ── */}
+                <div className="sticky top-0 z-10 -mx-6 -mt-2 mb-6 rounded-t-lg bg-white/95 px-6 pb-4 pt-2 backdrop-blur-sm">
+                  <div className="flex items-center justify-between mb-2">
+                    {[1, 2, 3].map((step) => (
+                      <div key={step} className="flex items-center gap-2">
+                        <div
+                          className={`flex h-7 w-7 items-center justify-center rounded-full text-xs font-bold transition-colors ${
+                            currentStep > step
+                              ? "bg-primary text-white"
+                              : currentStep === step
+                                ? "bg-primary text-white ring-2 ring-primary/30 ring-offset-1"
+                                : "bg-surface-muted text-muted"
+                          }`}
+                        >
+                          {currentStep > step ? (
+                            <CheckCircle2 className="h-4 w-4" />
+                          ) : (
+                            step
+                          )}
+                        </div>
+                        <span
+                          className={`hidden text-xs font-medium sm:inline ${
+                            currentStep >= step ? "text-foreground" : "text-muted"
+                          }`}
+                        >
+                          {step === 1 ? "Empresa" : step === 2 ? "Contacto" : "Adicional"}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                  {/* Progress track */}
+                  <div className="relative h-1.5 w-full rounded-full bg-surface-muted">
+                    <div
+                      className="absolute left-0 top-0 h-full rounded-full bg-primary transition-all duration-500 ease-out"
+                      style={{ width: `${((currentStep - 1) / 2) * 100}%` }}
+                    />
+                  </div>
+                  <p className="mt-1.5 text-center text-xs text-muted">
+                    Paso {currentStep} de 3
+                  </p>
+                </div>
+
                 <form
                   onSubmit={handleSubmit}
                   className="space-y-6"
@@ -469,6 +535,7 @@ export default function RegistroPage() {
                               setDgiiResult(null);
                             }
                           }}
+                          onBlur={handleRncBlur}
                           required
                           disabled={isSubmitting}
                           className={
@@ -481,14 +548,14 @@ export default function RegistroPage() {
                         />
                         <Button
                           type="button"
-                          variant="outline"
+                          variant="ghost"
                           onClick={handleValidateRnc}
                           disabled={
                             dgiiLoading ||
                             isSubmitting ||
                             !form.rnc.replace(/[-\s]/g, "")
                           }
-                          className="shrink-0"
+                          className="shrink-0 text-muted hover:text-foreground"
                         >
                           {dgiiLoading ? (
                             <Loader2 className="h-4 w-4 animate-spin" />
@@ -738,6 +805,7 @@ export default function RegistroPage() {
                             }
                             className="absolute right-3 top-1/2 -translate-y-1/2 text-muted hover:text-foreground"
                             tabIndex={-1}
+                            aria-label={showPassword ? "Ocultar contraseña" : "Mostrar contraseña"}
                           >
                             {showPassword ? (
                               <EyeOff className="h-4 w-4" />

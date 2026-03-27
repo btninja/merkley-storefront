@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import Image from "next/image";
+import DOMPurify from "isomorphic-dompurify";
 import { ArrowLeft, Calendar, User, Tag } from "lucide-react";
 import { Container } from "@/components/layout/container";
 import { Badge } from "@/components/ui/badge";
@@ -133,7 +134,7 @@ export default function BlogPostContent({ slug }: { slug: string }) {
               prose-img:rounded-lg
               prose-li:text-muted
               prose-strong:text-foreground"
-            dangerouslySetInnerHTML={{ __html: post.content }}
+            dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(post.content) }}
           />
 
           {/* Bottom CTA */}

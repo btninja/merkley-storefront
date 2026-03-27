@@ -13,6 +13,13 @@ export const metadata: Metadata = {
     description:
       "Colecciones de regalos corporativos para cada temporada. Ordena con anticipación y asegura disponibilidad.",
   },
+  twitter: {
+    card: "summary_large_image",
+    title: "Temporadas | Merkley Details",
+    description:
+      "Colecciones curadas de detalles corporativos para cada ocasión especial del año. Navidad, Día de las Madres, Día del Trabajador y más.",
+    images: ["https://merkleydetails.com/og-image.jpg"],
+  },
 };
 
 export default function Page() {

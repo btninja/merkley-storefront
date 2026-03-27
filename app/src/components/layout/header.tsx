@@ -238,14 +238,19 @@ export function Header() {
                     </DropdownMenuContent>
                   </DropdownMenu>
                 ) : (
-                  <div className="hidden items-center gap-2 sm:flex">
-                    <Button variant="ghost" size="sm" asChild>
-                      <Link href="/auth/login">Iniciar Sesión</Link>
-                    </Button>
-                    <Button size="sm" rounded="full" asChild>
+                  <>
+                    <div className="hidden items-center gap-2 sm:flex">
+                      <Button variant="ghost" size="sm" asChild>
+                        <Link href="/auth/login">Iniciar Sesión</Link>
+                      </Button>
+                      <Button size="sm" rounded="full" asChild>
+                        <Link href="/auth/registro">Crear Cuenta</Link>
+                      </Button>
+                    </div>
+                    <Button size="sm" rounded="full" className="sm:hidden" asChild>
                       <Link href="/auth/registro">Crear Cuenta</Link>
                     </Button>
-                  </div>
+                  </>
                 )}
               </>
             )}

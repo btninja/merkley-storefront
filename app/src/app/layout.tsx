@@ -4,7 +4,7 @@ import "./globals.css";
 import { Providers } from "./providers";
 import { UmamiScript } from "@/components/analytics/umami-script";
 import { GtmScript, GtmNoScript } from "@/components/analytics/gtm-script";
-import { ChatWidget } from "@/components/chat/chat-widget";
+import { WhatsAppFab } from "@/components/whatsapp-fab";
 
 const manrope = Manrope({
   variable: "--font-manrope",
@@ -88,8 +88,12 @@ const localBusinessJsonLd = {
     "Detalles corporativos y regalos personalizados para empresas en República Dominicana",
   address: {
     "@type": "PostalAddress",
+    addressLocality: "Santo Domingo",
+    addressRegion: "Distrito Nacional",
     addressCountry: "DO",
   },
+  telephone: "+18093735131",
+  areaServed: "DO",
   currenciesAccepted: "DOP",
 };
 
@@ -117,6 +121,11 @@ export default function RootLayout({
   return (
     <html lang="es">
       <head>
+        {/* Preconnect to critical origins for faster resource loading */}
+        <link rel="preconnect" href="https://erp.merkleydetails.com" />
+        <link rel="dns-prefetch" href="https://erp.merkleydetails.com" />
+        {/* GTM preconnect removed — scripts use lazyOnload strategy */}
+        <link rel="dns-prefetch" href="https://www.googletagmanager.com" />
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{
@@ -139,7 +148,7 @@ export default function RootLayout({
       <body className={`${manrope.variable} antialiased`}>
         <GtmNoScript />
         <Providers>{children}</Providers>
-        <ChatWidget />
+        <WhatsAppFab />
         <UmamiScript />
         <GtmScript />
       </body>

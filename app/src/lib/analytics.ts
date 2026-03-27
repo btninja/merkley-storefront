@@ -103,7 +103,7 @@ function trackMeta(event: string, params?: Record<string, unknown>) {
       if (event === "track" || event === "trackCustom") return;
       window.fbq("track", event, params);
     }
-  });
+  }).catch(() => {});
 }
 
 // ── Google Ads gtag (lazy) ──
@@ -141,7 +141,7 @@ function trackGoogleConversion(label: string, value?: number, currency?: string)
         currency: currency || "DOP",
       });
     }
-  });
+  }).catch(() => {});
 }
 
 // ── TikTok Pixel (lazy) ──
@@ -216,7 +216,7 @@ function trackTikTok(event: string, params?: Record<string, unknown>) {
     if (window.ttq) {
       window.ttq.track(event, params);
     }
-  });
+  }).catch(() => {});
 }
 
 /** Send enhanced conversion data (hashed user info) for better attribution. */
@@ -320,7 +320,7 @@ export function trackRegistration(email: string, referralSource?: string, userDa
           send_to: _config!.google_ads_id,
         });
       }
-    });
+    }).catch(() => {});
   }
 }
 
@@ -391,11 +391,22 @@ export function trackCtaClick(ctaName: string, location: string) {
   trackUmami("cta_click", { cta: ctaName, location });
 }
 
-/** Track WhatsApp contact click. */
+/** Track WhatsApp contact click — also fires Google Ads micro-conversion. */
 export function trackWhatsAppClick(context: string) {
   trackUmami("whatsapp_click", { context });
   trackMeta("Contact", { content_name: context });
   trackTikTok("Contact", { content_name: context });
+
+  // Fire Google Ads conversion for WhatsApp clicks (micro-conversion for bidding signals)
+  ensureGtag().then(() => {
+    if (window.gtag && _config?.google_ads_id) {
+      window.gtag("event", "conversion", {
+        send_to: _config.google_ads_id,
+        value: 0,
+        currency: "DOP",
+      });
+    }
+  }).catch(() => {});
 }
 
 /** Track a generic custom event (for components that don't import specific functions). */

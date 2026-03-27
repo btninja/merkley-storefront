@@ -91,7 +91,7 @@ class ApiError extends Error {
 async function frappeCall<T>(
   method: string,
   params?: Record<string, unknown>,
-  options?: { method?: "GET" | "POST" }
+  options?: { method?: "GET" | "POST"; revalidate?: number | false }
 ): Promise<T> {
   const httpMethod = options?.method || "POST";
   let url = `${ERP_BASE}/api/method/merkley_web.api.${method}`;
@@ -111,10 +111,11 @@ async function frappeCall<T>(
     }
   }
 
-  const fetchOptions: RequestInit = {
+  const fetchOptions: RequestInit & { next?: { revalidate?: number | false } } = {
     method: httpMethod,
     credentials: "include",
     headers,
+    ...(options?.revalidate !== undefined ? { next: { revalidate: options.revalidate } } : {}),
   };
 
   if (httpMethod === "GET" && params) {
@@ -234,7 +235,7 @@ export async function getProducts(params: {
 }
 
 export async function getProductDetail(slug: string): Promise<ProductDetailResponse> {
-  return frappeCall<ProductDetailResponse>("catalog.get_product_detail", { slug }, { method: "GET" });
+  return frappeCall<ProductDetailResponse>("catalog.get_product_detail", { slug }, { method: "GET", revalidate: 120 });
 }
 
 // ── Seasons ──

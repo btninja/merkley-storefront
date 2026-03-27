@@ -206,7 +206,7 @@ export const cardClasses = {
 // of these lines to test different messaging, but MUST keep 2-3 short trust
 // phrases in the same visual pattern (small text, centered, with middot separators).
 export const trustLines = {
-  hero: ["Sin compromiso", "Sin mínimo de compra", "Respuesta en 24h"],
+  hero: ["Sin compromiso", "Desde 12 unidades", "Cotización al instante"],
   register: ["Registro gratuito", "Sin tarjeta de crédito", "Cancela cuando quieras"],
 } as const;
 

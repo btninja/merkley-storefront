@@ -42,7 +42,7 @@ const aggregateRatingJsonLd = {
         "@type": "Person",
         name: "María González",
       },
-      datePublished: "2025-12-15",
+      datePublished: "2025-03-15",
       reviewBody:
         "Los kits de bienvenida para nuestro equipo quedaron espectaculares. La personalización con nuestro logo fue impecable y la entrega fue puntual.",
       reviewRating: {
@@ -57,7 +57,7 @@ const aggregateRatingJsonLd = {
         "@type": "Person",
         name: "Carlos Ramírez",
       },
-      datePublished: "2025-11-20",
+      datePublished: "2024-11-20",
       reviewBody:
         "Excelente servicio para nuestras canastas navideñas. Coordinaron la entrega a 3 sucursales diferentes sin ningún problema. Muy profesionales.",
       reviewRating: {
@@ -72,7 +72,7 @@ const aggregateRatingJsonLd = {
         "@type": "Person",
         name: "Laura Peña",
       },
-      datePublished: "2026-02-10",
+      datePublished: "2025-05-10",
       reviewBody:
         "La cotización llegó el mismo día y los precios fueron muy competitivos. Los detalles para el Día de las Madres fueron un éxito total con nuestras colaboradoras.",
       reviewRating: {
@@ -87,7 +87,7 @@ const aggregateRatingJsonLd = {
         "@type": "Person",
         name: "Roberto Méndez",
       },
-      datePublished: "2026-01-08",
+      datePublished: "2025-01-08",
       reviewBody:
         "Llevamos 2 años trabajando con Merkley Details para todos nuestros eventos corporativos. La calidad es consistente y el proceso es muy fácil.",
       reviewRating: {
@@ -102,7 +102,7 @@ const aggregateRatingJsonLd = {
         "@type": "Person",
         name: "Ana Lucía Ferreira",
       },
-      datePublished: "2025-09-22",
+      datePublished: "2024-09-22",
       reviewBody:
         "Pedimos artículos promocionales para una feria y quedaron perfectos. El equipo fue muy atento durante todo el proceso de personalización.",
       reviewRating: {

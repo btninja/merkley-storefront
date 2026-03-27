@@ -15,7 +15,7 @@ export function UmamiScript() {
     <Script
       src={analyticsConfig.umami_script_url}
       data-website-id={analyticsConfig.umami_website_id}
-      strategy="afterInteractive"
+      strategy="lazyOnload"
     />
   );
 }

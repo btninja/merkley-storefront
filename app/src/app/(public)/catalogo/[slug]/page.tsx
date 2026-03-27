@@ -1,6 +1,10 @@
+import { cache } from "react";
 import type { Metadata } from "next";
 import { getProductDetail } from "@/lib/api";
 import ProductDetailPage from "./product-detail-content";
+
+// Deduplicate: generateMetadata + Page both call this — cache() ensures one request per slug
+const getCachedProductDetail = cache(getProductDetail);
 
 type Props = {
   params: Promise<{ slug: string }>;
@@ -10,7 +14,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params;
 
   try {
-    const data = await getProductDetail(slug);
+    const data = await getCachedProductDetail(slug);
     const product = data?.item;
 
     if (!product) {
@@ -38,6 +42,12 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
         description: plainDescription,
         ...(ogImage ? { images: [{ url: ogImage }] } : {}),
       },
+      twitter: {
+        card: "summary_large_image",
+        title: `${product.name} | Merkley Details`,
+        description: plainDescription,
+        images: ogImage ? [ogImage] : ["https://merkleydetails.com/og-image.jpg"],
+      },
     };
   } catch {
     return {
@@ -60,7 +70,7 @@ export default async function Page({ params }: Props) {
   let productJsonLd = null;
   let breadcrumbJsonLd = null;
   try {
-    const data = await getProductDetail(slug);
+    const data = await getCachedProductDetail(slug);
     const product = data?.item;
     if (product) {
       const plainDesc =

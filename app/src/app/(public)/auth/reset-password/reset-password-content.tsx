@@ -17,7 +17,7 @@ const ERP_BASE =
 
 export default function ResetPasswordContent() {
   const searchParams = useSearchParams();
-  const token = searchParams.get("token") ?? "";
+  const token = searchParams.get("key") || searchParams.get("token") || "";
 
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");

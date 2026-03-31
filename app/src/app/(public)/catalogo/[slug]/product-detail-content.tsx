@@ -385,7 +385,7 @@ export default function ProductDetailPage() {
                   addItem({
                     item_code: product.sku,
                     item_name: product.name,
-                    qty: Math.max(product.minimum_order_qty, 1),
+                    qty: Math.max(product.minimum_order_qty, 6),
                     rate: product.price.amount ?? 0,
                     customization_options: product.customization_options,
                     is_personalizable: product.is_personalizable,

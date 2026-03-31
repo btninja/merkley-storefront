@@ -50,7 +50,7 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import * as api from "@/lib/api";
 import { formatCurrency } from "@/lib/format";
-import { calculateDeliveryTier } from "@/lib/constants";
+import { calculateDeliveryTier, SMALL_ORDER_QTY_THRESHOLD, SMALL_ORDER_SURCHARGE_PERCENT } from "@/lib/constants";
 import { trackBeginCheckout, trackQuoteSubmitted } from "@/lib/analytics";
 import type { QuotationLineInput, Product, ShippingZone, ShippingCalculation, CategoryTreeNode } from "@/lib/types";
 
@@ -97,6 +97,7 @@ interface CartItem extends QuotationLineInput {
   rate: number;
   customization_options: string | null;
   is_personalizable: boolean;
+  minimum_order_qty: number;
 }
 
 export default function NewQuotationPage() {
@@ -209,6 +210,7 @@ export default function NewQuotationPage() {
         customization_notes: "",
         customization_options: ci.customization_options,
         is_personalizable: ci.is_personalizable ?? false,
+        minimum_order_qty: 6,
       }));
       setItems(hydrated);
       setCartHydrated(true);
@@ -277,7 +279,7 @@ export default function NewQuotationPage() {
       if (existing) {
         return prev.map((item) =>
           item.item_code === product.sku
-            ? { ...item, qty: item.qty + Math.max(product.minimum_order_qty, 1) }
+            ? { ...item, qty: item.qty + Math.max(product.minimum_order_qty, 6) }
             : item
         );
       }
@@ -286,11 +288,12 @@ export default function NewQuotationPage() {
         {
           item_code: product.sku,
           item_name: product.name,
-          qty: Math.max(product.minimum_order_qty, 1),
+          qty: Math.max(product.minimum_order_qty, 6),
           rate: product.price.amount ?? 0,
           customization_notes: "",
           customization_options: product.customization_options,
           is_personalizable: product.is_personalizable,
+          minimum_order_qty: product.minimum_order_qty || 6,
         },
       ];
     });
@@ -300,7 +303,7 @@ export default function NewQuotationPage() {
   const setDirectQty = useCallback((itemCode: string, qty: number) => {
     setItems((prev) =>
       prev.map((item) =>
-        item.item_code === itemCode ? { ...item, qty: Math.max(1, qty) } : item
+        item.item_code === itemCode ? { ...item, qty: Math.max(item.minimum_order_qty || 6, qty) } : item
       )
     );
   }, []);
@@ -310,7 +313,7 @@ export default function NewQuotationPage() {
     setItems((prev) =>
       prev.map((item) =>
         item.item_code === itemCode
-          ? { ...item, qty: Math.max(1, item.qty + delta) }
+          ? { ...item, qty: Math.max(item.minimum_order_qty || 6, item.qty + delta) }
           : item
       )
     );
@@ -332,11 +335,24 @@ export default function NewQuotationPage() {
     setItems((prev) => prev.filter((item) => item.item_code !== itemCode));
   }, []);
 
-  // Calculate subtotal
-  const subtotal = useMemo(
-    () => items.reduce((sum, item) => sum + item.rate * item.qty, 0),
-    [items]
-  );
+  // Calculate subtotal and surcharges
+  const { subtotal, smallOrderSurcharge, deliverySurcharge, totalEstimado } = useMemo(() => {
+    const base = items.reduce((sum, item) => sum + item.rate * item.qty, 0);
+    const smallOrder = items.reduce((sum, item) => {
+      if (item.qty < SMALL_ORDER_QTY_THRESHOLD) {
+        return sum + item.rate * item.qty * (SMALL_ORDER_SURCHARGE_PERCENT / 100);
+      }
+      return sum;
+    }, 0);
+    const deliveryPct = deliveryInfo.surchargePercent;
+    const deliverySurch = base * (deliveryPct / 100);
+    return {
+      subtotal: base,
+      smallOrderSurcharge: smallOrder,
+      deliverySurcharge: deliverySurch,
+      totalEstimado: base + smallOrder + deliverySurch,
+    };
+  }, [items, deliveryInfo.surchargePercent]);
 
   // Submit handler
   const handleSubmit = useCallback(
@@ -739,19 +755,29 @@ export default function NewQuotationPage() {
                           size="icon"
                           className="h-7 w-7"
                           onClick={() => updateQty(item.item_code, -1)}
-                          disabled={item.qty <= 1}
+                          disabled={item.qty <= (item.minimum_order_qty || 6)}
+                          title={item.qty <= (item.minimum_order_qty || 6) ? `Mínimo: ${item.minimum_order_qty || 6} unidades` : undefined}
                         >
                           <Minus className="h-3 w-3" />
                         </Button>
-                        <Input
-                          type="number"
-                          min={1}
-                          value={item.qty}
-                          onChange={(e) =>
-                            setDirectQty(item.item_code, parseInt(e.target.value) || 1)
-                          }
-                          className="h-7 w-16 text-center text-sm"
-                        />
+                        <div className="relative group">
+                          <Input
+                            type="number"
+                            min={item.minimum_order_qty || 6}
+                            value={item.qty}
+                            onChange={(e) =>
+                              setDirectQty(item.item_code, parseInt(e.target.value) || (item.minimum_order_qty || 6))
+                            }
+                            className={`h-7 w-16 text-center text-sm ${
+                              item.qty <= (item.minimum_order_qty || 6) ? "border-destructive ring-destructive/20" : ""
+                            }`}
+                          />
+                          {item.qty <= (item.minimum_order_qty || 6) && (
+                            <div className="absolute -bottom-6 left-1/2 -translate-x-1/2 whitespace-nowrap rounded bg-foreground px-2 py-0.5 text-[10px] text-background opacity-0 group-hover:opacity-100 transition-opacity z-10">
+                              Min: {item.minimum_order_qty || 6} uds
+                            </div>
+                          )}
+                        </div>
                         <Button
                           variant="outline"
                           size="icon"
@@ -764,6 +790,12 @@ export default function NewQuotationPage() {
                           {formatCurrency(item.rate * item.qty)}
                         </span>
                       </div>
+                      {/* Small order surcharge note */}
+                      {item.qty < SMALL_ORDER_QTY_THRESHOLD && (
+                        <p className="text-[10px] text-amber-600 font-medium">
+                          +{SMALL_ORDER_SURCHARGE_PERCENT}% por pedido menor a {SMALL_ORDER_QTY_THRESHOLD} unidades
+                        </p>
+                      )}
 
                       {/* Personalization indicator + notes (only for personalizable items) */}
                       {item.is_personalizable && (
@@ -798,11 +830,29 @@ export default function NewQuotationPage() {
                 <Separator />
                 <CardContent className="pt-4 space-y-2">
                   <div className="flex items-center justify-between">
-                    <span className="text-sm text-muted">Subtotal productos</span>
+                    <span className="text-sm text-muted">Subtotal</span>
                     <span className="text-sm font-medium">
                       {formatCurrency(subtotal)}
                     </span>
                   </div>
+                  {smallOrderSurcharge > 0 && (
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm text-amber-600">Recargo pequeño pedido</span>
+                      <span className="text-sm font-medium text-amber-600">
+                        +{formatCurrency(smallOrderSurcharge)}
+                      </span>
+                    </div>
+                  )}
+                  {deliverySurcharge > 0 && (
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm text-amber-600">
+                        Recargo entrega ({deliveryInfo.tier} +{deliveryInfo.surchargePercent}%)
+                      </span>
+                      <span className="text-sm font-medium text-amber-600">
+                        +{formatCurrency(deliverySurcharge)}
+                      </span>
+                    </div>
+                  )}
                   {deliveryMethod === "shipping" && shippingCalc && (
                     <div className="flex items-center justify-between">
                       <span className="text-sm text-muted">Envío</span>
@@ -813,10 +863,10 @@ export default function NewQuotationPage() {
                   )}
                   <Separator />
                   <div className="flex items-center justify-between">
-                    <span className="text-sm font-medium">Estimado</span>
+                    <span className="text-sm font-medium">Total estimado</span>
                     <span className="text-lg font-bold">
                       {formatCurrency(
-                        subtotal + (deliveryMethod === "shipping" && shippingCalc ? shippingCalc.cost : 0)
+                        totalEstimado + (deliveryMethod === "shipping" && shippingCalc ? shippingCalc.cost : 0)
                       )}
                     </span>
                   </div>
@@ -932,7 +982,6 @@ export default function NewQuotationPage() {
                         {shippingZones.map((zone) => (
                           <option key={zone.zone_name} value={zone.zone_name}>
                             {zone.zone_name}
-                            {zone.delivery_method ? ` (${zone.delivery_method})` : ""}
                             {" — "}
                             {formatCurrency(zone.level_1_price)}
                           </option>
@@ -967,8 +1016,8 @@ export default function NewQuotationPage() {
                               </div>
                               {shippingCalc.may_vary && (
                                 <div className="flex items-start gap-1.5">
-                                  <Info className="h-3.5 w-3.5 mt-0.5 shrink-0 text-warning" />
-                                  <p className="text-xs text-warning">
+                                  <Info className="h-3.5 w-3.5 mt-0.5 shrink-0 text-amber-600" />
+                                  <p className="text-xs text-amber-600">
                                     El costo de envío puede variar ya que algunos productos no tienen dimensiones registradas.
                                   </p>
                                 </div>

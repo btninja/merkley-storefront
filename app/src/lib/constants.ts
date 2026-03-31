@@ -89,3 +89,7 @@ export const WEBSITE_CATEGORIES = [
 export const CURRENCY = "DOP";
 export const CURRENCY_SYMBOL = "RD$";
 export const ITBIS_RATE = 18;
+
+// Surcharge for small orders (fewer than this qty per line item)
+export const SMALL_ORDER_QTY_THRESHOLD = 12;
+export const SMALL_ORDER_SURCHARGE_PERCENT = 10;

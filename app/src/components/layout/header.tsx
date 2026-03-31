@@ -69,7 +69,7 @@ export function Header() {
     : "MD";
 
   return (
-    <header className="sticky top-0 z-40 w-full border-b border-border bg-surface/80 backdrop-blur-md">
+    <header className="sticky top-0 z-40 w-full border-b border-border backdrop-blur-md" style={{ backgroundColor: "rgba(255, 255, 255, 0.8)" }}>
       <Container>
         <div className="flex h-16 items-center justify-between">
           {/* Logo */}
@@ -118,13 +118,9 @@ export function Header() {
                 </Link>
 
                 {/* Hover dropdown panel */}
-                <div className={cn(
-                  "absolute left-1/2 top-full z-50 w-60 -translate-x-1/2 pt-1 transition-all duration-150",
-                  seasonOpen
-                    ? "visible opacity-100 translate-y-0"
-                    : "invisible opacity-0 -translate-y-1"
-                )}>
-                  <div className="rounded-xl border border-border bg-surface shadow-lg">
+                {seasonOpen && (
+                <div className="absolute left-1/2 top-full z-50 w-60 -translate-x-1/2 pt-1" style={{ isolation: "isolate" }}>
+                  <div className="rounded-xl border border-border shadow-lg" style={{ backgroundColor: "#ffffff", backdropFilter: "none", WebkitBackdropFilter: "none" }}>
                     <div className="px-3 pb-1 pt-3">
                       <p className="text-[11px] font-semibold uppercase tracking-wider text-muted">
                         Temporadas Activas
@@ -165,6 +161,7 @@ export function Header() {
                     </div>
                   </div>
                 </div>
+                )}
               </div>
             )}
           </nav>

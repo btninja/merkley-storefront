@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { writeFile, appendFile } from "fs/promises";
 
-const WEBHOOK_KEY = "68OnWtb08Vhb_jpUqZLS29waFf6mZrScT3ONUnIS0R8";
+const WEBHOOK_KEY = process.env.GOOGLE_ADS_WEBHOOK_KEY ?? "";
 const ERP_URL =
   process.env.NEXT_PUBLIC_ERP_URL || "https://erp.merkleydetails.com";
 const LOG_FILE = "/tmp/google-ads-webhook.log";
@@ -28,8 +28,8 @@ export async function POST(request: NextRequest) {
 
     const data = JSON.parse(rawBody);
 
-    // Verify the webhook key
-    if (data.google_key !== WEBHOOK_KEY) {
+    // Verify the webhook key (reject if key is unconfigured)
+    if (!WEBHOOK_KEY || data.google_key !== WEBHOOK_KEY) {
       await log(`REJECTED: Invalid key: ${data.google_key?.substring(0, 10)}...`);
       return NextResponse.json(
         { status: "error", message: "Invalid key" },

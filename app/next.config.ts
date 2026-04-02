@@ -16,15 +16,7 @@ const nextConfig: NextConfig = {
         hostname: "**.merkleydetails.com",
       },
       {
-        protocol: "http",
-        hostname: "**.merkleydetails.com",
-      },
-      {
         protocol: "https",
-        hostname: "merkleydetails.com",
-      },
-      {
-        protocol: "http",
         hostname: "merkleydetails.com",
       },
     ],
@@ -35,8 +27,8 @@ export default withSentryConfig(nextConfig, {
   // For all available options, see:
   // https://github.com/getsentry/sentry-webpack-plugin#options
 
-  org: "merkley-details",
-  project: "storefront",
+  org: "acertijo-f1",
+  project: "merkley-storefront",
 
   // Only print logs for uploading source maps in CI
   silent: !process.env.CI,

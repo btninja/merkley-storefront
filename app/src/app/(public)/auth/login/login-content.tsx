@@ -80,6 +80,15 @@ export default function LoginPage() {
         return;
       }
 
+      if (message.includes("APPROVAL_PENDING")) {
+        toast({
+          title: "Cuenta pendiente de aprobacion",
+          description: "Tu cuenta esta siendo revisada. Te notificaremos cuando sea aprobada.",
+          variant: "default",
+        });
+        return;
+      }
+
       toast({
         title: "Error de autenticación",
         description: message,

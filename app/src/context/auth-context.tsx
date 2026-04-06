@@ -1,7 +1,7 @@
 "use client";
 
 import React, { createContext, useContext, useCallback, useEffect, useState } from "react";
-import type { SessionCustomer, SessionResponse, SessionSettings, PriceContext, RegistrationData, RegisterResponse } from "@/lib/types";
+import type { SessionCustomer, SessionResponse, SessionSettings, PriceContext, RegistrationData, RegisterResponse, ApprovalPendingResponse } from "@/lib/types";
 import * as api from "@/lib/api";
 import { trackLogin, trackRegistration } from "@/lib/analytics";
 
@@ -14,12 +14,13 @@ interface AuthState {
   settings: SessionSettings | null;
 }
 
-/** Return value of register(): either the user got logged in or verification is required. */
+/** Return value of register(): either the user got logged in, verification is required, or approval is pending. */
 export interface RegisterResult {
   verificationRequired: boolean;
   email: string;
   joinedExisting?: boolean;
   companyName?: string;
+  approvalPending?: boolean;
 }
 
 interface AuthContextValue extends AuthState {
@@ -45,6 +46,10 @@ function applySession(response: SessionResponse): AuthState {
 
 function isVerificationResponse(r: RegisterResponse): r is { verification_required: true; email: string } {
   return "verification_required" in r && r.verification_required === true;
+}
+
+function isApprovalPendingResponse(r: RegisterResponse): r is ApprovalPendingResponse {
+  return "approval_pending" in r && (r as ApprovalPendingResponse).approval_pending === true;
 }
 
 function isAutoVerifiedResponse(r: RegisterResponse): boolean {
@@ -79,6 +84,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const register = useCallback(async (data: RegistrationData): Promise<RegisterResult> => {
     const response = await api.register(data);
 
+    if (isApprovalPendingResponse(response)) {
+      trackRegistration(response.email, data.referral_source);
+      return {
+        verificationRequired: false,
+        email: response.email,
+        approvalPending: true,
+      };
+    }
+
     if (isVerificationResponse(response)) {
       trackRegistration(response.email, data.referral_source);
       return {
@@ -101,7 +115,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       return { verificationRequired: false, email: data.email };
     }
 
-    setState(applySession(response));
+    // Full session response (direct activation)
+    const sessionResponse = response as SessionResponse;
+    setState(applySession(sessionResponse));
     trackRegistration(data.email, data.referral_source);
     return { verificationRequired: false, email: data.email };
   }, []);

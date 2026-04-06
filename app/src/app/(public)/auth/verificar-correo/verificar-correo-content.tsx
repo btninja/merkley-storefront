@@ -3,7 +3,7 @@
 import { Suspense, useState, useEffect, useCallback } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
-import { Mail, RefreshCw, ArrowLeft } from "lucide-react";
+import { Mail, RefreshCw, ArrowLeft, Clock } from "lucide-react";
 import { resendVerificationEmail } from "@/lib/api";
 import { toast } from "@/hooks/use-toast";
 import { Container } from "@/components/layout/container";
@@ -15,6 +15,8 @@ const COOLDOWN_SECONDS = 60;
 function VerificarCorreoContent() {
   const searchParams = useSearchParams();
   const email = searchParams.get("email") || "";
+  const status = searchParams.get("status");
+  const isPendingApproval = status === "pending_approval";
   const [cooldown, setCooldown] = useState(COOLDOWN_SECONDS);
   const [isResending, setIsResending] = useState(false);
 
@@ -51,6 +53,43 @@ function VerificarCorreoContent() {
       setIsResending(false);
     }
   }, [email, cooldown, isResending]);
+
+  if (isPendingApproval) {
+    return (
+      <Card className="w-full max-w-md">
+        <CardContent className="p-8 text-center">
+          <div className="mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-full bg-amber-50">
+            <Clock className="h-8 w-8 text-amber-600" />
+          </div>
+
+          <h1 className="text-2xl font-bold tracking-tight">
+            Solicitud recibida
+          </h1>
+
+          <p className="mt-3 text-muted">
+            Tu solicitud de cuenta esta siendo revisada por nuestro equipo.
+            Recibiras un correo de verificacion cuando tu cuenta sea aprobada.
+          </p>
+
+          {email && (
+            <p className="mt-4 text-sm text-muted">
+              Te notificaremos a <span className="font-semibold text-foreground">{email}</span>
+            </p>
+          )}
+
+          <div className="mt-8 border-t border-border pt-6">
+            <Link
+              href="/"
+              className="inline-flex items-center gap-1.5 text-sm text-muted transition-colors hover:text-foreground"
+            >
+              <ArrowLeft className="h-3.5 w-3.5" />
+              Volver al inicio
+            </Link>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
     <Card className="w-full max-w-md">

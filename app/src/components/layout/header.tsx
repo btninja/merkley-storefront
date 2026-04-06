@@ -69,7 +69,7 @@ export function Header() {
     : "MD";
 
   return (
-    <header className="sticky top-0 z-40 w-full border-b border-border backdrop-blur-md" style={{ backgroundColor: "rgba(255, 255, 255, 0.8)" }}>
+    <header className="sticky top-0 z-50 w-full border-b border-border bg-white">
       <Container>
         <div className="flex h-16 items-center justify-between">
           {/* Logo */}
@@ -117,10 +117,10 @@ export function Header() {
                   )} />
                 </Link>
 
-                {/* Hover dropdown panel */}
+                {/* Hover dropdown panel — fixed white background, no blur/gradient inheritance */}
                 {seasonOpen && (
-                <div className="absolute left-1/2 top-full z-50 w-60 -translate-x-1/2 pt-1" style={{ isolation: "isolate" }}>
-                  <div className="rounded-xl border border-border shadow-lg" style={{ backgroundColor: "#ffffff", backdropFilter: "none", WebkitBackdropFilter: "none" }}>
+                <div className="absolute left-1/2 top-full z-[60] w-64 -translate-x-1/2 pt-1">
+                  <div className="rounded-xl border border-gray-200 shadow-2xl bg-white ring-1 ring-black/5">
                     <div className="px-3 pb-1 pt-3">
                       <p className="text-[11px] font-semibold uppercase tracking-wider text-muted">
                         Temporadas Activas
@@ -131,7 +131,7 @@ export function Header() {
                         <Link
                           key={s.name}
                           href={`/temporada/${s.slug}`}
-                          className="flex items-center gap-3 rounded-lg px-3 py-2 transition-colors hover:bg-surface-muted"
+                          className="flex items-center gap-3 rounded-lg px-3 py-2 transition-colors hover:bg-gray-50"
                           onClick={() => setSeasonOpen(false)}
                         >
                           <span className="inline-block h-1.5 w-1.5 flex-shrink-0 rounded-full bg-green-500" />
@@ -152,7 +152,7 @@ export function Header() {
                     <div className="border-t border-border p-1.5">
                       <Link
                         href="/temporadas"
-                        className="flex items-center justify-center gap-1.5 rounded-lg px-3 py-2 text-xs font-medium text-primary transition-colors hover:bg-primary-soft"
+                        className="flex items-center justify-center gap-1.5 rounded-lg px-3 py-2 text-xs font-medium text-primary transition-colors hover:bg-blue-50"
                         onClick={() => setSeasonOpen(false)}
                       >
                         Ver todas las temporadas

@@ -90,25 +90,30 @@ export async function middleware(request: NextRequest) {
   const sid = request.cookies.get("sid")?.value;
   const userId = request.cookies.get("user_id")?.value;
 
+  // Build redirect base from forwarded headers (not request.url which is localhost behind nginx)
+  const proto = request.headers.get("x-forwarded-proto") || "https";
+  const host = request.headers.get("host") || "merkleydetails.com";
+  const origin = `${proto}://${host}`;
+
   // Fast path: no cookies = definitely not authenticated
   if (!sid || sid === "Guest" || !userId || userId === "Guest") {
-    return NextResponse.redirect(new URL("/auth/login", request.url));
+    return NextResponse.redirect(new URL("/auth/login", origin));
   }
 
   // Basic format validation
   if (sid.length < 20) {
-    return NextResponse.redirect(new URL("/auth/login", request.url));
+    return NextResponse.redirect(new URL("/auth/login", origin));
   }
 
   if (userId !== "Administrator" && !userId.includes("@")) {
-    return NextResponse.redirect(new URL("/auth/login", request.url));
+    return NextResponse.redirect(new URL("/auth/login", origin));
   }
 
   // Validate against ERPNext backend
   const isValid = await validateSession(request);
 
   if (!isValid) {
-    return NextResponse.redirect(new URL("/auth/login", request.url));
+    return NextResponse.redirect(new URL("/auth/login", origin));
   }
 
   return applySecurityHeaders(NextResponse.next());

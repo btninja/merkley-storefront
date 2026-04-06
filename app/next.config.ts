@@ -19,6 +19,10 @@ const nextConfig: NextConfig = {
         protocol: "https",
         hostname: "merkleydetails.com",
       },
+      {
+        protocol: "http",
+        hostname: "**.merkleydetails.com",
+      },
     ],
   },
 };

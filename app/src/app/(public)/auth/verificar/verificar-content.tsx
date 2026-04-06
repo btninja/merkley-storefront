@@ -3,8 +3,9 @@
 import { Suspense, useState, useEffect, useRef } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import Link from "next/link";
-import { CheckCircle2, XCircle, Loader2, RefreshCw, MessageCircle } from "lucide-react";
+import { CheckCircle2, XCircle, Loader2, RefreshCw, MessageCircle, Clock } from "lucide-react";
 import { verifyEmail, resendVerificationEmail } from "@/lib/api";
+import type { SessionResponse } from "@/lib/types";
 import { useAuth } from "@/context/auth-context";
 import { toast } from "@/hooks/use-toast";
 import { trackWhatsAppClick } from "@/lib/analytics";
@@ -14,7 +15,7 @@ import { Button } from "@/components/ui/button";
 
 const WHATSAPP_NUMBER = "18093735131";
 
-type VerifyState = "loading" | "success" | "error";
+type VerifyState = "loading" | "success" | "error" | "pending_approval";
 
 function VerificarContent() {
   const searchParams = useSearchParams();
@@ -41,8 +42,14 @@ function VerificarContent() {
 
     async function doVerify() {
       try {
-        const session = await verifyEmail(token, email);
-        applyVerifiedSession(session);
+        const result = await verifyEmail(token, email);
+
+        if ("approval_pending" in result && result.approval_pending) {
+          setState("pending_approval");
+          return;
+        }
+
+        applyVerifiedSession(result as SessionResponse);
         setState("success");
         toast({
           title: "Correo verificado",
@@ -127,6 +134,30 @@ function VerificarContent() {
             <p className="mt-3 text-muted">
               Tu cuenta ha sido activada exitosamente. Redirigiendo a tu cuenta...
             </p>
+          </>
+        )}
+
+        {/* Pending Approval */}
+        {state === "pending_approval" && (
+          <>
+            <div className="mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-full bg-amber-50">
+              <Clock className="h-8 w-8 text-amber-600" />
+            </div>
+            <h1 className="text-2xl font-bold tracking-tight">
+              Correo verificado
+            </h1>
+            <p className="mt-3 text-muted">
+              Tu correo ha sido verificado. Tu cuenta esta pendiente de aprobacion
+              por un administrador. Te notificaremos por correo cuando sea aprobada.
+            </p>
+            <div className="mt-6 border-t border-border pt-6">
+              <Link
+                href="/"
+                className="text-sm text-muted transition-colors hover:text-foreground"
+              >
+                Volver al inicio
+              </Link>
+            </div>
           </>
         )}
 

@@ -175,11 +175,11 @@ export default function HomePage() {
               Proveedor B2B · República Dominicana
             </div>
             <h1 className="text-4xl font-bold tracking-tight sm:text-5xl md:text-6xl">
-              Regalos corporativos{" "}
-              <span className="text-primary">sin complicaciones</span>
+              Precios transparentes.{" "}
+              <span className="text-primary">Cotizaciones al instante.</span>
             </h1>
             <p className="mt-6 text-lg leading-8 text-muted">
-              Pedidos desde 12 unidades, precios por volumen, cotiza al instante sin llamadas ni esperas.
+              Regalos corporativos desde 12 unidades, precios por volumen visibles al instante. Sin llamadas ni esperas largas.
             </p>
             <div className="mt-10 flex flex-col items-center gap-4 sm:flex-row sm:justify-center">
               <Button

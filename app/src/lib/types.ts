@@ -340,7 +340,12 @@ export interface VerificationRequiredResponse {
   company_name?: string;
 }
 
-export type RegisterResponse = SessionResponse | VerificationRequiredResponse;
+export interface ApprovalPendingResponse {
+  approval_pending: true;
+  email: string;
+}
+
+export type RegisterResponse = SessionResponse | VerificationRequiredResponse | ApprovalPendingResponse;
 
 // ── Quotation Creation ──
 

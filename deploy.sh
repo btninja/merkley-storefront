@@ -2,12 +2,16 @@
 # ============================================================================
 # Merkley Storefront — Build & Deploy (Next.js standalone)
 #
-# Next.js standalone output does NOT include /public or /.next/static.
-# After every build these must be copied in, then the server restarted.
-# Skipping this causes 404s on JS/CSS chunks.
+# Handles the full deploy lifecycle:
+#   1. Build Next.js app
+#   2. Copy static assets into standalone (Next.js doesn't do this)
+#   3. Sync to deploy directory
+#   4. Purge nginx proxy cache (prevents stale HTML referencing old chunks)
+#   5. Restart the server process
+#   6. Health check
 #
 # Usage:
-#   ./deploy.sh              Build + copy assets + restart  (default)
+#   ./deploy.sh              Build + deploy + restart  (default)
 #   ./deploy.sh build        Build + copy assets only
 #   ./deploy.sh restart      Restart only (no build)
 # ============================================================================
@@ -19,6 +23,7 @@ STANDALONE="$APP_DIR/.next/standalone"
 DEPLOY_DIR="/home/frappe/merkley-storefront-dev/deploy"
 LOG_DIR="/home/frappe/merkley-storefront-dev/logs"
 SUPERVISOR_PROG="merkley-storefront"
+NGINX_CACHE_DIR="/var/cache/nginx/storefront"
 PORT=3100
 MODE="${1:-full}"
 
@@ -36,12 +41,27 @@ mkdir -p "$LOG_DIR"
 do_build() {
   cd "$APP_DIR"
 
-  log "Building Next.js storefront..."
-  npm run build 2>&1 | tail -10
+  # Clean previous build to avoid stale manifests
+  rm -rf .next node_modules/.cache
 
-  if [ ! -f "$STANDALONE/server.js" ]; then
-    err "Build failed — standalone/server.js not found."
-  fi
+  log "Building Next.js storefront..."
+  # Retry build up to 2 times (Turbopack has intermittent temp file race conditions)
+  local attempt=0
+  while [ $attempt -lt 3 ]; do
+    attempt=$((attempt + 1))
+    if npm run build 2>&1 | tail -10; then
+      if [ -f "$STANDALONE/server.js" ]; then
+        break
+      fi
+    fi
+    if [ $attempt -lt 3 ]; then
+      warn "Build attempt $attempt failed, retrying..."
+      rm -rf .next
+      sync && sleep 2
+    else
+      err "Build failed after 3 attempts — standalone/server.js not found."
+    fi
+  done
 
   log "Build complete — ID: $(cat .next/BUILD_ID)"
 
@@ -59,6 +79,26 @@ do_build() {
   rsync -a --delete "$STANDALONE/" "$DEPLOY_DIR/"
 
   log "Assets synced."
+}
+
+# ── Purge nginx cache ────────────────────────────────────────────────────────
+
+purge_cache() {
+  log "Purging nginx proxy cache..."
+
+  # Remove cached HTML pages (they reference old chunk hashes)
+  if [ -d "$NGINX_CACHE_DIR" ]; then
+    sudo find "$NGINX_CACHE_DIR" -type f -delete 2>/dev/null || true
+  fi
+
+  # Recreate cache directory structure (nginx needs this)
+  sudo mkdir -p "$NGINX_CACHE_DIR"
+  sudo chown www-data:www-data "$NGINX_CACHE_DIR"
+
+  # Reload nginx to pick up the purged cache
+  sudo nginx -s reload 2>/dev/null || true
+
+  log "Cache purged."
 }
 
 # ── Restart ──────────────────────────────────────────────────────────────────
@@ -108,6 +148,46 @@ do_restart() {
   log "Health: HTTP $status"
 }
 
+# ── Verify ───────────────────────────────────────────────────────────────────
+
+verify_chunks() {
+  log "Verifying chunks are accessible..."
+
+  # Get CSS and first JS chunk from the live HTML
+  local html
+  html=$(curl -sf "http://127.0.0.1:$PORT/" 2>/dev/null || echo "")
+
+  if [ -z "$html" ]; then
+    warn "Could not fetch HTML for verification"
+    return
+  fi
+
+  local css
+  css=$(echo "$html" | grep -o '_next/static/css/[^"]*' | head -1)
+  local js
+  js=$(echo "$html" | grep -o '_next/static/chunks/webpack[^"]*' | head -1)
+
+  if [ -n "$css" ]; then
+    local css_status
+    css_status=$(curl -sf -o /dev/null -w "%{http_code}" "http://127.0.0.1:$PORT/$css" 2>/dev/null || echo "000")
+    if [ "$css_status" = "200" ]; then
+      log "CSS chunk OK: $css → $css_status"
+    else
+      warn "CSS chunk FAILED: $css → $css_status"
+    fi
+  fi
+
+  if [ -n "$js" ]; then
+    local js_status
+    js_status=$(curl -sf -o /dev/null -w "%{http_code}" "http://127.0.0.1:$PORT/$js" 2>/dev/null || echo "000")
+    if [ "$js_status" = "200" ]; then
+      log "JS chunk OK: $js → $js_status"
+    else
+      warn "JS chunk FAILED: $js → $js_status"
+    fi
+  fi
+}
+
 # ── Main ─────────────────────────────────────────────────────────────────────
 
 case "$MODE" in
@@ -117,10 +197,13 @@ case "$MODE" in
     ;;
   restart)
     do_restart
+    purge_cache
     ;;
   full|*)
     do_build
     do_restart
+    purge_cache
+    verify_chunks
     log "Deploy complete!"
     ;;
 esac

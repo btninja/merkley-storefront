@@ -15,6 +15,7 @@ import {
   XCircle,
   Clock,
   CheckCircle2,
+  Receipt,
 } from "lucide-react";
 import { useInvoiceDetail } from "@/hooks/use-invoices";
 import { PageHeader } from "@/components/layout/page-header";
@@ -65,13 +66,25 @@ function DetailSkeleton() {
 export default function InvoiceDetailPage() {
   const params = useParams();
   const name = params.name as string;
-  const { data, isLoading, mutate } = useInvoiceDetail(name);
+  const { data, isLoading, error, mutate } = useInvoiceDetail(name);
   const { toast } = useToast();
   const [isDownloading, setIsDownloading] = useState(false);
   const [annulmentOpen, setAnnulmentOpen] = useState(false);
 
-  if (isLoading || !data) {
+  if (isLoading) {
     return <DetailSkeleton />;
+  }
+
+  if (error || !data) {
+    return (
+      <Card className="mx-auto max-w-lg mt-8">
+        <CardContent className="py-12 text-center">
+          <Receipt className="mx-auto h-10 w-10 text-destructive" />
+          <p className="mt-3 font-medium">Error al cargar factura</p>
+          <p className="mt-1 text-sm text-muted">No se pudo cargar la factura. Verifica el enlace o intenta de nuevo.</p>
+        </CardContent>
+      </Card>
+    );
   }
 
   const invoice = data.invoice;
@@ -390,14 +403,42 @@ export default function InvoiceDetailPage() {
               <span className="text-muted">Subtotal</span>
               <span>{formatCurrency(invoice.subtotal)}</span>
             </div>
-            {invoice.taxes.map((tax, index) => (
-              <div key={index} className="flex items-center justify-between text-sm">
-                <span className="text-muted">
-                  {tax.description} ({tax.rate}%)
-                </span>
-                <span>{formatCurrency(tax.tax_amount)}</span>
-              </div>
-            ))}
+            {/* Split taxes into shipping vs other by description prefix.
+                _override_shipping_cost rebuilds taxes as charge_type=Actual
+                (rate=0) for both Envío AND ITBIS, so a rate-based filter
+                would hide ITBIS. Description-based filter is robust. */}
+            {(() => {
+              const shippingRows = invoice.taxes.filter((t) =>
+                (t.description || "").toLowerCase().startsWith("env")
+              );
+              const otherRows = invoice.taxes.filter(
+                (t) => !(t.description || "").toLowerCase().startsWith("env")
+              );
+              const totalShipping = shippingRows.reduce((s, t) => s + t.tax_amount, 0);
+              return (
+                <>
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="text-muted">Envío</span>
+                    <span>
+                      {totalShipping > 0 ? (
+                        formatCurrency(totalShipping)
+                      ) : (
+                        <span className="text-muted">Recoger en local</span>
+                      )}
+                    </span>
+                  </div>
+                  {otherRows.map((tax, index) => (
+                    <div key={index} className="flex items-center justify-between text-sm">
+                      <span className="text-muted">
+                        {tax.description}
+                        {tax.rate > 0 && ` (${tax.rate}%)`}
+                      </span>
+                      <span>{formatCurrency(tax.tax_amount)}</span>
+                    </div>
+                  ))}
+                </>
+              );
+            })()}
             <Separator />
             <div className="flex items-center justify-between">
               <span className="text-base font-semibold">Total</span>

@@ -87,19 +87,36 @@ const DELIVERY_TIER_STYLES: Record<string, string> = {
 export default function QuotationDetailPage() {
   const params = useParams();
   const name = params.name as string;
-  const { data, isLoading, mutate } = useQuotationDetail(name);
+  const { data, isLoading, error, mutate } = useQuotationDetail(name);
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isDownloading, setIsDownloading] = useState(false);
 
-  if (isLoading || !data) {
+  if (isLoading) {
     return <DetailSkeleton />;
+  }
+
+  if (error || !data) {
+    return (
+      <Card className="mx-auto max-w-lg mt-8">
+        <CardContent className="py-12 text-center">
+          <FileText className="mx-auto h-10 w-10 text-destructive" />
+          <p className="mt-3 font-medium">Error al cargar cotizacion</p>
+          <p className="mt-1 text-sm text-muted">No se pudo cargar la cotizacion. Verifica el enlace o intenta de nuevo.</p>
+        </CardContent>
+      </Card>
+    );
   }
 
   const quote = data.quote;
   const stageColors = QUOTE_STAGE_COLORS[quote.stage as QuoteStage];
   const isDraft = quote.stage === "Borrador";
   const isTerminal = quote.stage === "Rechazada" || quote.stage === "Expirada";
+  // Only allow PDF download once the CRM has approved the quote.
+  // Shipping and pricing can change during internal review, so we
+  // don't let the client download an unvetted PDF.
+  const isApproved = quote.stage === "Aprobada" || quote.stage === "Aceptada por Cliente";
+  const canDownloadPdf = isApproved;
 
   // Compute delivery tier from desired_delivery_date for display
   const deliveryInfo = quote.desired_delivery_date
@@ -283,12 +300,7 @@ export default function QuotationDetailPage() {
       <div className="flex flex-wrap gap-2">
         {isDraft && (
           <>
-            <Button variant="outline" asChild>
-              <Link href={`/cotizaciones/${quote.name}/editar`}>
-                <Pencil className="h-4 w-4" />
-                Editar
-              </Link>
-            </Button>
+            {/* TODO: Implement edit — load quote items into cart and redirect to /cotizaciones/nueva */}
             <Button onClick={handleSubmit} disabled={isSubmitting}>
               {isSubmitting ? (
                 <Loader2 className="h-4 w-4 animate-spin" />
@@ -299,7 +311,7 @@ export default function QuotationDetailPage() {
             </Button>
           </>
         )}
-        {!isDraft && (
+        {!isDraft && canDownloadPdf && (
           <Button variant="outline" onClick={handleDownloadPdf} disabled={isDownloading}>
             {isDownloading ? (
               <Loader2 className="h-4 w-4 animate-spin" />
@@ -308,6 +320,18 @@ export default function QuotationDetailPage() {
             )}
             Descargar PDF
           </Button>
+        )}
+        {!isDraft && !canDownloadPdf && !isTerminal && (
+          <div className="flex items-start gap-2 rounded-lg border border-warning/30 bg-warning-soft px-3 py-2 text-sm">
+            <Info className="mt-0.5 h-4 w-4 shrink-0 text-warning" />
+            <div>
+              <p className="font-medium text-warning">PDF no disponible</p>
+              <p className="mt-0.5 text-xs text-muted">
+                La cotización está en revisión. Podrás descargar el PDF una vez que
+                sea aprobada por nuestro equipo — el envío y otros costos pueden ajustarse.
+              </p>
+            </div>
+          </div>
         )}
       </div>
 
@@ -398,19 +422,27 @@ export default function QuotationDetailPage() {
                   </div>
                 </div>
               )}
-              {quote.shipping.cost > 0 && (
-                <div>
-                  <p className="text-xs text-muted">Costo de Envío</p>
-                  <div className="flex items-center gap-2">
-                    <p className="text-sm font-bold">{formatCurrency(quote.shipping.cost)}</p>
-                    {quote.shipping.tier && (
-                      <Badge variant="outline" className="text-[10px]">
-                        {quote.shipping.tier}
-                      </Badge>
-                    )}
-                  </div>
+              {/* Costo de Envío — always rendered when delivery method is set,
+                   with different labels for pickup vs shipping vs missing cost. */}
+              <div>
+                <p className="text-xs text-muted">Costo de Envío</p>
+                <div className="flex items-center gap-2">
+                  {quote.shipping.delivery_method === "Recoger en local" ? (
+                    <p className="text-sm font-medium text-muted">Recoger en local</p>
+                  ) : quote.shipping.cost > 0 ? (
+                    <>
+                      <p className="text-sm font-bold">{formatCurrency(quote.shipping.cost)}</p>
+                      {quote.shipping.tier && (
+                        <Badge variant="outline" className="text-[10px]">
+                          {quote.shipping.tier}
+                        </Badge>
+                      )}
+                    </>
+                  ) : (
+                    <p className="text-sm font-medium text-muted">—</p>
+                  )}
                 </div>
-              )}
+              </div>
             </div>
             {quote.shipping.may_vary && (
               <div className="mt-3 flex items-start gap-1.5 rounded-lg bg-warning-soft p-2">
@@ -558,14 +590,44 @@ export default function QuotationDetailPage() {
               <span className="text-muted">Subtotal</span>
               <span>{formatCurrency(quote.subtotal)}</span>
             </div>
-            {quote.taxes.map((tax, index) => (
-              <div key={index} className="flex items-center justify-between text-sm">
+            {/* Envio row — always visible when the quote has a delivery
+                 method, showing either the cost or "Recoger en local".
+                 Previously shipping was only visible inside the taxes loop
+                 as "Envío — Zona (0%)" which looked broken. */}
+            {quote.shipping && (
+              <div className="flex items-center justify-between text-sm">
                 <span className="text-muted">
-                  {tax.description} ({tax.rate}%)
+                  Envío
+                  {quote.shipping.zone && quote.shipping.delivery_method === "Envio estandar" && (
+                    <span className="text-xs"> · {quote.shipping.zone}</span>
+                  )}
                 </span>
-                <span>{formatCurrency(tax.tax_amount)}</span>
+                <span>
+                  {quote.shipping.delivery_method === "Recoger en local" ? (
+                    <span className="text-muted">Recoger en local</span>
+                  ) : quote.shipping.cost > 0 ? (
+                    formatCurrency(quote.shipping.cost)
+                  ) : (
+                    <span className="text-muted">—</span>
+                  )}
+                </span>
               </div>
-            ))}
+            )}
+            {/* Tax rows — skip shipping rows (description starts with "Env")
+                 so the Envio above isn't duplicated. The (rate%) suffix is
+                 also skipped for rate=0 rows (charge_type=Actual) since
+                 showing "(0%)" was misleading. */}
+            {quote.taxes
+              .filter((tax) => !(tax.description || "").toLowerCase().startsWith("env"))
+              .map((tax, index) => (
+                <div key={index} className="flex items-center justify-between text-sm">
+                  <span className="text-muted">
+                    {tax.description}
+                    {tax.rate > 0 && ` (${tax.rate}%)`}
+                  </span>
+                  <span>{formatCurrency(tax.tax_amount)}</span>
+                </div>
+              ))}
             <Separator />
             <div className="flex items-center justify-between">
               <span className="text-base font-semibold">Total</span>

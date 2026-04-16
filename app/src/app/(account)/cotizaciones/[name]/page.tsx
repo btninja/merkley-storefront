@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useParams } from "next/navigation";
+import { useCart } from "@/context/cart-context";
 import Link from "next/link";
 import {
   Calendar,
@@ -91,6 +92,7 @@ export default function QuotationDetailPage() {
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isDownloading, setIsDownloading] = useState(false);
+  const cartContext = useCart();
 
   if (isLoading) {
     return <DetailSkeleton />;
@@ -300,7 +302,28 @@ export default function QuotationDetailPage() {
       <div className="flex flex-wrap gap-2">
         {isDraft && (
           <>
-            {/* TODO: Implement edit — load quote items into cart and redirect to /cotizaciones/nueva */}
+            <Button
+              variant="outline"
+              onClick={() => {
+                // Load quote items into cart and redirect to quotation builder
+                const { replaceItems } = cartContext;
+                const cartItems = quote.items.map((item: { item_code: string; item_name: string; qty: number; rate: number; description?: string }) => ({
+                  item_code: item.item_code,
+                  item_name: item.item_name,
+                  qty: item.qty,
+                  rate: item.rate,
+                  customization_options: item.description || null,
+                  is_personalizable: false,
+                  image_url: null,
+                  minimum_order_qty: 2,
+                }));
+                replaceItems(cartItems);
+                window.location.href = "/cotizaciones/nueva";
+              }}
+            >
+              <Pencil className="h-4 w-4" />
+              Editar
+            </Button>
             <Button onClick={handleSubmit} disabled={isSubmitting}>
               {isSubmitting ? (
                 <Loader2 className="h-4 w-4 animate-spin" />

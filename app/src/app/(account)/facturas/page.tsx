@@ -66,11 +66,15 @@ function ListSkeleton() {
 
 export default function FacturasPage() {
   const [statusFilter, setStatusFilter] = useState("");
-  const { data, isLoading } = useMyInvoices(
-    statusFilter ? { status: statusFilter } : undefined
+  const [limit, setLimit] = useState(20);
+  const { data, isLoading, error } = useMyInvoices(
+    { status: statusFilter || undefined, page_length: limit }
   );
   const { toast } = useToast();
   const [downloadingId, setDownloadingId] = useState<string | null>(null);
+
+  const invoices = data?.invoices || [];
+  const hasMore = data?.pagination?.has_more;
 
   const handleDownloadPdf = async (name: string) => {
     setDownloadingId(name);
@@ -116,7 +120,14 @@ export default function FacturasPage() {
       {/* Invoice list */}
       {isLoading ? (
         <ListSkeleton />
-      ) : !data?.invoices.length ? (
+      ) : error ? (
+        <Card className="mx-auto max-w-lg">
+          <CardContent className="py-12 text-center">
+            <Receipt className="mx-auto h-10 w-10 text-destructive" />
+            <p className="mt-3 text-sm text-destructive">Error al cargar facturas. Intenta de nuevo.</p>
+          </CardContent>
+        </Card>
+      ) : !invoices.length ? (
         <Card className="mx-auto max-w-lg">
           <CardHeader className="text-center">
             <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-primary-soft">
@@ -134,7 +145,7 @@ export default function FacturasPage() {
         </Card>
       ) : (
         <div className="space-y-3">
-          {data.invoices.map((invoice) => {
+          {invoices.map((invoice) => {
             const statusStyle =
               PAYMENT_STATUS_STYLES[invoice.payment_status.color] ||
               PAYMENT_STATUS_STYLES.warning;
@@ -226,6 +237,18 @@ export default function FacturasPage() {
               </Link>
             );
           })}
+          {hasMore && (
+            <div className="flex justify-center pt-4">
+              <Button
+                variant="outline"
+                onClick={() => setLimit((l) => l + 20)}
+                disabled={isLoading}
+              >
+                {isLoading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
+                Cargar más
+              </Button>
+            </div>
+          )}
         </div>
       )}
     </div>

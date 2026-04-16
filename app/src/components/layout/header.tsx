@@ -112,6 +112,11 @@ export function Header() {
                 className="relative"
                 onMouseEnter={openSeasons}
                 onMouseLeave={closeSeasons}
+                onFocus={openSeasons}
+                onBlur={(e) => {
+                  // Only close if focus moved outside the dropdown
+                  if (!e.currentTarget.contains(e.relatedTarget)) closeSeasons();
+                }}
               >
                 <Link
                   href="/temporadas"

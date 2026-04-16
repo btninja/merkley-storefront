@@ -2,6 +2,7 @@
 
 import { Suspense, useState, useEffect, useCallback } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
+import Image from "next/image";
 import { Search, X, SlidersHorizontal, Package } from "lucide-react";
 import { useProducts, useBootstrap } from "@/hooks/use-catalog";
 import { useDebounce } from "@/hooks/use-debounce";
@@ -16,7 +17,7 @@ import {
   SheetTitle,
   SheetDescription,
 } from "@/components/ui/sheet";
-import { ProductCard, CatalogSkeleton } from "@/components/catalog/product-card";
+import { ProductCard, CatalogSkeleton, ProductCardSkeleton } from "@/components/catalog/product-card";
 import { CatalogBreadcrumb } from "@/components/catalog/breadcrumb";
 import { FilterSidebar } from "@/components/catalog/filter-sidebar";
 import { CatalogCtaBar } from "@/components/catalog/catalog-cta-bar";
@@ -199,7 +200,19 @@ function CatalogoContent() {
     <>
       {/* Hero header */}
       <section className="relative overflow-hidden bg-gradient-to-br from-primary-soft via-white to-surface-muted">
-        <Container className="py-12 md:py-16">
+        {(() => {
+          const bannerSeason = bootstrap?.seasons?.find(s => s.banner_image);
+          return bannerSeason?.banner_image ? (
+            <Image
+              src={bannerSeason.banner_image}
+              alt="Catálogo"
+              fill
+              className="object-cover opacity-10"
+              sizes="100vw"
+            />
+          ) : null;
+        })()}
+        <Container className="relative z-10 py-12 md:py-16">
           {category ? (
             <div>
               <CatalogBreadcrumb
@@ -413,8 +426,8 @@ function CatalogoContent() {
 
                 {isLoading && allProducts.length > 0 && (
                   <div className="mt-6 grid gap-4 sm:grid-cols-2 md:grid-cols-3 lg:gap-6">
-                    {Array.from({ length: 3 }).map((_, i) => (
-                      <CatalogSkeleton key={`loading-${i}`} />
+                    {Array.from({ length: 6 }).map((_, i) => (
+                      <ProductCardSkeleton key={`loading-${i}`} />
                     ))}
                   </div>
                 )}

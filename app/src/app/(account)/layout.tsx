@@ -23,17 +23,14 @@ import { Sidebar } from "@/components/layout/sidebar";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 
+// Bottom nav shows only the 5 most-used links for tap-friendly 44px+ targets.
+// The full list lives in the sidebar (visible on desktop, accessible via hamburger).
 const MOBILE_NAV_LINKS = [
   { href: "/cuenta", label: "Panel", icon: LayoutDashboard, exact: true },
   { href: "/cotizaciones", label: "Cotizaciones", icon: FileText },
-  { href: "/catalogo-pdf", label: "Catálogo", icon: BookOpen },
   { href: "/facturas", label: "Facturas", icon: Receipt },
   { href: "/pedidos", label: "Pedidos", icon: Package },
-  { href: "/historial", label: "Historial", icon: History },
-  { href: "/descargas", label: "Descargas", icon: Download },
   { href: "/soporte", label: "Soporte", icon: MessageCircle },
-  { href: "/cuenta/equipo", label: "Equipo", icon: Users, adminOnly: true },
-  { href: "/cuenta/perfil", label: "Perfil", icon: User },
 ];
 
 function AccountLoadingSkeleton() {
@@ -111,12 +108,13 @@ export default function AccountLayout({
 }) {
   const { isLoading, isAuthenticated } = useAuth();
   const router = useRouter();
+  const pathname = usePathname();
 
   useEffect(() => {
     if (!isLoading && !isAuthenticated) {
-      router.push("/auth/login");
+      router.push(`/auth/login?next=${encodeURIComponent(pathname)}`);
     }
-  }, [isLoading, isAuthenticated, router]);
+  }, [isLoading, isAuthenticated, router, pathname]);
 
   if (isLoading) {
     return <AccountLoadingSkeleton />;

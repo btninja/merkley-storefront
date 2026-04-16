@@ -204,7 +204,7 @@ function ListSkeleton() {
 }
 
 export default function PedidosPage() {
-  const { data, isLoading } = useOrderPipeline();
+  const { data, isLoading, error } = useOrderPipeline();
 
   return (
     <div className="space-y-6">
@@ -215,6 +215,13 @@ export default function PedidosPage() {
 
       {isLoading ? (
         <ListSkeleton />
+      ) : error ? (
+        <Card className="mx-auto max-w-lg">
+          <CardContent className="py-12 text-center">
+            <Package className="mx-auto h-10 w-10 text-destructive" />
+            <p className="mt-3 text-sm text-destructive">Error al cargar pedidos. Intenta de nuevo.</p>
+          </CardContent>
+        </Card>
       ) : !data?.orders.length ? (
         <Card className="mx-auto max-w-lg">
           <CardHeader className="text-center">

@@ -30,6 +30,7 @@ interface CartContextValue {
 }
 
 const STORAGE_KEY = "mw_cart";
+const MAX_QTY = 10000;
 
 const CartContext = createContext<CartContextValue | null>(null);
 
@@ -82,11 +83,11 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
       if (existing) {
         return prev.map((i) =>
           i.item_code === newItem.item_code
-            ? { ...i, qty: i.qty + newItem.qty }
+            ? { ...i, qty: Math.min(i.qty + newItem.qty, MAX_QTY) }
             : i
         );
       }
-      return [...prev, newItem];
+      return [...prev, { ...newItem, qty: Math.min(newItem.qty, MAX_QTY) }];
     });
     trackAddToCart(newItem.item_code, newItem.item_name, newItem.qty, newItem.rate);
     setLastAddedAt(Date.now());
@@ -95,7 +96,9 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
   const updateQty = useCallback((item_code: string, qty: number) => {
     setItems((prev) =>
       prev.map((i) =>
-        i.item_code === item_code ? { ...i, qty: Math.max(1, qty) } : i
+        i.item_code === item_code
+          ? { ...i, qty: Math.min(Math.max(i.minimum_order_qty || 1, qty), MAX_QTY) }
+          : i
       )
     );
   }, []);

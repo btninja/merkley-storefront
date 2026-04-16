@@ -190,7 +190,7 @@ export function Header() {
               <MobileSearchToggle onOpen={() => setMobileSearchOpen(true)} />
             </div>
             {/* Cart icon — always visible, opens drawer */}
-            <Button variant="ghost" size="icon" className="relative" onClick={() => setCartOpen(true)}>
+            <Button variant="ghost" size="icon" className="relative" onClick={() => setCartOpen(true)} aria-label="Abrir carrito">
               <ShoppingBag className="h-5 w-5" />
               {itemCount > 0 && (
                 <span className={cn(

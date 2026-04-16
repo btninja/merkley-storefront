@@ -82,8 +82,9 @@ export default function ResetPasswordContent() {
 
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
+        // Never show data.exception (raw Python traceback) to the user.
+        // Parse _server_messages for the user-facing message; fall back to generic.
         const msg =
-          data?.exception ||
           data?._server_messages ||
           data?.message ||
           "No se pudo restablecer la contraseña. El enlace puede haber expirado.";

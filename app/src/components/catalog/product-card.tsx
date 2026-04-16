@@ -117,7 +117,7 @@ export const ProductCard = memo(function ProductCard({ product }: { product: Pro
             </Badge>
             <Button
               size="icon"
-              className="ml-auto h-7 w-7 shrink-0 rounded-full shadow-sm transition-all sm:opacity-0 sm:group-hover:opacity-100"
+              className="ml-auto h-7 w-7 shrink-0 rounded-full shadow-sm transition-all [@media(hover:hover)]:opacity-0 [@media(hover:hover)]:group-hover:opacity-100"
               onClick={handleAddToCart}
               aria-label={`Agregar ${product.name} a cotización`}
             >

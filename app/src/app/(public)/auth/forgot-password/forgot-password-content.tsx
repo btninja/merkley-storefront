@@ -37,11 +37,11 @@ export default function ForgotPasswordContent() {
 
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
+        // Never show data.exception (raw Python traceback) to the user.
         const msg =
-          data?.exception ||
           data?.message ||
           "No se pudo enviar el correo. Intenta de nuevo.";
-        setError(msg);
+        setError(typeof msg === "string" ? msg : "Error al enviar el correo.");
         return;
       }
 

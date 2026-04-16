@@ -210,7 +210,7 @@ export default function NewQuotationPage() {
         customization_notes: "",
         customization_options: ci.customization_options,
         is_personalizable: ci.is_personalizable ?? false,
-        minimum_order_qty: 6,
+        minimum_order_qty: ci.minimum_order_qty || 1,
       }));
       setItems(hydrated);
       setCartHydrated(true);
@@ -225,7 +225,7 @@ export default function NewQuotationPage() {
   useEffect(() => {
     if (!cartHydrated) return;
     replaceItems(
-      items.map(({ item_code, item_name, qty, rate, customization_options, is_personalizable }) => ({
+      items.map(({ item_code, item_name, qty, rate, customization_options, is_personalizable, minimum_order_qty }) => ({
         item_code,
         item_name,
         qty,
@@ -233,6 +233,7 @@ export default function NewQuotationPage() {
         customization_options,
         is_personalizable,
         image_url: null,
+        minimum_order_qty: minimum_order_qty || 1,
       }))
     );
   }, [items, cartHydrated, replaceItems]);
@@ -279,7 +280,7 @@ export default function NewQuotationPage() {
       if (existing) {
         return prev.map((item) =>
           item.item_code === product.sku
-            ? { ...item, qty: item.qty + Math.max(product.minimum_order_qty, 6) }
+            ? { ...item, qty: item.qty + Math.max(product.minimum_order_qty, 1) }
             : item
         );
       }
@@ -288,12 +289,12 @@ export default function NewQuotationPage() {
         {
           item_code: product.sku,
           item_name: product.name,
-          qty: Math.max(product.minimum_order_qty, 6),
+          qty: Math.max(product.minimum_order_qty, 1),
           rate: product.price.amount ?? 0,
           customization_notes: "",
           customization_options: product.customization_options,
           is_personalizable: product.is_personalizable,
-          minimum_order_qty: product.minimum_order_qty || 6,
+          minimum_order_qty: product.minimum_order_qty || 1,
         },
       ];
     });
@@ -303,7 +304,7 @@ export default function NewQuotationPage() {
   const setDirectQty = useCallback((itemCode: string, qty: number) => {
     setItems((prev) =>
       prev.map((item) =>
-        item.item_code === itemCode ? { ...item, qty: Math.max(item.minimum_order_qty || 6, qty) } : item
+        item.item_code === itemCode ? { ...item, qty: Math.max(item.minimum_order_qty || 1, qty) } : item
       )
     );
   }, []);
@@ -313,7 +314,7 @@ export default function NewQuotationPage() {
     setItems((prev) =>
       prev.map((item) =>
         item.item_code === itemCode
-          ? { ...item, qty: Math.max(item.minimum_order_qty || 6, item.qty + delta) }
+          ? { ...item, qty: Math.max(item.minimum_order_qty || 1, item.qty + delta) }
           : item
       )
     );
@@ -755,26 +756,26 @@ export default function NewQuotationPage() {
                           size="icon"
                           className="h-7 w-7"
                           onClick={() => updateQty(item.item_code, -1)}
-                          disabled={item.qty <= (item.minimum_order_qty || 6)}
-                          title={item.qty <= (item.minimum_order_qty || 6) ? `Mínimo: ${item.minimum_order_qty || 6} unidades` : undefined}
+                          disabled={item.qty <= (item.minimum_order_qty || 1)}
+                          title={item.qty <= (item.minimum_order_qty || 1) ? `Mínimo: ${item.minimum_order_qty || 1} unidades` : undefined}
                         >
                           <Minus className="h-3 w-3" />
                         </Button>
                         <div className="relative group">
                           <Input
                             type="number"
-                            min={item.minimum_order_qty || 6}
+                            min={item.minimum_order_qty || 1}
                             value={item.qty}
                             onChange={(e) =>
-                              setDirectQty(item.item_code, parseInt(e.target.value) || (item.minimum_order_qty || 6))
+                              setDirectQty(item.item_code, parseInt(e.target.value) || (item.minimum_order_qty || 1))
                             }
                             className={`h-7 w-16 text-center text-sm ${
-                              item.qty <= (item.minimum_order_qty || 6) ? "border-destructive ring-destructive/20" : ""
+                              item.qty <= (item.minimum_order_qty || 1) ? "border-destructive ring-destructive/20" : ""
                             }`}
                           />
-                          {item.qty <= (item.minimum_order_qty || 6) && (
+                          {item.qty <= (item.minimum_order_qty || 1) && (
                             <div className="absolute -bottom-6 left-1/2 -translate-x-1/2 whitespace-nowrap rounded bg-foreground px-2 py-0.5 text-[10px] text-background opacity-0 group-hover:opacity-100 transition-opacity z-10">
-                              Min: {item.minimum_order_qty || 6} uds
+                              Min: {item.minimum_order_qty || 1} uds
                             </div>
                           )}
                         </div>
@@ -891,6 +892,7 @@ export default function NewQuotationPage() {
                   type="date"
                   value={desiredDeliveryDate}
                   onChange={(e) => setDesiredDeliveryDate(e.target.value)}
+                  min={new Date().toISOString().split("T")[0]}
                 />
               </div>
 

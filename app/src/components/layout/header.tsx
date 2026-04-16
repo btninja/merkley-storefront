@@ -1,12 +1,13 @@
 "use client";
 
-import { useRef, useState, useCallback } from "react";
+import { useRef, useState, useCallback, useEffect } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { User, LogOut, FileText, LayoutDashboard, ChevronDown, Calendar, ArrowRight, ShoppingBag, X } from "lucide-react";
 import { useAuth } from "@/context/auth-context";
 import { useCart } from "@/context/cart-context";
+import { CartDrawer } from "@/components/cart/cart-drawer";
 import { useBootstrap } from "@/hooks/use-catalog";
 import { Button } from "@/components/ui/button";
 import {
@@ -39,7 +40,18 @@ const MONTH_NAMES: Record<number, string> = {
 export function Header() {
   const pathname = usePathname();
   const { isAuthenticated, customer, logout, isLoading } = useAuth();
-  const { itemCount } = useCart();
+  const { itemCount, lastAddedAt } = useCart();
+  const [cartOpen, setCartOpen] = useState(false);
+  const [bouncing, setBouncing] = useState(false);
+
+  // Badge bounce when an item is added
+  useEffect(() => {
+    if (lastAddedAt > 0) {
+      setBouncing(true);
+      const timer = setTimeout(() => setBouncing(false), 300);
+      return () => clearTimeout(timer);
+    }
+  }, [lastAddedAt]);
   const { data: bootstrap } = useBootstrap();
   const seasons = bootstrap?.seasons || [];
 
@@ -177,17 +189,19 @@ export function Header() {
             <div className="md:hidden">
               <MobileSearchToggle onOpen={() => setMobileSearchOpen(true)} />
             </div>
-            {/* Cart icon — visible when there are items */}
-            {itemCount > 0 && (
-              <Button variant="ghost" size="icon" className="relative" asChild>
-                <Link href="/cotizaciones/nueva">
-                  <ShoppingBag className="h-5 w-5" />
-                  <span className="absolute -right-0.5 -top-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-primary px-1 text-[10px] font-bold text-white">
-                    {itemCount > 99 ? "99+" : itemCount}
-                  </span>
-                </Link>
-              </Button>
-            )}
+            {/* Cart icon — always visible, opens drawer */}
+            <Button variant="ghost" size="icon" className="relative" onClick={() => setCartOpen(true)}>
+              <ShoppingBag className="h-5 w-5" />
+              {itemCount > 0 && (
+                <span className={cn(
+                  "absolute -right-0.5 -top-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-primary px-1 text-[10px] font-bold text-white",
+                  bouncing && "animate-bounce-once"
+                )}>
+                  {itemCount > 99 ? "99+" : itemCount}
+                </span>
+              )}
+            </Button>
+            <CartDrawer open={cartOpen} onOpenChange={setCartOpen} />
 
             {!isLoading && (
               <>

@@ -43,11 +43,12 @@ export const ProductCard = memo(function ProductCard({ product }: { product: Pro
     addItem({
       item_code: product.sku,
       item_name: product.name,
-      qty: Math.max(product.minimum_order_qty, 6),
+      qty: product.minimum_order_qty || 2,
       rate: product.price.amount ?? 0,
       customization_options: product.customization_options,
       is_personalizable: product.is_personalizable,
       image_url: product.images?.[0]?.url ?? null,
+      minimum_order_qty: product.minimum_order_qty || 2,
     });
     toast({
       title: "Producto agregado",

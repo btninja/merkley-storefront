@@ -13,6 +13,7 @@ export interface CartItem {
   customization_options: string | null;
   is_personalizable: boolean;
   image_url: string | null;
+  minimum_order_qty: number;
 }
 
 // ── Context value ──
@@ -25,6 +26,7 @@ interface CartContextValue {
   removeItem: (item_code: string) => void;
   replaceItems: (items: CartItem[]) => void;
   clearCart: () => void;
+  lastAddedAt: number;
 }
 
 const STORAGE_KEY = "mw_cart";
@@ -59,6 +61,7 @@ function saveCart(items: CartItem[]) {
 export function CartProvider({ children }: { children: React.ReactNode }) {
   const [items, setItems] = useState<CartItem[]>([]);
   const [hydrated, setHydrated] = useState(false);
+  const [lastAddedAt, setLastAddedAt] = useState(0);
 
   // Hydrate from localStorage on mount (SSR guard)
   useEffect(() => {
@@ -86,6 +89,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
       return [...prev, newItem];
     });
     trackAddToCart(newItem.item_code, newItem.item_name, newItem.qty, newItem.rate);
+    setLastAddedAt(Date.now());
   }, []);
 
   const updateQty = useCallback((item_code: string, qty: number) => {
@@ -115,7 +119,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
 
   return (
     <CartContext.Provider
-      value={{ items, itemCount, addItem, updateQty, removeItem, replaceItems, clearCart }}
+      value={{ items, itemCount, addItem, updateQty, removeItem, replaceItems, clearCart, lastAddedAt }}
     >
       {children}
     </CartContext.Provider>

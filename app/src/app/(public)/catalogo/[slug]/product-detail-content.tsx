@@ -143,38 +143,9 @@ export default function ProductDetailPage() {
   const activeImage = images[activeImageIdx] || null;
   const AvailIcon = availabilityIcon(product.availability.label);
 
-  const productJsonLd = {
-    "@context": "https://schema.org",
-    "@type": "Product",
-    name: product.name,
-    description: product.short_description || product.description?.replace(/<[^>]*>/g, "") || undefined,
-    image: images.length > 0 ? images.map((img) => img.url) : undefined,
-    url: `https://merkleydetails.com/catalogo/${product.slug}`,
-    sku: product.sku,
-    brand: {
-      "@type": "Brand",
-      name: "Merkley Details",
-    },
-    offers: {
-      "@type": "Offer",
-      url: `https://merkleydetails.com/catalogo/${product.slug}`,
-      priceCurrency: "DOP",
-      price: product.price.amount ?? undefined,
-      availability:
-        product.availability.label === "Disponible"
-          ? "https://schema.org/InStock"
-          : product.availability.label === "Bajo Pedido"
-            ? "https://schema.org/PreOrder"
-            : "https://schema.org/OutOfStock",
-    },
-  };
-
   return (
     <>
-    <script
-      type="application/ld+json"
-      dangerouslySetInnerHTML={{ __html: JSON.stringify(productJsonLd) }}
-    />
+    {/* Product JSON-LD is rendered server-side in page.tsx — no duplicate here */}
     {/* Breadcrumb hero strip */}
     <section className="bg-gradient-to-br from-primary-soft via-white to-surface-muted">
       <Container className="py-4">
@@ -385,11 +356,12 @@ export default function ProductDetailPage() {
                   addItem({
                     item_code: product.sku,
                     item_name: product.name,
-                    qty: Math.max(product.minimum_order_qty, 6),
+                    qty: product.minimum_order_qty || 2,
                     rate: product.price.amount ?? 0,
                     customization_options: product.customization_options,
                     is_personalizable: product.is_personalizable,
                     image_url: product.images[0]?.url || null,
+                    minimum_order_qty: product.minimum_order_qty || 2,
                   });
                   setJustAdded(true);
                   toast({

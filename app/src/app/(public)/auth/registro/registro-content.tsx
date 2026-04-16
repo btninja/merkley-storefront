@@ -325,32 +325,22 @@ export default function RegistroPage() {
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : "Error al crear la cuenta. Intenta de nuevo.";
 
-      if (message.includes("USER_EXISTS_UNVERIFIED")) {
+      if (message.includes("COMPANY_EXISTS")) {
         toast({
-          title: "Cuenta pendiente de verificacion",
-          description: "Ya tienes una cuenta. Revisa tu correo para verificarla.",
+          title: "Empresa ya registrada",
+          description: "Ya existe una empresa con este nombre. Si eres parte de esta empresa, contacta al administrador.",
+          variant: "destructive",
+        });
+      } else if (message.includes("correo") && message.includes("verificac")) {
+        // Backend verification-related error — redirect to verification page
+        clearStoredForm();
+        toast({
+          title: "Verifica tu correo",
+          description: "Te hemos enviado un correo de verificacion. Revisa tu bandeja de entrada.",
           variant: "default",
         });
         router.push(`/auth/verificar-correo?email=${encodeURIComponent(form.email.trim().toLowerCase())}`);
         return;
-      } else if (message.includes("USER_EXISTS")) {
-        clearStoredForm();
-        toast({
-          title: "Ya tienes una cuenta",
-          description: "Hemos encontrado una cuenta con este correo. Inicia sesion.",
-          variant: "default",
-        });
-        router.push(`/auth/login?email=${encodeURIComponent(form.email.trim().toLowerCase())}&from=registro`);
-        return;
-      } else if (message.includes("DOMAIN_MISMATCH")) {
-        const domainMatch = message.match(/@([^\s]+)/);
-        toast({
-          title: "Dominio de correo no coincide",
-          description: domainMatch
-            ? `Tu empresa requiere un correo @${domainMatch[1]} para registrarse.`
-            : "El dominio de tu correo no coincide con el registrado para esta empresa.",
-          variant: "destructive",
-        });
       } else {
         toast({ title: "Error de registro", description: message, variant: "destructive" });
       }
@@ -459,8 +449,11 @@ export default function RegistroPage() {
                     <div className="space-y-4">
                       <div className="space-y-2">
                         <Label htmlFor="rnc">
-                          RNC o Cedula <span className="text-destructive">*</span>
+                          RNC o Cédula <span className="text-destructive">*</span>
                         </Label>
+                        <p className="text-[11px] text-muted leading-tight">
+                          El número de registro de tu empresa en la DGII (9 dígitos). Lo encuentras en cualquier factura fiscal o en dgii.gov.do.
+                        </p>
                         <div className="flex gap-2">
                           <Input
                             id="rnc"

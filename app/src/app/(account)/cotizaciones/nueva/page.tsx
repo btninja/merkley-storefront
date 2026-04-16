@@ -1079,6 +1079,31 @@ export default function NewQuotationPage() {
           </div>
         </div>
       </div>
+
+      {/* Mobile sticky submit bar — shows above bottom nav so users
+          don't have to scroll past the entire cart to find the submit
+          button. Only renders on small screens when items exist. */}
+      {items.length > 0 && (
+        <div className="fixed bottom-14 left-0 right-0 z-40 border-t bg-background/95 backdrop-blur px-4 py-3 flex items-center justify-between gap-3 sm:hidden">
+          <div className="min-w-0">
+            <p className="text-xs text-muted">
+              {items.length} {items.length === 1 ? "producto" : "productos"} · {items.reduce((s, i) => s + i.qty, 0)} uds
+            </p>
+            <p className="text-sm font-bold">
+              {formatCurrency(items.reduce((s, i) => s + i.qty * i.rate, 0))}
+            </p>
+          </div>
+          <Button
+            size="sm"
+            onClick={() => handleSubmit(true)}
+            disabled={isSubmitting}
+            className="shrink-0"
+          >
+            {isSubmitting ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Send className="h-3.5 w-3.5" />}
+            Enviar
+          </Button>
+        </div>
+      )}
     </div>
   );
 }

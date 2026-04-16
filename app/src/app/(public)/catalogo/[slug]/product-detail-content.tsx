@@ -256,9 +256,19 @@ export default function ProductDetailPage() {
                   Precio disponible al iniciar sesión
                 </p>
               )}
-              <p className="mt-0.5 text-xs text-muted">
-                Precio unitario &middot; {product.price.currency} &middot; ITBIS no incluido
+              <p className="mt-1 text-sm font-medium text-amber-600">
+                + ITBIS 18%
               </p>
+              {product.price.amount != null && (
+                <p className="text-xs text-muted mt-0.5">
+                  Con ITBIS: ~{formatCurrency(product.price.amount * 1.18)} por unidad
+                </p>
+              )}
+              {product.minimum_order_qty < 12 && (
+                <p className="mt-2 text-xs text-amber-700 bg-amber-50 rounded-md px-2.5 py-1.5 inline-block">
+                  Pedidos de menos de 12 unidades incluyen un recargo del 10%.
+                </p>
+              )}
             </div>
 
             <Separator className="my-5" />

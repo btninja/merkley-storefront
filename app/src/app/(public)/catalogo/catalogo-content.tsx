@@ -242,7 +242,7 @@ function CatalogoContent() {
         </Container>
       </section>
 
-      <section className="py-6">
+      <section className="py-6 pb-20 sm:pb-6">
       <Container>
         {/* Search bar */}
         <div className="flex items-center gap-3">

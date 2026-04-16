@@ -51,19 +51,31 @@ export function CartItemRow({ item, onUpdateQty, onRemove }: CartItemRowProps) {
           <Button
             variant="outline"
             size="icon"
-            className="h-6 w-6"
+            className="h-7 w-7"
             disabled={!canDecrement}
             onClick={() => onUpdateQty(item.qty - 1)}
           >
             <Minus className="h-3 w-3" />
           </Button>
-          <span className="w-8 text-center text-sm font-medium tabular-nums">
-            {item.qty}
-          </span>
+          <input
+            type="number"
+            inputMode="numeric"
+            className="w-12 text-center text-sm font-medium tabular-nums border rounded-md h-7 bg-transparent focus:outline-none focus:ring-1 focus:ring-ring [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none [-moz-appearance:textfield]"
+            value={item.qty}
+            min={minQty}
+            onChange={(e) => {
+              const val = parseInt(e.target.value, 10);
+              if (!isNaN(val) && val >= minQty) onUpdateQty(val);
+            }}
+            onBlur={(e) => {
+              const val = parseInt(e.target.value, 10);
+              if (isNaN(val) || val < minQty) onUpdateQty(minQty);
+            }}
+          />
           <Button
             variant="outline"
             size="icon"
-            className="h-6 w-6"
+            className="h-7 w-7"
             onClick={() => onUpdateQty(item.qty + 1)}
           >
             <Plus className="h-3 w-3" />

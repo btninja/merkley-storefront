@@ -16,6 +16,7 @@ import {
   MapPin,
   Package,
   Pencil,
+  RefreshCw,
   ScrollText,
   Send,
   ShieldCheck,
@@ -355,6 +356,29 @@ export default function QuotationDetailPage() {
               </p>
             </div>
           </div>
+        )}
+        {/* Reorder button — for any non-draft quotation */}
+        {!isDraft && quote.items?.length > 0 && (
+          <Button
+            variant="outline"
+            onClick={() => {
+              const cartItems = quote.items.map((item: { item_code: string; item_name: string; qty: number; rate: number; description?: string; is_personalizable?: boolean; minimum_order_qty?: number; image_url?: string }) => ({
+                item_code: item.item_code,
+                item_name: item.item_name,
+                qty: item.qty,
+                rate: item.rate,
+                customization_options: item.description || null,
+                is_personalizable: item.is_personalizable ?? false,
+                image_url: item.image_url || null,
+                minimum_order_qty: item.minimum_order_qty || item.qty || 2,
+              }));
+              cartContext.replaceItems(cartItems);
+              window.location.href = "/cotizaciones/nueva";
+            }}
+          >
+            <RefreshCw className="h-4 w-4" />
+            Repetir cotización
+          </Button>
         )}
       </div>
 

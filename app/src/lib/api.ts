@@ -111,10 +111,14 @@ async function frappeCall<T>(
     }
   }
 
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 15000);
+
   const fetchOptions: RequestInit & { next?: { revalidate?: number | false } } = {
     method: httpMethod,
     credentials: "include",
     headers,
+    signal: controller.signal,
     ...(options?.revalidate !== undefined ? { next: { revalidate: options.revalidate } } : {}),
   };
 
@@ -129,7 +133,17 @@ async function frappeCall<T>(
     fetchOptions.body = JSON.stringify(params);
   }
 
-  let response = await fetch(url, fetchOptions);
+  let response: Response;
+  try {
+    response = await fetch(url, fetchOptions);
+  } catch (err) {
+    clearTimeout(timeoutId);
+    if (err instanceof DOMException && err.name === "AbortError") {
+      throw new ApiError("La solicitud tardo demasiado. Intenta de nuevo.", 408);
+    }
+    throw err;
+  }
+  clearTimeout(timeoutId);
 
   // If we get a 403, the CSRF token may be stale — refresh and retry once
   if (response.status === 403 && httpMethod === "POST") {
@@ -149,7 +163,7 @@ async function frappeCall<T>(
     try {
       const errorData = await response.json();
       serverMessage =
-        errorData?.exc_type === "ValidationError"
+        (errorData?.exc_type === "ValidationError" || errorData?.exc_type === "DuplicateEntryError")
           ? errorData?._server_messages
             ? JSON.parse(errorData._server_messages)?.[0]
               ? JSON.parse(JSON.parse(errorData._server_messages)[0])?.message
@@ -256,6 +270,7 @@ export async function getSeasonProducts(params: {
   page_length?: number;
   tier?: string;
   search?: string;
+  sort_by?: string;
 }): Promise<SeasonProductsResponse> {
   return frappeCall<SeasonProductsResponse>("seasons.get_season_products", params, { method: "GET" });
 }
@@ -311,7 +326,7 @@ export async function downloadQuotationPdf(name: string): Promise<void> {
   link.href = URL.createObjectURL(blob);
   link.download = `${name}.pdf`;
   link.click();
-  URL.revokeObjectURL(link.href);
+  setTimeout(() => URL.revokeObjectURL(link.href), 1000);
 }
 
 // ── Invoices ──
@@ -319,6 +334,7 @@ export async function downloadQuotationPdf(name: string): Promise<void> {
 export async function getMyInvoices(params?: {
   status?: string;
   page?: number;
+  page_length?: number;
 }): Promise<InvoiceListResponse> {
   return frappeCall<InvoiceListResponse>("invoices.get_my_invoices", params as Record<string, unknown>);
 }
@@ -413,7 +429,7 @@ export async function downloadInvoicePdf(name: string): Promise<void> {
   link.href = URL.createObjectURL(blob);
   link.download = `${name}.pdf`;
   link.click();
-  URL.revokeObjectURL(link.href);
+  setTimeout(() => URL.revokeObjectURL(link.href), 1000);
 }
 
 // ── Retention Letter ──
@@ -457,7 +473,7 @@ export async function downloadCartaResponsabilidad(name: string): Promise<void> 
   link.href = URL.createObjectURL(blob);
   link.download = `Carta_Responsabilidad_${name}.pdf`;
   link.click();
-  URL.revokeObjectURL(link.href);
+  setTimeout(() => URL.revokeObjectURL(link.href), 1000);
 }
 
 // ── Shipping ──
@@ -548,7 +564,7 @@ export async function getFeaturedClients(): Promise<FeaturedClientsResponse> {
 }
 
 export async function getClientPortfolio(): Promise<ClientPortfolioResponse> {
-  return frappeCall<ClientPortfolioResponse>("clients.get_client_portfolio");
+  return frappeCall<ClientPortfolioResponse>("clients.get_client_portfolio", undefined, { method: "GET" });
 }
 
 // ── Link Page ──

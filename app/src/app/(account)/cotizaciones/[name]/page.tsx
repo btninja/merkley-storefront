@@ -307,15 +307,15 @@ export default function QuotationDetailPage() {
               onClick={() => {
                 // Load quote items into cart and redirect to quotation builder
                 const { replaceItems } = cartContext;
-                const cartItems = quote.items.map((item: { item_code: string; item_name: string; qty: number; rate: number; description?: string }) => ({
+                const cartItems = quote.items.map((item: { item_code: string; item_name: string; qty: number; rate: number; description?: string; is_personalizable?: boolean; minimum_order_qty?: number; image_url?: string }) => ({
                   item_code: item.item_code,
                   item_name: item.item_name,
                   qty: item.qty,
                   rate: item.rate,
                   customization_options: item.description || null,
-                  is_personalizable: false,
-                  image_url: null,
-                  minimum_order_qty: 2,
+                  is_personalizable: item.is_personalizable ?? false,
+                  image_url: item.image_url || null,
+                  minimum_order_qty: item.minimum_order_qty || item.qty || 2,
                 }));
                 replaceItems(cartItems);
                 window.location.href = "/cotizaciones/nueva";

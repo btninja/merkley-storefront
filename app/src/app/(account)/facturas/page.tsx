@@ -105,7 +105,7 @@ export default function FacturasPage() {
         {STATUS_FILTERS.map((filter) => (
           <button
             key={filter.value}
-            onClick={() => setStatusFilter(filter.value)}
+            onClick={() => { setStatusFilter(filter.value); setLimit(20); }}
             className={`rounded-full px-3 py-1.5 text-xs font-medium transition-colors ${
               statusFilter === filter.value
                 ? "bg-primary text-primary-foreground"

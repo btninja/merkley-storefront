@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect, useCallback } from "react";
 import { cn } from "@/lib/utils";
+import { useUtmParams } from "@/context/utm-context";
 
 // ── Config ──────────────────────────────────────────────────────────
 
@@ -176,6 +177,7 @@ export function ChatWidget() {
   const [phone, setPhone] = useState("");
   const [initialMessage, setInitialMessage] = useState("");
   const [starting, setStarting] = useState(false);
+  const utmParams = useUtmParams();
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -340,9 +342,7 @@ export function ChatWidget() {
         visitor_email: email.trim() || undefined,
         visitor_phone: phone.trim() || undefined,
         page_url: window.location.href,
-        utm_source: new URLSearchParams(window.location.search).get("utm_source") || undefined,
-        utm_medium: new URLSearchParams(window.location.search).get("utm_medium") || undefined,
-        utm_campaign: new URLSearchParams(window.location.search).get("utm_campaign") || undefined,
+        ...utmParams,
       });
 
       setSessionId(result.session_id);

@@ -5,6 +5,7 @@ import { MessageCircle, Send, X, CheckCircle2 } from "lucide-react";
 import { useBootstrap } from "@/hooks/use-catalog";
 import { Button } from "@/components/ui/button";
 import { trackWhatsAppClick, trackEvent } from "@/lib/analytics";
+import { useUtmParams } from "@/context/utm-context";
 
 const ERP_BASE =
   process.env.NEXT_PUBLIC_ERP_URL ||
@@ -34,6 +35,7 @@ export function CatalogCtaBar() {
   const [phone, setPhone] = useState("");
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
+  const utmParams = useUtmParams();
 
   if (!whatsapp) return null;
 
@@ -63,15 +65,7 @@ export function CatalogCtaBar() {
             phone: phone.trim(),
             message: message.trim() || undefined,
             page_url: window.location.href,
-            utm_source:
-              new URLSearchParams(window.location.search).get("utm_source") ||
-              undefined,
-            utm_medium:
-              new URLSearchParams(window.location.search).get("utm_medium") ||
-              undefined,
-            utm_campaign:
-              new URLSearchParams(window.location.search).get("utm_campaign") ||
-              undefined,
+            ...utmParams,
           }),
         }
       );

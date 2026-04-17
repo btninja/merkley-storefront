@@ -23,10 +23,9 @@ import type {
   ShippingZonesResponse,
 } from "./types";
 
-const ERP_BASE =
-  process.env.NEXT_PUBLIC_ERP_URL ||
-  process.env.FRAPPE_BASE_URL ||
-  "https://erp.merkleydetails.com";
+import { ERP_BASE_URL as ERP_BASE } from "./env";
+// Re-exported for callers that still import ERP_BASE from this module.
+export { ERP_BASE };
 
 // ── CSRF Token Management ──
 

@@ -52,10 +52,7 @@ import { QUOTE_STAGE_COLORS, PAYMENT_INFO, calculateDeliveryTier } from "@/lib/c
 import { TERMS_SECTIONS, TERMS_FOOTER } from "@/lib/terms";
 import type { QuoteStage } from "@/lib/constants";
 
-const ERP_BASE =
-  process.env.NEXT_PUBLIC_ERP_URL ||
-  process.env.FRAPPE_BASE_URL ||
-  "https://erp.merkleydetails.com";
+import { ERP_BASE_URL as ERP_BASE } from "@/lib/env";
 
 function DetailSkeleton() {
   return (

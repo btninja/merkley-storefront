@@ -41,6 +41,16 @@ mkdir -p "$LOG_DIR"
 do_build() {
   cd "$APP_DIR"
 
+  # Load env from the repo root so NEXT_PUBLIC_* values get baked into the
+  # client bundle. Matches how the supervisor runtime loads the same file.
+  if [ -f "/home/frappe/merkley-storefront-dev/.env.production" ]; then
+    log "Loading .env.production"
+    set -a
+    # shellcheck disable=SC1091
+    source /home/frappe/merkley-storefront-dev/.env.production
+    set +a
+  fi
+
   # Clean previous build to avoid stale manifests
   rm -rf .next node_modules/.cache
 

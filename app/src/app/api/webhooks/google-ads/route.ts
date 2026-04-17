@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { writeFile, appendFile } from "fs/promises";
 
+import { ERP_BASE_URL as ERP_URL } from "@/lib/env";
+
 const WEBHOOK_KEY = process.env.GOOGLE_ADS_WEBHOOK_KEY ?? "";
-const ERP_URL =
-  process.env.NEXT_PUBLIC_ERP_URL || "https://erp.merkleydetails.com";
 const LOG_FILE = "/tmp/google-ads-webhook.log";
 
 async function log(msg: string) {

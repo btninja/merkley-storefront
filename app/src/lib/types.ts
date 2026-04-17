@@ -157,7 +157,9 @@ export interface ContactScheduleItem {
 export interface ContactInfo {
   phone: string;
   email: string;
+  support_email: string;
   whatsapp: string;
+  brand_name: string;
   address: string[];
   schedule: ContactScheduleItem[];
 }

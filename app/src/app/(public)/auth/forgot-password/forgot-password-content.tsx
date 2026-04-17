@@ -9,10 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
-const ERP_BASE =
-  process.env.NEXT_PUBLIC_ERP_URL ||
-  process.env.FRAPPE_BASE_URL ||
-  "https://erp.merkleydetails.com";
+import { ERP_BASE_URL as ERP_BASE } from "@/lib/env";
 
 export default function ForgotPasswordContent() {
   const [email, setEmail] = useState("");

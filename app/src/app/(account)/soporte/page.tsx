@@ -15,9 +15,13 @@ import { Button } from "@/components/ui/button";
 export default function SoportePage() {
   const { data: bootstrap } = useBootstrap();
   const whatsapp = bootstrap?.contact?.whatsapp || "";
+  const supportEmail = bootstrap?.contact?.support_email || "";
+  const brandName = bootstrap?.contact?.brand_name || "nuestro equipo";
   const digits = whatsapp.replace(/\D/g, "");
   const whatsappUrl = digits
-    ? `https://wa.me/${digits}?text=${encodeURIComponent("Hola, necesito ayuda con mi cuenta en Merkley Details.")}`
+    ? `https://wa.me/${digits}?text=${encodeURIComponent(
+        `Hola, necesito ayuda con mi cuenta en ${brandName}.`
+      )}`
     : "";
 
   return (
@@ -49,7 +53,20 @@ export default function SoportePage() {
             </Button>
           ) : (
             <p className="text-sm text-muted">
-              Número de soporte no disponible. Contacta a ventas@merkleydetails.com.
+              Número de soporte no disponible.
+              {supportEmail ? (
+                <>
+                  {" "}
+                  Contacta a{" "}
+                  <a
+                    href={`mailto:${supportEmail}`}
+                    className="font-medium text-foreground hover:underline"
+                  >
+                    {supportEmail}
+                  </a>
+                  .
+                </>
+              ) : null}
             </p>
           )}
           <p className="text-xs text-muted text-center">

@@ -7,10 +7,7 @@ import { Button } from "@/components/ui/button";
 import { trackWhatsAppClick, trackEvent } from "@/lib/analytics";
 import { useUtmParams } from "@/context/utm-context";
 
-const ERP_BASE =
-  process.env.NEXT_PUBLIC_ERP_URL ||
-  process.env.FRAPPE_BASE_URL ||
-  "https://erp.merkleydetails.com";
+import { ERP_BASE_URL as ERP_BASE } from "@/lib/env";
 
 function WhatsAppIcon({ className }: { className?: string }) {
   return (

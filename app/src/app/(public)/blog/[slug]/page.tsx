@@ -8,7 +8,7 @@ type Props = {
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params;
   // Fetch post data for metadata
-  const ERP_BASE = process.env.FRAPPE_BASE_URL || "https://erp.merkleydetails.com";
+  const { ERP_BASE_URL: ERP_BASE } = await import("@/lib/env");
   try {
     const res = await fetch(
       `${ERP_BASE}/api/method/merkley_web.api.blog.get_blog_post?slug=${encodeURIComponent(slug)}`,
@@ -55,7 +55,7 @@ export default async function BlogPostPage({ params }: Props) {
   const { slug } = await params;
 
   let articleJsonLd = null;
-  const ERP_BASE = process.env.FRAPPE_BASE_URL || "https://erp.merkleydetails.com";
+  const { ERP_BASE_URL: ERP_BASE } = await import("@/lib/env");
   try {
     const res = await fetch(
       `${ERP_BASE}/api/method/merkley_web.api.blog.get_blog_post?slug=${encodeURIComponent(slug)}`,

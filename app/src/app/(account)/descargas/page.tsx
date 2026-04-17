@@ -26,10 +26,7 @@ import { useToast } from "@/hooks/use-toast";
 import { formatCurrency, formatDateShort } from "@/lib/format";
 import type { DownloadDocument } from "@/lib/api";
 
-const ERP_BASE =
-  process.env.NEXT_PUBLIC_ERP_URL ||
-  process.env.FRAPPE_BASE_URL ||
-  "https://erp.merkleydetails.com";
+import { ERP_BASE_URL as ERP_BASE } from "@/lib/env";
 
 function ListSkeleton() {
   return (

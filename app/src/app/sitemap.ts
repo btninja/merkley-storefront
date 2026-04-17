@@ -2,10 +2,7 @@ import type { MetadataRoute } from "next";
 
 const BASE_URL = "https://merkleydetails.com";
 
-const ERP_BASE =
-  process.env.NEXT_PUBLIC_ERP_URL ||
-  process.env.FRAPPE_BASE_URL ||
-  "https://erp.merkleydetails.com";
+import { ERP_BASE_URL as ERP_BASE } from "@/lib/env";
 
 interface SitemapProduct {
   slug: string;

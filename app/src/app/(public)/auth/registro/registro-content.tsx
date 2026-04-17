@@ -43,6 +43,10 @@ import {
 } from "@/components/ui/select";
 import { validateRnc } from "@/lib/api";
 import type { DgiiValidationResult } from "@/lib/types";
+import {
+  PasswordStrength,
+  isPasswordValid,
+} from "@/components/auth/password-strength";
 
 const EMPLOYEE_RANGES = [
   "1-50",
@@ -170,16 +174,15 @@ export default function RegistroPage() {
     form.contact_name.trim() !== "" &&
     form.email.trim() !== "" &&
     form.phone.trim() !== "" &&
-    form.password.trim() !== "" &&
-    form.password.length >= 8;
+    isPasswordValid(form.password);
 
   // DGII RNC validation
   const handleValidateRnc = useCallback(async () => {
     const cleanRnc = form.rnc.replace(/[-\s]/g, "");
     if (!cleanRnc || cleanRnc.length < 9) {
       toast({
-        title: "RNC invalido",
-        description: "El RNC debe tener 9 digitos o la Cedula 11 digitos.",
+        title: "RNC inválido",
+        description: "El RNC debe tener 9 dígitos o la Cédula 11 dígitos.",
         variant: "destructive",
       });
       return;
@@ -205,8 +208,8 @@ export default function RegistroPage() {
           toast({
             title: "Empresa ya registrada",
             description: result.trusted_domain
-              ? `Usa un correo @${result.trusted_domain} para acceder automaticamente.`
-              : `La empresa "${companyName}" ya tiene una cuenta. Registrate para unirte.`,
+              ? `Usa un correo @${result.trusted_domain} para acceder automáticamente.`
+              : `La empresa "${companyName}" ya tiene una cuenta. Regístrate para unirte.`,
             variant: "default",
           });
         } else {
@@ -268,12 +271,14 @@ export default function RegistroPage() {
       return;
     }
 
-    if (form.password.length < 8) {
+    if (!isPasswordValid(form.password)) {
+      // Should be prevented by canProceedToStep3, but guard against URL-hopping.
       toast({
-        title: "Contrasena muy corta",
-        description: "La contrasena debe tener al menos 8 caracteres.",
+        title: "Contraseña no válida",
+        description: "Revisa los requisitos de la contraseña en el paso 2.",
         variant: "destructive",
       });
+      setStep(2);
       return;
     }
 
@@ -309,8 +314,8 @@ export default function RegistroPage() {
         toast({
           title: joinedExisting ? "Te has unido al equipo" : "Cuenta creada",
           description: joinedExisting
-            ? "Te hemos enviado un correo de verificacion. Una vez verificado, tendras acceso a los datos de tu empresa."
-            : "Te hemos enviado un correo de verificacion.",
+            ? "Te hemos enviado un correo de verificación. Una vez verificado, tendrás acceso a los datos de tu empresa."
+            : "Te hemos enviado un correo de verificación.",
           variant: "success",
         });
         router.push(`/auth/verificar-correo?email=${encodeURIComponent(result.email)}`);
@@ -336,7 +341,7 @@ export default function RegistroPage() {
         clearStoredForm();
         toast({
           title: "Verifica tu correo",
-          description: "Te hemos enviado un correo de verificacion. Revisa tu bandeja de entrada.",
+          description: "Te hemos enviado un correo de verificación. Revisa tu bandeja de entrada.",
           variant: "default",
         });
         router.push(`/auth/verificar-correo?email=${encodeURIComponent(form.email.trim().toLowerCase())}`);
@@ -359,7 +364,7 @@ export default function RegistroPage() {
               Precios exclusivos para empresas
             </h2>
             <p className="mt-3 text-sm text-muted">
-              Mas de 500 empresas en Republica Dominicana ya usan
+              Más de 500 empresas en República Dominicana ya usan
               Merkley Details para sus regalos y detalles corporativos.
             </p>
             <div className="mt-8 space-y-4">
@@ -379,7 +384,7 @@ export default function RegistroPage() {
             </div>
             <div className="mt-8 rounded-lg border border-primary/20 bg-white/60 p-4">
               <p className="text-xs font-medium text-primary">
-                &#9733; 98% de satisfaccion del cliente
+                &#9733; 98% de satisfacción del cliente
               </p>
               <p className="mt-1 text-xs text-muted">
                 &ldquo;Merkley hizo que nuestro evento corporativo
@@ -400,7 +405,7 @@ export default function RegistroPage() {
                 <CardDescription>
                   {step === 1 && "Verifica tu empresa con el RNC"}
                   {step === 2 && "Completa tus datos de contacto"}
-                  {step === 3 && "Informacion adicional (opcional)"}
+                  {step === 3 && "Información adicional (opcional)"}
                 </CardDescription>
               </CardHeader>
 
@@ -526,7 +531,7 @@ export default function RegistroPage() {
                                       {dgiiResult.trusted_domain && (
                                         <p className="mt-1 text-xs text-muted">
                                           Usa un correo <strong>@{dgiiResult.trusted_domain}</strong> para
-                                          unirte automaticamente al equipo de tu empresa.
+                                          unirte automáticamente al equipo de tu empresa.
                                         </p>
                                       )}
                                     </>
@@ -582,7 +587,7 @@ export default function RegistroPage() {
                         {dgiiChecked && dgiiResult?.valid && (
                           <p className="text-xs text-muted">
                             {dgiiResult.company_exists
-                              ? "Te uniras al equipo de esta empresa."
+                              ? "Te unirás al equipo de esta empresa."
                               : "Auto-completado desde DGII."}
                           </p>
                         )}
@@ -604,7 +609,7 @@ export default function RegistroPage() {
                           />
                         </div>
                         <div className="space-y-2">
-                          <Label htmlFor="position">Posicion / Cargo</Label>
+                          <Label htmlFor="position">Posición / Cargo</Label>
                           <Input
                             id="position"
                             placeholder="Ej: Gerente de RRHH"
@@ -617,7 +622,7 @@ export default function RegistroPage() {
 
                       <div className="space-y-2">
                         <Label htmlFor="email">
-                          Correo electronico corporativo <span className="text-destructive">*</span>
+                          Correo electrónico corporativo <span className="text-destructive">*</span>
                         </Label>
                         <Input
                           id="email"
@@ -636,7 +641,7 @@ export default function RegistroPage() {
                               <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-amber-600" />
                               <div className="text-sm">
                                 <p className="font-medium text-amber-800">
-                                  Tu cuenta requerira aprobacion de un administrador antes de activarse.
+                                  Tu cuenta requerirá aprobación de un administrador antes de activarse.
                                 </p>
                                 <p className="mt-1 text-amber-700">
                                   Por favor usa tu correo corporativo si tienes uno para acceso inmediato.
@@ -649,7 +654,7 @@ export default function RegistroPage() {
 
                       <div className="space-y-2">
                         <Label htmlFor="phone">
-                          Telefono / WhatsApp <span className="text-destructive">*</span>
+                          Teléfono / WhatsApp <span className="text-destructive">*</span>
                         </Label>
                         <Input
                           id="phone"
@@ -664,13 +669,13 @@ export default function RegistroPage() {
 
                       <div className="space-y-2">
                         <Label htmlFor="password">
-                          Contrasena <span className="text-destructive">*</span>
+                          Contraseña <span className="text-destructive">*</span>
                         </Label>
                         <div className="relative">
                           <Input
                             id="password"
                             type={showPassword ? "text" : "password"}
-                            placeholder="Minimo 8 caracteres"
+                            placeholder="Tu contraseña"
                             value={form.password}
                             onChange={(e) => updateField("password", e.target.value)}
                             autoComplete="new-password"
@@ -678,17 +683,23 @@ export default function RegistroPage() {
                             minLength={8}
                             disabled={isSubmitting}
                             className="pr-10"
+                            aria-describedby="password-strength"
                           />
                           <button
                             type="button"
                             onClick={() => setShowPassword(!showPassword)}
                             className="absolute right-3 top-1/2 -translate-y-1/2 text-muted hover:text-foreground"
                             tabIndex={-1}
+                            aria-label={showPassword ? "Ocultar contraseña" : "Mostrar contraseña"}
                           >
                             {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                           </button>
                         </div>
-                        <p className="text-xs text-muted">Minimo 8 caracteres</p>
+                        <PasswordStrength
+                          id="password-strength"
+                          password={form.password}
+                          hideWhenEmpty
+                        />
                       </div>
 
                       <div className="flex gap-2">
@@ -718,7 +729,7 @@ export default function RegistroPage() {
                   {step === 3 && (
                     <div className="space-y-4">
                       <p className="text-sm text-muted">
-                        Esta informacion es opcional pero nos ayuda a darte un mejor servicio.
+                        Esta información es opcional pero nos ayuda a darte un mejor servicio.
                       </p>
                       <div className="grid gap-4 sm:grid-cols-2">
                         <div className="space-y-2">
@@ -756,7 +767,7 @@ export default function RegistroPage() {
                           </Select>
                         </div>
                         <div className="space-y-2 sm:col-span-2">
-                          <Label>Como nos encontraste?</Label>
+                          <Label>¿Cómo nos encontraste?</Label>
                           <Select
                             value={form.referral_source}
                             onValueChange={(val) => updateField("referral_source", val)}
@@ -798,9 +809,9 @@ export default function RegistroPage() {
                 </form>
 
                 <div className="mt-6 text-center text-sm text-muted">
-                  <span>Ya tienes una cuenta?</span>{" "}
+                  <span>¿Ya tienes una cuenta?</span>{" "}
                   <Link href="/auth/login" className="font-medium text-primary hover:underline">
-                    Iniciar sesion
+                    Iniciar sesión
                   </Link>
                 </div>
               </CardContent>

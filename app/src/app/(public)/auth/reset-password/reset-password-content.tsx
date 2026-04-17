@@ -9,6 +9,10 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import {
+  PasswordStrength,
+  isPasswordValid,
+} from "@/components/auth/password-strength";
 
 const ERP_BASE =
   process.env.NEXT_PUBLIC_ERP_URL ||
@@ -60,8 +64,8 @@ export default function ResetPasswordContent() {
     e.preventDefault();
     setError("");
 
-    if (newPassword.length < 8) {
-      setError("La contraseña debe tener al menos 8 caracteres.");
+    if (!isPasswordValid(newPassword)) {
+      setError("La contraseña no cumple todos los requisitos.");
       return;
     }
     if (newPassword !== confirmPassword) {
@@ -88,18 +92,27 @@ export default function ResetPasswordContent() {
           data?._server_messages ||
           data?.message ||
           "No se pudo restablecer la contraseña. El enlace puede haber expirado.";
-        // _server_messages is a JSON-encoded array string in Frappe
+
+        let resolved: string;
         if (typeof msg === "string" && msg.startsWith("[")) {
           try {
             const arr = JSON.parse(msg) as string[];
             const inner = JSON.parse(arr[0]) as { message: string };
-            setError(inner.message || msg);
+            resolved = inner.message || msg;
           } catch {
-            setError(msg);
+            resolved = msg;
           }
         } else {
-          setError(typeof msg === "string" ? msg : "Error al restablecer la contraseña.");
+          resolved = typeof msg === "string" ? msg : "Error al restablecer la contraseña.";
         }
+
+        // Frappe may wrap messages in HTML (<div>, <ul><li>…); render as plain text.
+        setError(
+          resolved
+            .replace(/<\/?[^>]+>/g, " ")
+            .replace(/\s+/g, " ")
+            .trim() || "Error al restablecer la contraseña."
+        );
         return;
       }
 
@@ -162,19 +175,21 @@ export default function ResetPasswordContent() {
                   <Input
                     id="newPassword"
                     type={showPassword ? "text" : "password"}
-                    placeholder="Mínimo 8 caracteres"
+                    placeholder="Tu nueva contraseña"
                     value={newPassword}
                     onChange={(e) => setNewPassword(e.target.value)}
                     autoComplete="new-password"
                     required
                     disabled={loading}
                     className="pr-10"
+                    aria-describedby="new-password-strength"
                   />
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
                     className="absolute right-3 top-1/2 -translate-y-1/2 text-muted hover:text-foreground"
                     tabIndex={-1}
+                    aria-label={showPassword ? "Ocultar contraseña" : "Mostrar contraseña"}
                   >
                     {showPassword ? (
                       <EyeOff className="h-4 w-4" />
@@ -183,6 +198,11 @@ export default function ResetPasswordContent() {
                     )}
                   </button>
                 </div>
+                <PasswordStrength
+                  id="new-password-strength"
+                  password={newPassword}
+                  hideWhenEmpty
+                />
               </div>
 
               {/* Confirm password */}
@@ -197,7 +217,15 @@ export default function ResetPasswordContent() {
                   autoComplete="new-password"
                   required
                   disabled={loading}
+                  aria-invalid={
+                    confirmPassword.length > 0 && confirmPassword !== newPassword
+                  }
                 />
+                {confirmPassword.length > 0 && confirmPassword !== newPassword && (
+                  <p className="text-xs text-destructive">
+                    Las contraseñas no coinciden.
+                  </p>
+                )}
               </div>
 
               {error && (
@@ -210,7 +238,11 @@ export default function ResetPasswordContent() {
                 type="submit"
                 className="w-full"
                 size="lg"
-                disabled={loading}
+                disabled={
+                  loading ||
+                  !isPasswordValid(newPassword) ||
+                  newPassword !== confirmPassword
+                }
               >
                 {loading ? "Cambiando..." : "Cambiar contraseña"}
               </Button>

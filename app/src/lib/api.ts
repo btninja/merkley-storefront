@@ -86,6 +86,23 @@ class ApiError extends Error {
   }
 }
 
+/**
+ * Strip HTML tags and decode the small set of entities Frappe emits
+ * in _server_messages. Keeps backend errors readable in toasts.
+ */
+function stripHtml(value: string): string {
+  return value
+    .replace(/<\/?[^>]+>/g, " ")
+    .replace(/&nbsp;/g, " ")
+    .replace(/&amp;/g, "&")
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">")
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;/g, "'")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
 // ── Core API Call ──
 
 async function frappeCall<T>(
@@ -162,7 +179,7 @@ async function frappeCall<T>(
     let serverMessage: string | undefined;
     try {
       const errorData = await response.json();
-      serverMessage =
+      const raw =
         (errorData?.exc_type === "ValidationError" || errorData?.exc_type === "DuplicateEntryError")
           ? errorData?._server_messages
             ? JSON.parse(errorData._server_messages)?.[0]
@@ -170,6 +187,9 @@ async function frappeCall<T>(
               : undefined
             : undefined
           : errorData?.message;
+      if (typeof raw === "string" && raw.length > 0) {
+        serverMessage = stripHtml(raw);
+      }
     } catch {
       // ignore
     }

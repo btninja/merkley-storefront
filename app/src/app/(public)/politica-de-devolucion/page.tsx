@@ -1,16 +1,18 @@
+/**
+ * TEMPLATE — legal scaffold. Must be reviewed and customized per tenant
+ * jurisdiction before production.
+ */
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Container } from "@/components/layout/container";
 import { ShieldCheck, ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { LegalTemplateBanner } from "@/components/legal-template-banner";
 
 export const metadata: Metadata = {
-  title: "Política de Devoluciones y Reembolsos | Merkley Details",
+  title: "Política de Devoluciones y Reembolsos",
   description:
-    "Conoce nuestra política de devoluciones, cambios, garantías y reembolsos para productos corporativos y regalos personalizados en República Dominicana.",
-  alternates: {
-    canonical: "https://merkleydetails.com/politica-de-devolucion",
-  },
+    "Política de devoluciones, cambios, garantías y reembolsos para productos corporativos.",
 };
 
 const LAST_UPDATED = "13 de marzo de 2026";
@@ -138,6 +140,7 @@ export default function PoliticaDevolucionPage() {
       {/* Content */}
       <section className="py-16">
         <Container size="sm">
+          <LegalTemplateBanner />
           <div className="space-y-10">
             {SECTIONS.map((section) => (
               <div key={section.title}>

@@ -5,6 +5,7 @@ import { Providers } from "./providers";
 import { UmamiScript } from "@/components/analytics/umami-script";
 import { GtmScript, GtmNoScript } from "@/components/analytics/gtm-script";
 import { WhatsAppFab } from "@/components/whatsapp-fab";
+import { ERP_BASE_URL, STOREFRONT_BASE_URL } from "@/lib/env";
 
 const manrope = Manrope({
   variable: "--font-manrope",
@@ -18,132 +19,162 @@ export const viewport: Viewport = {
   themeColor: "#ffa8b7",
 };
 
-export const metadata: Metadata = {
-  metadataBase: new URL("https://merkleydetails.com"),
-  title: {
-    default: "Merkley Details | Detalles Corporativos",
-    template: "%s | Merkley Details",
-  },
-  description:
-    "Detalles corporativos y regalos personalizados para empresas en República Dominicana. Solicita tu cotización.",
-  keywords: [
-    "detalles corporativos",
-    "regalos empresariales",
-    "República Dominicana",
-    "canastas navideñas",
-    "regalos personalizados",
-    "merchandising empresarial",
-    "regalos corporativos",
-    "kits empresariales",
-    "regalos para empleados",
-    "detalles personalizados",
-    "regalos día del trabajador",
-    "regalos día de las madres",
-    "obsequios corporativos",
-    "gifting empresarial",
-  ],
-  openGraph: {
-    type: "website",
-    locale: "es_DO",
-    siteName: "Merkley Details",
-    title: "Merkley Details | Detalles Corporativos",
-    description:
-      "Regalos personalizados, canastas y detalles para empresas en República Dominicana. Cotización sin compromiso.",
-  },
-  twitter: {
-    card: "summary_large_image",
-    title: "Merkley Details | Detalles Corporativos",
-    description:
-      "Regalos personalizados, canastas y detalles para empresas en República Dominicana.",
-  },
-  robots: {
-    index: true,
-    follow: true,
-  },
+/**
+ * Fetch tenant branding (name, description, OG image, etc.) from the
+ * Frappe backend so a new deployment gets its own SEO metadata without
+ * editing this file. Cached 1h server-side; invalidation requires a
+ * rebuild OR an explicit `revalidateTag` call from the admin page.
+ */
+async function fetchBrandConfig() {
+  try {
+    const res = await fetch(
+      `${ERP_BASE_URL}/api/method/merkley_web.brand.get_storefront_config`,
+      { next: { revalidate: 3600 } }
+    );
+    if (!res.ok) return null;
+    const data = await res.json();
+    return data?.message ?? null;
+  } catch {
+    return null;
+  }
+}
+
+// ── Fallback values used when the backend is unreachable during build ──
+const FALLBACK = {
+  brand_name: "Storefront",
+  brand_tagline: "",
+  meta_description: "",
+  meta_title_template: "",
+  og_image_url: "",
+  twitter_handle: "",
+  contact_phone: "",
+  contact_address: "",
+  storefront_url: STOREFRONT_BASE_URL,
 };
 
-const organizationJsonLd = {
-  "@context": "https://schema.org",
-  "@type": "Organization",
-  name: "Merkley Details",
-  url: "https://merkleydetails.com",
-  logo: "https://merkleydetails.com/logo_merkley.svg",
-  description:
-    "Detalles corporativos y regalos personalizados para empresas en República Dominicana",
-  contactPoint: {
-    "@type": "ContactPoint",
-    contactType: "customer service",
-    availableLanguage: "Spanish",
-  },
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const cfg = (await fetchBrandConfig()) || FALLBACK;
+  const brand = cfg.brand_name || FALLBACK.brand_name;
+  const tagline = cfg.brand_tagline || "";
+  const description =
+    cfg.meta_description ||
+    (tagline ? tagline : `${brand} — catálogo y cotizaciones online.`);
+  const template = cfg.meta_title_template || `{brand} | ${tagline || brand}`;
+  const defaultTitle = template.replaceAll("{brand}", brand);
+  const ogImages = cfg.og_image_url ? [{ url: cfg.og_image_url }] : undefined;
 
-const localBusinessJsonLd = {
-  "@context": "https://schema.org",
-  "@type": "LocalBusiness",
-  name: "Merkley Details",
-  url: "https://merkleydetails.com",
-  logo: "https://merkleydetails.com/logo_merkley.svg",
-  image: "https://merkleydetails.com/logo_merkley.svg",
-  description:
-    "Detalles corporativos y regalos personalizados para empresas en República Dominicana",
-  address: {
-    "@type": "PostalAddress",
-    addressLocality: "Santo Domingo",
-    addressRegion: "Distrito Nacional",
-    addressCountry: "DO",
-  },
-  telephone: "+18093735131",
-  areaServed: "DO",
-  currenciesAccepted: "DOP",
-};
-
-const websiteJsonLd = {
-  "@context": "https://schema.org",
-  "@type": "WebSite",
-  name: "Merkley Details",
-  url: "https://merkleydetails.com",
-  potentialAction: {
-    "@type": "SearchAction",
-    target: {
-      "@type": "EntryPoint",
-      urlTemplate:
-        "https://merkleydetails.com/catalogo?q={search_term_string}",
+  return {
+    metadataBase: new URL(STOREFRONT_BASE_URL),
+    title: {
+      default: defaultTitle,
+      template: `%s | ${brand}`,
     },
-    "query-input": "required name=search_term_string",
-  },
-};
+    description,
+    openGraph: {
+      type: "website",
+      locale: "es_DO",
+      siteName: brand,
+      title: defaultTitle,
+      description,
+      images: ogImages,
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: defaultTitle,
+      description,
+      images: ogImages,
+      ...(cfg.twitter_handle ? { site: `@${cfg.twitter_handle}` } : {}),
+    },
+    robots: {
+      index: true,
+      follow: true,
+    },
+  };
+}
 
-export default function RootLayout({
+/**
+ * Build the JSON-LD schema blocks from the brand config. Kept minimal
+ * intentionally — tenants with richer schema needs should override the
+ * layout in their own repo. This is a TEMPLATE starting point.
+ */
+function buildSchemaBlocks(cfg: Record<string, string>) {
+  const brand = cfg.brand_name || FALLBACK.brand_name;
+  const storefrontUrl = cfg.storefront_url || STOREFRONT_BASE_URL;
+  const logo = cfg.brand_logo_url || "";
+  const description = cfg.meta_description || "";
+  const phone = cfg.contact_phone ? `+${cfg.contact_phone.replace(/\D/g, "")}` : "";
+
+  return [
+    {
+      "@context": "https://schema.org",
+      "@type": "Organization",
+      name: brand,
+      url: storefrontUrl,
+      ...(logo ? { logo } : {}),
+      ...(description ? { description } : {}),
+      contactPoint: {
+        "@type": "ContactPoint",
+        contactType: "customer service",
+        availableLanguage: "Spanish",
+      },
+    },
+    {
+      "@context": "https://schema.org",
+      "@type": "WebSite",
+      name: brand,
+      url: storefrontUrl,
+      potentialAction: {
+        "@type": "SearchAction",
+        target: {
+          "@type": "EntryPoint",
+          urlTemplate: `${storefrontUrl}/catalogo?q={search_term_string}`,
+        },
+        "query-input": "required name=search_term_string",
+      },
+    },
+    // LocalBusiness is DR-specific; remove or edit this block if your
+    // tenant isn't a physical business in the Dominican Republic.
+    ...(phone
+      ? [
+          {
+            "@context": "https://schema.org",
+            "@type": "LocalBusiness",
+            name: brand,
+            url: storefrontUrl,
+            ...(logo ? { logo, image: logo } : {}),
+            ...(description ? { description } : {}),
+            telephone: phone,
+            areaServed: "DO",
+            currenciesAccepted: "DOP",
+          },
+        ]
+      : []),
+  ];
+}
+
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const cfg = (await fetchBrandConfig()) || FALLBACK;
+  const schemaBlocks = buildSchemaBlocks(cfg);
+
   return (
     <html lang="es">
       <head>
         {/* Preconnect to critical origins for faster resource loading */}
-        <link rel="preconnect" href="https://erp.merkleydetails.com" />
-        <link rel="dns-prefetch" href="https://erp.merkleydetails.com" />
+        <link rel="preconnect" href={ERP_BASE_URL} />
+        <link rel="dns-prefetch" href={ERP_BASE_URL} />
         {/* GTM preconnect removed — scripts use lazyOnload strategy */}
         <link rel="dns-prefetch" href="https://www.googletagmanager.com" />
-        <script
-          type="application/ld+json"
-          dangerouslySetInnerHTML={{
-            __html: JSON.stringify(organizationJsonLd),
-          }}
-        />
-        <script
-          type="application/ld+json"
-          dangerouslySetInnerHTML={{
-            __html: JSON.stringify(localBusinessJsonLd),
-          }}
-        />
-        <script
-          type="application/ld+json"
-          dangerouslySetInnerHTML={{
-            __html: JSON.stringify(websiteJsonLd),
-          }}
-        />
+        {schemaBlocks.map((block, i) => (
+          <script
+            key={i}
+            type="application/ld+json"
+            dangerouslySetInnerHTML={{ __html: JSON.stringify(block) }}
+          />
+        ))}
       </head>
       <body className={`${manrope.variable} antialiased`}>
         <GtmNoScript />

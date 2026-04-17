@@ -1,4 +1,5 @@
 import type { MetadataRoute } from "next";
+import { STOREFRONT_BASE_URL } from "@/lib/env";
 
 export default function robots(): MetadataRoute.Robots {
   return {
@@ -13,6 +14,6 @@ export default function robots(): MetadataRoute.Robots {
         "/catalogo-pdf",
       ],
     },
-    sitemap: "https://merkleydetails.com/sitemap.xml",
+    sitemap: `${STOREFRONT_BASE_URL}/sitemap.xml`,
   };
 }

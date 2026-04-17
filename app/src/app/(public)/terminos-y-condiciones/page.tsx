@@ -1,16 +1,22 @@
+/**
+ * TEMPLATE — legal text below is a starting scaffold derived from
+ * Merkley Details' own terms. A new tenant MUST have this reviewed by
+ * legal counsel and rewritten for their own entity, jurisdiction, and
+ * services before going live. The LegalTemplateBanner component at
+ * the top of the rendered page will remind admins until
+ * `NEXT_PUBLIC_LEGAL_REVIEWED=1` is set.
+ */
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Container } from "@/components/layout/container";
 import { FileText, ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { LegalTemplateBanner } from "@/components/legal-template-banner";
 
 export const metadata: Metadata = {
-  title: "Términos y Condiciones | Merkley Details",
+  title: "Términos y Condiciones",
   description:
-    "Lee los términos y condiciones de uso de la plataforma de Merkley Details para cotizaciones, pedidos y servicios de detalles corporativos en República Dominicana.",
-  alternates: {
-    canonical: "https://merkleydetails.com/terminos-y-condiciones",
-  },
+    "Términos y condiciones de uso de la plataforma para cotizaciones, pedidos y servicios corporativos.",
 };
 
 const LAST_UPDATED = "23 de marzo de 2026";
@@ -169,9 +175,9 @@ export default function TerminosCondicionesPage() {
               Términos y Condiciones
             </h1>
             <p className="mt-4 text-base leading-7 text-muted">
-              Estos términos regulan el uso de los servicios de Merkley
-              Details, incluyendo cotizaciones, pedidos, personalización y
-              entrega de productos corporativos.
+              Estos términos regulan el uso de los servicios de la plataforma,
+              incluyendo cotizaciones, pedidos, personalización y entrega
+              de productos corporativos.
             </p>
             <p className="mt-2 text-sm text-muted-foreground">
               Última actualización: {LAST_UPDATED}
@@ -183,6 +189,7 @@ export default function TerminosCondicionesPage() {
       {/* Content */}
       <section className="py-16">
         <Container size="sm">
+          <LegalTemplateBanner />
           <div className="space-y-10">
             {SECTIONS.map((section) => (
               <div key={section.title}>

@@ -1,8 +1,5 @@
 import type { MetadataRoute } from "next";
-
-const BASE_URL = "https://merkleydetails.com";
-
-import { ERP_BASE_URL as ERP_BASE } from "@/lib/env";
+import { ERP_BASE_URL as ERP_BASE, STOREFRONT_BASE_URL as BASE_URL } from "@/lib/env";
 
 interface SitemapProduct {
   slug: string;

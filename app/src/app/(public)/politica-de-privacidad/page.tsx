@@ -1,16 +1,19 @@
+/**
+ * TEMPLATE — see /terminos-y-condiciones for the same warning. Replace
+ * the content below with text reviewed by your data-protection counsel
+ * before production.
+ */
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Container } from "@/components/layout/container";
 import { ShieldCheck, ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { LegalTemplateBanner } from "@/components/legal-template-banner";
 
 export const metadata: Metadata = {
-  title: "Política de Privacidad | Merkley Details",
+  title: "Política de Privacidad",
   description:
-    "Conoce cómo Merkley Details recopila, usa y protege tu información personal en nuestra plataforma de detalles corporativos y regalos personalizados.",
-  alternates: {
-    canonical: "https://merkleydetails.com/politica-de-privacidad",
-  },
+    "Política de privacidad sobre recopilación, uso y protección de información personal en la plataforma.",
 };
 
 const LAST_UPDATED = "13 de marzo de 2026";
@@ -151,6 +154,7 @@ export default function PoliticaPrivacidadPage() {
       {/* Content */}
       <section className="py-16">
         <Container size="sm">
+          <LegalTemplateBanner />
           <div className="space-y-10">
             {SECTIONS.map((section) => (
               <div key={section.title}>

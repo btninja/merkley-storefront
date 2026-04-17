@@ -22,6 +22,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Separator } from "@/components/ui/separator";
+import { useToast } from "@/hooks/use-toast";
 import { formatCurrency, formatDateShort } from "@/lib/format";
 import type { DownloadDocument } from "@/lib/api";
 
@@ -49,6 +50,7 @@ function MonthGroup({
 }) {
   const [expanded, setExpanded] = useState(true);
   const [downloadingId, setDownloadingId] = useState<string | null>(null);
+  const { toast } = useToast();
 
   const handleDownload = async (doc: DownloadDocument) => {
     setDownloadingId(doc.name);
@@ -61,9 +63,13 @@ function MonthGroup({
       link.href = URL.createObjectURL(blob);
       link.download = `${doc.name}.pdf`;
       link.click();
-      URL.revokeObjectURL(link.href);
+      setTimeout(() => URL.revokeObjectURL(link.href), 1000);
     } catch {
-      // Silent fail — user will see no file downloaded
+      toast({
+        title: "Error de descarga",
+        description: "No se pudo descargar el documento. Intenta de nuevo.",
+        variant: "destructive",
+      });
     } finally {
       setDownloadingId(null);
     }

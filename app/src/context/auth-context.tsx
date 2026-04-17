@@ -33,7 +33,17 @@ interface AuthContextValue extends AuthState {
 
 const AuthContext = createContext<AuthContextValue | null>(null);
 
+function setSessionMarker(authenticated: boolean) {
+  if (typeof document === "undefined") return;
+  if (authenticated) {
+    document.cookie = "mw_session=1; path=/; max-age=604800; secure; samesite=lax";
+  } else {
+    document.cookie = "mw_session=; path=/; max-age=0; secure; samesite=lax";
+  }
+}
+
 function applySession(response: SessionResponse): AuthState {
+  setSessionMarker(response.user.is_authenticated);
   return {
     isLoading: false,
     isAuthenticated: response.user.is_authenticated,
@@ -71,6 +81,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const response = await api.getSessionContext();
       setState(applySession(response));
     } catch {
+      setSessionMarker(false);
       setState((prev) => ({ ...prev, isLoading: false, isAuthenticated: false }));
     }
   }, []);
@@ -128,15 +139,26 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const logout = useCallback(async () => {
-    await api.logout();
-    setState({
-      isLoading: false,
-      isAuthenticated: false,
-      email: null,
-      customer: null,
-      priceContext: null,
-      settings: null,
-    });
+    try {
+      await api.logout();
+    } catch {
+      // Clear local state even if server-side logout fails
+    } finally {
+      api.setCsrfToken(null);
+      setSessionMarker(false);
+      setState({
+        isLoading: false,
+        isAuthenticated: false,
+        email: null,
+        customer: null,
+        priceContext: null,
+        settings: null,
+      });
+      try {
+        sessionStorage.removeItem("md_login_email");
+        sessionStorage.removeItem("md_registro_form");
+      } catch { /* ignore */ }
+    }
   }, []);
 
   useEffect(() => {

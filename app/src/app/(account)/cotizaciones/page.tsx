@@ -103,10 +103,15 @@ function QuotationRow({ quote }: { quote: QuotationSummary }) {
 }
 
 function QuotationFilteredList({ stage }: { stage?: string }) {
-  const { data, isLoading } = useMyQuotations(stage);
+  const { data, isLoading, error } = useMyQuotations(stage);
   const quotations = data?.quotes ?? [];
 
   if (isLoading) return <QuotationListSkeleton />;
+  if (error) return (
+    <div className="py-12 text-center">
+      <p className="text-sm text-destructive">Error al cargar cotizaciones. Intenta de nuevo.</p>
+    </div>
+  );
   if (quotations.length === 0) return <EmptyState />;
 
   return (

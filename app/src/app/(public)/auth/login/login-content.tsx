@@ -15,13 +15,22 @@ import { Label } from "@/components/ui/label";
 export default function LoginPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { login } = useAuth();
+  const { login, isAuthenticated, isLoading } = useAuth();
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [fromRegistro, setFromRegistro] = useState(false);
+
+  // Redirect authenticated users away from login page
+  useEffect(() => {
+    if (!isLoading && isAuthenticated) {
+      const next = searchParams.get("next");
+      const safeNext = next && next.startsWith("/") && !next.startsWith("//") ? next : "/cuenta";
+      router.push(safeNext);
+    }
+  }, [isLoading, isAuthenticated, router, searchParams]);
 
   // Restore email from query param (redirect from registro) or sessionStorage
   useEffect(() => {
@@ -64,7 +73,9 @@ export default function LoginPage() {
         description: "Has iniciado sesión exitosamente.",
         variant: "success",
       });
-      router.push("/cuenta");
+      const next = searchParams.get("next");
+      const safeNext = next && next.startsWith("/") && !next.startsWith("//") ? next : "/cuenta";
+      router.push(safeNext);
     } catch (err: unknown) {
       const message =
         err instanceof Error ? err.message : "Error al iniciar sesión. Verifica tus credenciales.";

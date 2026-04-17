@@ -156,7 +156,7 @@ export default function HomePage() {
   return (
     <>
       {/* ── Hero with Lifestyle Photo ── */}
-      <section className="relative min-h-[60vh] overflow-hidden">
+      <section className="relative min-h-[70vh] overflow-hidden">
         {/* Background: lifestyle photo placeholder with gradient overlay */}
         <div className="absolute inset-0 bg-gradient-to-br from-primary-soft via-white to-surface-muted" />
         {/*
@@ -168,124 +168,48 @@ export default function HomePage() {
           <div className="h-full w-full bg-[radial-gradient(circle_at_30%_40%,rgba(255,168,183,0.4),transparent_60%),radial-gradient(circle_at_70%_60%,rgba(255,168,183,0.3),transparent_50%)]" />
         </div>
 
-        <Container className="relative py-20 md:py-32 lg:py-36">
-          <div className="mx-auto max-w-3xl text-center">
-            <div className="mb-6 inline-flex items-center gap-2 rounded-full bg-white/80 px-4 py-1.5 text-sm font-medium text-primary shadow-sm backdrop-blur-sm">
-              <Sparkles className="h-3.5 w-3.5" />
+        <Container className="relative py-24 md:py-36 lg:py-40">
+          <div className="mx-auto max-w-4xl text-center">
+            <div className="mb-8 inline-flex items-center gap-2 rounded-full bg-white/80 px-4 py-2 text-sm font-medium text-primary shadow-sm backdrop-blur-sm">
+              <Sparkles className="h-4 w-4" />
               Proveedor B2B · República Dominicana
             </div>
-            <h1 className="text-4xl font-bold tracking-tight sm:text-5xl md:text-6xl">
-              Precios transparentes.{" "}
-              <span className="text-primary">Cotizaciones al instante.</span>
+            <h1 className="text-4xl font-bold tracking-tight sm:text-5xl md:text-6xl lg:text-7xl">
+              Regalos corporativos{" "}
+              <span className="text-primary">desde 12 unidades</span>
             </h1>
-            <p className="mt-6 text-lg leading-8 text-muted">
-              Regalos corporativos desde 12 unidades, precios por volumen visibles al instante. Sin llamadas ni esperas largas.
+            <p className="mt-8 text-xl leading-8 text-muted max-w-2xl mx-auto">
+              Precios transparentes, cotizaciones al instante. Sin llamadas ni esperas.
             </p>
-            <div className="mt-10 flex flex-col items-center gap-4 sm:flex-row sm:justify-center">
+            <div className="mt-12 flex flex-col items-center gap-6 sm:flex-row sm:justify-center sm:gap-4">
               <Button
                 size="lg"
                 rounded="full"
-                className="w-full sm:w-auto text-base"
+                className="w-full sm:w-auto text-lg px-8 py-4 h-auto"
                 asChild
                 onClick={() => trackCtaClick("ver_catalogo", "hero")}
               >
                 <Link href="/catalogo">
-                  Ver Catálogo
-                  <ArrowRight className="ml-2 h-4 w-4" />
+                  Ver Catálogo Ahora
+                  <ArrowRight className="ml-2 h-5 w-5" />
                 </Link>
               </Button>
               <Button
                 variant="outline"
                 size="lg"
                 rounded="full"
-                className="w-full sm:w-auto text-base bg-white/80 backdrop-blur-sm"
+                className="w-full sm:w-auto text-lg px-8 py-4 h-auto bg-white/80 backdrop-blur-sm"
                 asChild
                 onClick={() => trackCtaClick("crear_cuenta", "hero")}
               >
                 <Link href="/auth/registro">
                   Crear Cuenta Gratis
-                  <ArrowRight className="ml-2 h-4 w-4" />
                 </Link>
               </Button>
             </div>
-            <p className="mt-5 flex flex-wrap items-center justify-center gap-x-4 gap-y-1 text-sm text-muted">
-              <span>Sin compromiso</span>
-              <span className="hidden sm:inline">&middot;</span>
-              <span>Desde 12 unidades</span>
-              <span className="hidden sm:inline">&middot;</span>
-              <span>Cotización al instante</span>
+            <p className="mt-8 text-sm text-muted">
+              Sin compromiso • Desde 12 unidades • Cotización al instante
             </p>
-          </div>
-        </Container>
-      </section>
-
-      {/* ── Testimonials (moved up for early trust) ── */}
-      <section className="border-t border-border bg-white py-20">
-        <Container>
-          <div className="mb-12 text-center">
-            <h2 className="text-3xl font-bold tracking-tight">
-              Lo que dicen nuestros clientes
-            </h2>
-            <p className="mt-3 text-muted">
-              Empresas de toda República Dominicana confían en nosotros para sus detalles corporativos.
-            </p>
-          </div>
-          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-            {[
-              {
-                role: "Coordinadora de Compras",
-                company: "Firma de Abogados",
-                text: "Llegó el pedido y todo está hermoso. El tiempo de espera fue excelente.",
-                rating: 5,
-              },
-              {
-                role: "Encargada de Eventos",
-                company: "Club Social",
-                text: "Excelente, les encantó el detalle, mil gracias por su buen trabajo.",
-                rating: 5,
-              },
-              {
-                role: "Asistente Administrativa",
-                company: "Zona Franca",
-                text: "Por eso es que pongo en las manos de ustedes mis regalos. Ustedes son los mejores.",
-                rating: 5,
-              },
-              {
-                role: "Gerente de RRHH",
-                company: "Empresa de Seguros",
-                text: "Hermoso! Tú hermosa orden, estamos encantados.",
-                rating: 5,
-              },
-              {
-                role: "Encargada de Compras",
-                company: "Empresa de Servicios",
-                text: "Ya recibí, muchas gracias, están hermosos.",
-                rating: 5,
-              },
-              {
-                role: "Coordinadora de Finanzas",
-                company: "Firma Legal",
-                text: "Muchísimas gracias. Todo bello.",
-                rating: 5,
-              },
-            ].map((t, idx) => (
-              <Card key={idx} className="border-border/60">
-                <CardContent className="p-6">
-                  <div className="mb-3 flex gap-0.5">
-                    {Array.from({ length: t.rating }).map((_, i) => (
-                      <Star key={i} className="h-4 w-4 fill-amber-400 text-amber-400" />
-                    ))}
-                  </div>
-                  <p className="text-sm leading-relaxed text-muted">
-                    &ldquo;{t.text}&rdquo;
-                  </p>
-                  <div className="mt-4 border-t border-border/40 pt-4">
-                    <p className="text-sm font-semibold">{t.role}</p>
-                    <p className="text-xs text-muted">{t.company}</p>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
           </div>
         </Container>
       </section>
@@ -412,6 +336,77 @@ export default function HomePage() {
                 </Link>
               );
             })}
+          </div>
+        </Container>
+      </section>
+
+      {/* ── Testimonials (moved here for better flow) ── */}
+      <section className="border-t border-border bg-white py-20">
+        <Container>
+          <div className="mb-12 text-center">
+            <h2 className="text-3xl font-bold tracking-tight">
+              Lo que dicen nuestros clientes
+            </h2>
+            <p className="mt-3 text-muted">
+              Empresas de toda República Dominicana confían en nosotros para sus detalles corporativos.
+            </p>
+          </div>
+          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+            {[
+              {
+                role: "Coordinadora de Compras",
+                company: "Firma de Abogados",
+                text: "Llegó el pedido y todo está hermoso. El tiempo de espera fue excelente.",
+                rating: 5,
+              },
+              {
+                role: "Encargada de Eventos",
+                company: "Club Social",
+                text: "Excelente, les encantó el detalle, mil gracias por su buen trabajo.",
+                rating: 5,
+              },
+              {
+                role: "Asistente Administrativa",
+                company: "Zona Franca",
+                text: "Por eso es que pongo en las manos de ustedes mis regalos. Ustedes son los mejores.",
+                rating: 5,
+              },
+              {
+                role: "Gerente de RRHH",
+                company: "Empresa de Seguros",
+                text: "Hermoso! Tú hermosa orden, estamos encantados.",
+                rating: 5,
+              },
+              {
+                role: "Encargada de Compras",
+                company: "Empresa de Servicios",
+                text: "Ya recibí, muchas gracias, están hermosos.",
+                rating: 5,
+              },
+              {
+                role: "Coordinadora de Finanzas",
+                company: "Firma Legal",
+                text: "Muchísimas gracias. Todo bello.",
+                rating: 5,
+              },
+            ].map((t, idx) => (
+              <Card key={idx} className="border-border/60">
+                <CardContent className="p-6">
+                  <div className="mb-3 flex gap-0.5">
+                    {Array.from({ length: t.rating }).map((_, i) => (
+                      <Star key={i} className="h-4 w-4 fill-amber-400 text-amber-400" />
+                    ))}
+                  </div>
+                  <p className="text-sm leading-relaxed text-muted">
+                    &ldquo;{t.text}&rdquo;
+                  </p>
+                  <div className="mt-4 border-t border-border/40 pt-4">
+                    <p className="text-sm font-semibold">{t.role}</p>
+                    <p className="text-xs text-muted">{t.company}</p>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
           </div>
         </Container>
       </section>

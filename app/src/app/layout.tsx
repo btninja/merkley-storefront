@@ -107,7 +107,7 @@ const websiteJsonLd = {
     target: {
       "@type": "EntryPoint",
       urlTemplate:
-        "https://merkleydetails.com/catalogo?search={search_term_string}",
+        "https://merkleydetails.com/catalogo?q={search_term_string}",
     },
     "query-input": "required name=search_term_string",
   },

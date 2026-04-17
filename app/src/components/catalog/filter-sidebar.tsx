@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 // Accordion components handle the chevron internally
 import {
   Accordion,
@@ -9,6 +9,7 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
 import { cn } from "@/lib/utils";
 import type { CategoryTreeNode, TierFilter } from "@/lib/types";
@@ -18,6 +19,21 @@ const AVAILABILITY_OPTIONS = [
   { value: "Disponible", label: "Disponible" },
   { value: "Bajo Pedido", label: "Bajo Pedido" },
 ];
+
+/** Filter a category tree to only include nodes matching the search query (or ancestors of matches). */
+function filterTree(nodes: CategoryTreeNode[], query: string): CategoryTreeNode[] {
+  if (!query) return nodes;
+  const q = query.toLowerCase();
+  function matches(node: CategoryTreeNode): CategoryTreeNode | null {
+    const nameMatch = node.name.toLowerCase().includes(q);
+    const filteredChildren = node.children.map(matches).filter(Boolean) as CategoryTreeNode[];
+    if (nameMatch || filteredChildren.length > 0) {
+      return { ...node, children: nameMatch ? node.children : filteredChildren };
+    }
+    return null;
+  }
+  return nodes.map(matches).filter(Boolean) as CategoryTreeNode[];
+}
 
 /** Find which top-level accordion items should be open for the active category. */
 function findOpenParents(
@@ -137,12 +153,12 @@ function CategoryBranch({
 
 export function FilterSidebar({
   categoryTree,
-  tiers,
+  tiers: _tiers,
   activeCategory,
-  activeTier,
+  activeTier: _activeTier,
   activeAvailability,
   onCategoryChange,
-  onTierChange,
+  onTierChange: _onTierChange,
   onAvailabilityChange,
 }: {
   categoryTree: CategoryTreeNode[];
@@ -154,10 +170,31 @@ export function FilterSidebar({
   onTierChange: (tier: string) => void;
   onAvailabilityChange: (avail: string) => void;
 }) {
-  const defaultOpen = useMemo(
-    () => (activeCategory ? findOpenParents(categoryTree, activeCategory) : []),
-    [activeCategory, categoryTree]
+  const [categorySearch, setCategorySearch] = useState("");
+
+  const filteredTree = useMemo(
+    () => filterTree(categoryTree, categorySearch),
+    [categoryTree, categorySearch]
   );
+
+  const [openItems, setOpenItems] = useState<string[]>(() =>
+    activeCategory ? findOpenParents(categoryTree, activeCategory) : []
+  );
+
+  // When searching, auto-expand all branches to reveal matches
+  const effectiveOpen = useMemo(() => {
+    if (categorySearch) {
+      const all: string[] = [];
+      function collect(nodes: CategoryTreeNode[]) {
+        for (const n of nodes) {
+          if (n.children.length > 0) { all.push(n.name); collect(n.children); }
+        }
+      }
+      collect(filteredTree);
+      return all;
+    }
+    return openItems;
+  }, [categorySearch, filteredTree, openItems]);
 
   return (
     <aside className="space-y-5">
@@ -166,8 +203,14 @@ export function FilterSidebar({
         <h3 className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted">
           Categorías
         </h3>
+        <Input
+          placeholder="Buscar categoria..."
+          value={categorySearch}
+          onChange={(e) => setCategorySearch(e.target.value)}
+          className="mb-2 h-8 text-sm"
+        />
         <button
-          onClick={() => onCategoryChange("")}
+          onClick={() => { onCategoryChange(""); setCategorySearch(""); }}
           className={cn(
             "mb-1 w-full rounded-md px-2 py-1.5 text-left text-sm transition-colors",
             !activeCategory
@@ -179,10 +222,11 @@ export function FilterSidebar({
         </button>
         <Accordion
           type="multiple"
-          defaultValue={defaultOpen}
+          value={effectiveOpen}
+          onValueChange={(val) => { if (!categorySearch) setOpenItems(val); }}
           className="space-y-0.5"
         >
-          {categoryTree.map((node) => (
+          {filteredTree.map((node) => (
             <CategoryBranch
               key={node.name}
               node={node}
@@ -191,37 +235,12 @@ export function FilterSidebar({
               onCategoryChange={onCategoryChange}
             />
           ))}
+          {filteredTree.length === 0 && categorySearch && (
+            <p className="px-2 py-3 text-xs text-muted text-center">
+              Sin resultados
+            </p>
+          )}
         </Accordion>
-      </div>
-
-      <Separator />
-
-      {/* Tiers */}
-      <div>
-        <h3 className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted">
-          Nivel
-        </h3>
-        <div className="flex flex-wrap gap-2">
-          <Button
-            variant={!activeTier ? "default" : "outline"}
-            size="sm"
-            rounded="full"
-            onClick={() => onTierChange("")}
-          >
-            Todos
-          </Button>
-          {tiers.map((t) => (
-            <Button
-              key={t.tier}
-              variant={activeTier === t.tier ? "default" : "outline"}
-              size="sm"
-              rounded="full"
-              onClick={() => onTierChange(t.tier)}
-            >
-              {t.tier}
-            </Button>
-          ))}
-        </div>
       </div>
 
       <Separator />

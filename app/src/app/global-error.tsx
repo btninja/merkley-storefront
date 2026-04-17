@@ -18,9 +18,9 @@ export default function GlobalError({
     <html>
       <body>
         <div style={{ padding: "2rem", textAlign: "center" }}>
-          <h2>Something went wrong!</h2>
+          <h2>Algo salio mal</h2>
           <button onClick={() => reset()} style={{ marginTop: "1rem" }}>
-            Try again
+            Intentar de nuevo
           </button>
         </div>
       </body>

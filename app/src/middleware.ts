@@ -1,11 +1,6 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
-const ERP_BASE =
-  process.env.NEXT_PUBLIC_ERP_URL ||
-  process.env.FRAPPE_BASE_URL ||
-  "https://erp.merkleydetails.com";
-
 /** Routes that require an authenticated portal session. */
 const PROTECTED_PREFIXES = [
   "/cuenta",
@@ -36,38 +31,6 @@ function applySecurityHeaders(response: NextResponse): NextResponse {
   return response;
 }
 
-/**
- * Validate a Frappe portal session against the ERPNext backend.
- * Returns true if the session is valid, false otherwise.
- */
-async function validateSession(
-  request: NextRequest
-): Promise<boolean> {
-  const sessionUrl = new URL(
-    "/api/method/merkley_web.api.auth.get_session_context",
-    ERP_BASE
-  );
-  const cookie = request.headers.get("cookie");
-
-  try {
-    const response = await fetch(sessionUrl, {
-      method: "GET",
-      headers: {
-        Accept: "application/json",
-        ...(cookie ? { cookie } : {}),
-      },
-      cache: "no-store",
-    });
-
-    if (!response.ok) return false;
-
-    const data = await response.json();
-    return Boolean(data?.message?.email);
-  } catch {
-    return false;
-  }
-}
-
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
@@ -75,7 +38,7 @@ export async function middleware(request: NextRequest) {
   if (
     pathname.startsWith("/_next") ||
     pathname.startsWith("/api") ||
-    pathname.includes(".")
+    /\.[a-zA-Z0-9]{2,5}$/.test(pathname)
   ) {
     return NextResponse.next();
   }
@@ -85,35 +48,23 @@ export async function middleware(request: NextRequest) {
     return applySecurityHeaders(NextResponse.next());
   }
 
-  // ── Protected route: validate session ──
+  // ── Protected route ──
+  // Check for the same-domain session marker cookie set by auth-context.tsx
+  // after successful login. The real session validation happens client-side
+  // via getSessionContext() against the ERP (cross-domain with credentials).
+  // We can't validate ERP cookies here because they're on erp.merkleydetails.com
+  // while this middleware runs on merkleydetails.com.
 
-  const sid = request.cookies.get("sid")?.value;
-  const userId = request.cookies.get("user_id")?.value;
+  const hasSession = request.cookies.get("mw_session")?.value === "1";
 
-  // Build redirect base from forwarded headers (not request.url which is localhost behind nginx)
-  const proto = request.headers.get("x-forwarded-proto") || "https";
-  const host = request.headers.get("host") || "merkleydetails.com";
-  const origin = `${proto}://${host}`;
-
-  // Fast path: no cookies = definitely not authenticated
-  if (!sid || sid === "Guest" || !userId || userId === "Guest") {
-    return NextResponse.redirect(new URL("/auth/login", origin));
-  }
-
-  // Basic format validation
-  if (sid.length < 20) {
-    return NextResponse.redirect(new URL("/auth/login", origin));
-  }
-
-  if (userId !== "Administrator" && !userId.includes("@")) {
-    return NextResponse.redirect(new URL("/auth/login", origin));
-  }
-
-  // Validate against ERPNext backend
-  const isValid = await validateSession(request);
-
-  if (!isValid) {
-    return NextResponse.redirect(new URL("/auth/login", origin));
+  if (!hasSession) {
+    // Build redirect URL preserving the original destination
+    const proto = request.headers.get("x-forwarded-proto") || "https";
+    const host = request.headers.get("host") || "merkleydetails.com";
+    const origin = `${proto}://${host}`;
+    const loginUrl = new URL("/auth/login", origin);
+    loginUrl.searchParams.set("next", pathname);
+    return NextResponse.redirect(loginUrl);
   }
 
   return applySecurityHeaders(NextResponse.next());

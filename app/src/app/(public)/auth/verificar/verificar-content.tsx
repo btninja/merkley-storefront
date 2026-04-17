@@ -3,7 +3,7 @@
 import { Suspense, useState, useEffect, useRef } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import Link from "next/link";
-import { CheckCircle2, XCircle, Loader2, RefreshCw, MessageCircle, Clock } from "lucide-react";
+import { CheckCircle2, XCircle, Loader2, RefreshCw, MessageCircle, Clock, ArrowRight } from "lucide-react";
 import { verifyEmail, resendVerificationEmail } from "@/lib/api";
 import type { SessionResponse } from "@/lib/types";
 import { useAuth } from "@/context/auth-context";
@@ -15,7 +15,7 @@ import { Button } from "@/components/ui/button";
 
 const WHATSAPP_NUMBER = "18093735131";
 
-type VerifyState = "loading" | "success" | "error" | "pending_approval";
+type VerifyState = "loading" | "success" | "error" | "pending_approval" | "already_verified";
 
 function VerificarContent() {
   const searchParams = useSearchParams();
@@ -63,9 +63,14 @@ function VerificarContent() {
           router.push(isInvited ? "/cuenta/perfil?setup=1" : "/cuenta");
         }, 2000);
       } catch (err: unknown) {
-        setState("error");
         const message =
           err instanceof Error ? err.message : "Error al verificar el correo.";
+        // Handle "already verified" as a friendly state, not an error
+        if (message.includes("ya fue verificado")) {
+          setState("already_verified");
+          return;
+        }
+        setState("error");
         // Clean up the prefixed error messages
         const cleanMessage = message
           .replace("TOKEN_INVALID: ", "")
@@ -75,6 +80,7 @@ function VerificarContent() {
     }
 
     doVerify();
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- searchParams accessed via ref guard; re-running is prevented by hasVerified
   }, [token, email, applyVerifiedSession, router]);
 
   const handleResend = async () => {
@@ -156,6 +162,29 @@ function VerificarContent() {
                 className="text-sm text-muted transition-colors hover:text-foreground"
               >
                 Volver al inicio
+              </Link>
+            </div>
+          </>
+        )}
+
+        {/* Already Verified */}
+        {state === "already_verified" && (
+          <>
+            <div className="mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-full bg-green-50">
+              <CheckCircle2 className="h-8 w-8 text-green-600" />
+            </div>
+            <h1 className="text-2xl font-bold tracking-tight">
+              Correo ya verificado
+            </h1>
+            <p className="mt-3 text-muted">
+              Tu correo ya fue verificado anteriormente. Puedes iniciar sesion directamente.
+            </p>
+            <div className="mt-6">
+              <Link href={`/auth/login${email ? `?email=${encodeURIComponent(email)}` : ""}`}>
+                <Button className="w-full gap-2">
+                  Iniciar Sesion
+                  <ArrowRight className="h-4 w-4" />
+                </Button>
               </Link>
             </div>
           </>

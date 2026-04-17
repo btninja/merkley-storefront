@@ -22,9 +22,10 @@ export function useSeasonProducts(params: {
   page?: number;
   tier?: string;
   search?: string;
+  sort_by?: string;
 }) {
   const key = params.season
-    ? ["season-products", params.season, params.page, params.tier, params.search]
+    ? ["season-products", params.season, params.page, params.tier, params.search, params.sort_by]
         .filter(Boolean)
         .join(":")
     : null;
@@ -37,6 +38,7 @@ export function useSeasonProducts(params: {
           page_length: 12,
           tier: params.tier,
           search: params.search,
+          sort_by: params.sort_by,
         })
       : null
   );

@@ -29,7 +29,7 @@ import { formatDate } from "@/lib/format";
 import type { TeamMember } from "@/lib/types";
 
 export default function TeamPage() {
-  const { customer, refreshSession } = useAuth();
+  const { customer, refreshSession, isLoading: authLoading } = useAuth();
   const router = useRouter();
   const { toast } = useToast();
 
@@ -67,12 +67,14 @@ export default function TeamPage() {
   }, [toast]);
 
   useEffect(() => {
+    if (authLoading) return;
+    if (!customer) return;
     if (!isAdmin) {
       router.push("/cuenta");
       return;
     }
     fetchTeam();
-  }, [isAdmin, router, fetchTeam]);
+  }, [authLoading, customer, isAdmin, router, fetchTeam]);
 
   const handleToggleUser = async (
     email: string,

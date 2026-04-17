@@ -61,7 +61,7 @@ function TemporadaInner() {
   const [allProducts, setAllProducts] = useState<Product[]>([]);
 
   const { data: bootstrap } = useBootstrap();
-  const { data, isLoading } = useSeasonProducts({ season: slug, page, tier, search: debouncedSearch || undefined });
+  const { data, isLoading } = useSeasonProducts({ season: slug, page, tier, search: debouncedSearch || undefined, sort_by: sortBy || undefined });
 
   const tiers = bootstrap?.filters?.tiers || [];
   const season = data?.season;

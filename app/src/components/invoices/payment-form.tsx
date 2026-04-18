@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState } from "react";
 import {
   Upload,
   Loader2,
@@ -21,6 +21,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/hooks/use-toast";
+import { FileDropzone } from "@/components/shared/file-dropzone";
 import * as api from "@/lib/api";
 import type { Invoice } from "@/lib/types";
 
@@ -31,7 +32,6 @@ interface PaymentFormProps {
 
 export function PaymentForm({ invoice, onPaymentSubmitted }: PaymentFormProps) {
   const { toast } = useToast();
-  const fileInputRef = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [uploadedFileUrl, setUploadedFileUrl] = useState<string | null>(null);
@@ -42,20 +42,9 @@ export function PaymentForm({ invoice, onPaymentSubmitted }: PaymentFormProps) {
   const isPaymentPending = stage === "Pendiente de Pago";
   const wasRejected = !!invoice.payment_rejection_reason;
 
-  const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
+  const handleFileUpload = async (files: File[]) => {
+    const file = files[0];
     if (!file) return;
-
-    // Validate file
-    const maxSize = 10 * 1024 * 1024; // 10MB
-    if (file.size > maxSize) {
-      toast({
-        title: "Archivo muy grande",
-        description: "El archivo no puede exceder 10MB.",
-        variant: "destructive",
-      });
-      return;
-    }
 
     setUploading(true);
     setFileName(file.name);
@@ -78,8 +67,6 @@ export function PaymentForm({ invoice, onPaymentSubmitted }: PaymentFormProps) {
       setFileName(null);
     } finally {
       setUploading(false);
-      // Reset input so the same file can be re-selected
-      if (fileInputRef.current) fileInputRef.current.value = "";
     }
   };
 
@@ -205,47 +192,37 @@ export function PaymentForm({ invoice, onPaymentSubmitted }: PaymentFormProps) {
         </CardHeader>
         <CardContent className="space-y-4">
           {/* File upload area */}
-          <div
-            onClick={() => fileInputRef.current?.click()}
-            className="flex cursor-pointer flex-col items-center gap-3 rounded-lg border-2 border-dashed border-border p-6 transition-colors hover:border-primary hover:bg-primary-soft/30"
-          >
-            {uploading ? (
-              <>
-                <Loader2 className="h-8 w-8 animate-spin text-primary" />
-                <p className="text-sm text-muted">Subiendo archivo...</p>
-              </>
-            ) : uploadedFileUrl ? (
-              <>
-                <CheckCircle2 className="h-8 w-8 text-success" />
-                <div className="text-center">
-                  <p className="text-sm font-medium text-success">Archivo cargado</p>
-                  <p className="text-xs text-muted">{fileName}</p>
-                  <p className="mt-1 text-xs text-primary underline">
-                    Click para cambiar
-                  </p>
-                </div>
-              </>
-            ) : (
-              <>
-                <Upload className="h-8 w-8 text-muted" />
-                <div className="text-center">
-                  <p className="text-sm font-medium">
-                    Click para subir comprobante
-                  </p>
-                  <p className="text-xs text-muted">
-                    PDF, JPG, PNG (máx. 10MB)
-                  </p>
-                </div>
-              </>
-            )}
-          </div>
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept=".pdf,.jpg,.jpeg,.png,.webp"
-            className="hidden"
-            onChange={handleFileSelect}
-          />
+          {uploadedFileUrl ? (
+            <div
+              className="flex cursor-pointer flex-col items-center gap-3 rounded-lg border-2 border-dashed border-border p-6 transition-colors hover:border-primary hover:bg-primary-soft/30"
+              onClick={() => { setUploadedFileUrl(null); setFileName(null); }}
+            >
+              <CheckCircle2 className="h-8 w-8 text-success" />
+              <div className="text-center">
+                <p className="text-sm font-medium text-success">Archivo cargado</p>
+                <p className="text-xs text-muted">{fileName}</p>
+                <p className="mt-1 text-xs text-primary underline">
+                  Click para cambiar
+                </p>
+              </div>
+            </div>
+          ) : (
+            <FileDropzone
+              label="Click para subir comprobante"
+              helperText="PDF, JPG, PNG (máx. 10MB)"
+              accept=".pdf,image/jpeg,image/png"
+              maxSizeBytes={10 * 1024 * 1024}
+              isUploading={uploading}
+              onOversize={() =>
+                toast({
+                  title: "Archivo muy grande",
+                  description: "El archivo no puede exceder 10MB.",
+                  variant: "destructive",
+                })
+              }
+              onFiles={handleFileUpload}
+            />
+          )}
 
           <Separator />
 

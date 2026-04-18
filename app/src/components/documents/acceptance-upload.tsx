@@ -1,8 +1,7 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState } from "react";
 import {
-  Upload,
   FileText,
   AlertTriangle,
   Loader2,
@@ -23,6 +22,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/hooks/use-toast";
+import { FileDropzone } from "@/components/shared/file-dropzone";
 import * as api from "@/lib/api";
 import { APPROVAL_METHODS, PAYMENT_INFO } from "@/lib/constants";
 import type { ApprovalMethod } from "@/lib/constants";
@@ -36,114 +36,6 @@ interface ApprovalUploadProps {
   documents: QuotationDocuments | null;
   hasPersonalizableItems: boolean;
   onSuccess: () => void;
-}
-
-function FileDropZone({
-  label,
-  hint,
-  file,
-  onFileSelect,
-  onClear,
-}: {
-  label: string;
-  hint?: string;
-  file: File | null;
-  onFileSelect: (file: File) => void;
-  onClear: () => void;
-}) {
-  const inputRef = useRef<HTMLInputElement>(null);
-  const [isDragging, setIsDragging] = useState(false);
-
-  function validateAndSelect(selected: File) {
-    if (selected.size > MAX_FILE_SIZE) {
-      alert("El archivo no puede exceder 10 MB.");
-      return;
-    }
-    const ext = selected.name.split(".").pop()?.toLowerCase() || "";
-    if (!["pdf", "jpg", "jpeg", "png"].includes(ext)) {
-      alert("Solo se aceptan archivos PDF, JPG o PNG.");
-      return;
-    }
-    onFileSelect(selected);
-  }
-
-  function handleChange(e: React.ChangeEvent<HTMLInputElement>) {
-    const selected = e.target.files?.[0];
-    if (selected) validateAndSelect(selected);
-  }
-
-  function handleDragOver(e: React.DragEvent) {
-    e.preventDefault();
-    e.stopPropagation();
-    setIsDragging(true);
-  }
-
-  function handleDragLeave(e: React.DragEvent) {
-    e.preventDefault();
-    e.stopPropagation();
-    setIsDragging(false);
-  }
-
-  function handleDrop(e: React.DragEvent) {
-    e.preventDefault();
-    e.stopPropagation();
-    setIsDragging(false);
-    const dropped = e.dataTransfer.files?.[0];
-    if (dropped) validateAndSelect(dropped);
-  }
-
-  return (
-    <div className="space-y-1.5">
-      <label className="text-sm font-medium">{label}</label>
-      {hint && <p className="text-xs text-muted">{hint}</p>}
-      {file ? (
-        <div className="flex items-center gap-3 rounded-lg border border-border bg-surface-muted p-3">
-          <FileText className="h-5 w-5 shrink-0 text-primary" />
-          <div className="flex-1 min-w-0">
-            <p className="truncate text-sm font-medium">{file.name}</p>
-            <p className="text-xs text-muted">
-              {(file.size / 1024).toFixed(0)} KB
-            </p>
-          </div>
-          <button
-            type="button"
-            onClick={onClear}
-            className="shrink-0 rounded-md p-1 text-muted hover:text-foreground"
-          >
-            <X className="h-4 w-4" />
-          </button>
-        </div>
-      ) : (
-        <button
-          type="button"
-          onClick={() => inputRef.current?.click()}
-          onDragOver={handleDragOver}
-          onDragLeave={handleDragLeave}
-          onDrop={handleDrop}
-          className={`flex w-full flex-col items-center gap-2 rounded-lg border-2 border-dashed p-6 text-center transition-colors ${
-            isDragging
-              ? "border-primary bg-primary/5"
-              : "border-border bg-surface hover:border-primary/40 hover:bg-surface-muted"
-          }`}
-        >
-          <Upload className={`h-6 w-6 ${isDragging ? "text-primary" : "text-muted"}`} />
-          <span className="text-sm text-muted">
-            {isDragging
-              ? "Suelta el archivo aquí"
-              : "Arrastra un archivo o haz clic para seleccionar"}
-          </span>
-          <span className="text-xs text-muted">PDF, JPG o PNG (máx 10 MB)</span>
-        </button>
-      )}
-      <input
-        ref={inputRef}
-        type="file"
-        accept={ACCEPTED_TYPES}
-        onChange={handleChange}
-        className="hidden"
-      />
-    </div>
-  );
 }
 
 export function ApprovalUpload({
@@ -164,6 +56,24 @@ export function ApprovalUpload({
   const isVoucherMethod = approvalMethod === "Voucher de pago del 50%";
 
   const canSubmit = approvalMethod && approvalDoc && (!hasPersonalizableItems || logoFile);
+
+  function handleOversize() {
+    toast({
+      title: "Archivo muy grande",
+      description: "El archivo no puede exceder 10 MB.",
+      variant: "destructive",
+    });
+  }
+
+  function handleReject(_file: File, reason: "type" | "size") {
+    if (reason === "type") {
+      toast({
+        title: "Tipo de archivo no permitido",
+        description: "Solo se aceptan archivos PDF, JPG o PNG.",
+        variant: "destructive",
+      });
+    }
+  }
 
   async function handleDownloadCarta() {
     setDownloadingCarta(true);
@@ -355,12 +265,34 @@ export function ApprovalUpload({
             <Separator />
             <div className="space-y-3">
               <p className="text-sm font-semibold">2. Subir documento de aprobación</p>
-              <FileDropZone
-                label={approvalMethod}
-                file={approvalDoc}
-                onFileSelect={setApprovalDoc}
-                onClear={() => setApprovalDoc(null)}
-              />
+              {approvalDoc ? (
+                <div className="flex items-center gap-3 rounded-lg border border-border bg-surface-muted p-3">
+                  <FileText className="h-5 w-5 shrink-0 text-primary" />
+                  <div className="flex-1 min-w-0">
+                    <p className="truncate text-sm font-medium">{approvalDoc.name}</p>
+                    <p className="text-xs text-muted">
+                      {(approvalDoc.size / 1024).toFixed(0)} KB
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setApprovalDoc(null)}
+                    className="shrink-0 rounded-md p-1 text-muted hover:text-foreground"
+                  >
+                    <X className="h-4 w-4" />
+                  </button>
+                </div>
+              ) : (
+                <FileDropzone
+                  label={approvalMethod}
+                  helperText="PDF, JPG o PNG (máx 10 MB)"
+                  accept={ACCEPTED_TYPES}
+                  maxSizeBytes={MAX_FILE_SIZE}
+                  onOversize={handleOversize}
+                  onReject={handleReject}
+                  onFiles={([f]) => { if (f) setApprovalDoc(f); }}
+                />
+              )}
             </div>
           </>
         )}
@@ -378,13 +310,34 @@ export function ApprovalUpload({
                 Tu cotización incluye artículos personalizables. Sube el logo de tu empresa
                 en alta resolución para que podamos aplicarlo a los productos.
               </p>
-              <FileDropZone
-                label="Logo de empresa"
-                hint="Preferiblemente en formato PNG con fondo transparente"
-                file={logoFile}
-                onFileSelect={setLogoFile}
-                onClear={() => setLogoFile(null)}
-              />
+              {logoFile ? (
+                <div className="flex items-center gap-3 rounded-lg border border-border bg-surface-muted p-3">
+                  <FileText className="h-5 w-5 shrink-0 text-primary" />
+                  <div className="flex-1 min-w-0">
+                    <p className="truncate text-sm font-medium">{logoFile.name}</p>
+                    <p className="text-xs text-muted">
+                      {(logoFile.size / 1024).toFixed(0)} KB
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setLogoFile(null)}
+                    className="shrink-0 rounded-md p-1 text-muted hover:text-foreground"
+                  >
+                    <X className="h-4 w-4" />
+                  </button>
+                </div>
+              ) : (
+                <FileDropzone
+                  label="Logo de empresa"
+                  helperText="Preferiblemente en formato PNG con fondo transparente"
+                  accept={ACCEPTED_TYPES}
+                  maxSizeBytes={MAX_FILE_SIZE}
+                  onOversize={handleOversize}
+                  onReject={handleReject}
+                  onFiles={([f]) => { if (f) setLogoFile(f); }}
+                />
+              )}
             </div>
           </>
         )}

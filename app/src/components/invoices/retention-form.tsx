@@ -1,9 +1,8 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useState, useEffect } from "react";
 import {
   Loader2,
-  FileText,
   CheckCircle2,
   Receipt,
 } from "lucide-react";
@@ -19,6 +18,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/hooks/use-toast";
+import { FileDropzone } from "@/components/shared/file-dropzone";
 import * as api from "@/lib/api";
 import { formatCurrency, formatDate } from "@/lib/format";
 import type { Invoice } from "@/lib/types";
@@ -30,7 +30,6 @@ interface RetentionFormProps {
 
 export function RetentionForm({ invoice, onRetentionSubmitted }: RetentionFormProps) {
   const { toast } = useToast();
-  const fileInputRef = useRef<HTMLInputElement>(null);
   const RETENTION_KEY = `md_retention_${invoice.name}`;
   const [uploading, setUploading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
@@ -129,19 +128,9 @@ export function RetentionForm({ invoice, onRetentionSubmitted }: RetentionFormPr
     );
   }
 
-  const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
+  const handleFileUpload = async (files: File[]) => {
+    const file = files[0];
     if (!file) return;
-
-    const maxSize = 10 * 1024 * 1024;
-    if (file.size > maxSize) {
-      toast({
-        title: "Archivo muy grande",
-        description: "El archivo no puede exceder 10MB.",
-        variant: "destructive",
-      });
-      return;
-    }
 
     setUploading(true);
     setFileName(file.name);
@@ -164,7 +153,6 @@ export function RetentionForm({ invoice, onRetentionSubmitted }: RetentionFormPr
       setFileName(null);
     } finally {
       setUploading(false);
-      if (fileInputRef.current) fileInputRef.current.value = "";
     }
   };
 
@@ -267,41 +255,34 @@ export function RetentionForm({ invoice, onRetentionSubmitted }: RetentionFormPr
         </div>
 
         {/* File upload area */}
-        <div
-          onClick={() => fileInputRef.current?.click()}
-          className="flex cursor-pointer flex-col items-center gap-3 rounded-lg border-2 border-dashed border-border p-6 transition-colors hover:border-primary hover:bg-primary-soft/30"
-        >
-          {uploading ? (
-            <>
-              <Loader2 className="h-8 w-8 animate-spin text-primary" />
-              <p className="text-sm text-muted">Subiendo archivo...</p>
-            </>
-          ) : uploadedFileUrl ? (
-            <>
-              <CheckCircle2 className="h-8 w-8 text-success" />
-              <div className="text-center">
-                <p className="text-sm font-medium text-success">Archivo cargado</p>
-                <p className="text-xs text-muted">{fileName}</p>
-                <p className="mt-1 text-xs text-primary underline">Click para cambiar</p>
-              </div>
-            </>
-          ) : (
-            <>
-              <FileText className="h-8 w-8 text-muted" />
-              <div className="text-center">
-                <p className="text-sm font-medium">Click para subir carta de retención</p>
-                <p className="text-xs text-muted">PDF, JPG, PNG (máx. 10MB)</p>
-              </div>
-            </>
-          )}
-        </div>
-        <input
-          ref={fileInputRef}
-          type="file"
-          accept=".pdf,.jpg,.jpeg,.png,.webp"
-          className="hidden"
-          onChange={handleFileSelect}
-        />
+        {uploadedFileUrl ? (
+          <div className="flex cursor-pointer flex-col items-center gap-3 rounded-lg border-2 border-dashed border-border p-6 transition-colors hover:border-primary hover:bg-primary-soft/30"
+            onClick={() => { setUploadedFileUrl(null); setFileName(null); }}
+          >
+            <CheckCircle2 className="h-8 w-8 text-success" />
+            <div className="text-center">
+              <p className="text-sm font-medium text-success">Archivo cargado</p>
+              <p className="text-xs text-muted">{fileName}</p>
+              <p className="mt-1 text-xs text-primary underline">Click para cambiar</p>
+            </div>
+          </div>
+        ) : (
+          <FileDropzone
+            label="Click para subir carta de retención"
+            helperText="PDF, JPG, PNG (máx. 10MB)"
+            accept=".pdf,image/jpeg,image/png"
+            maxSizeBytes={10 * 1024 * 1024}
+            isUploading={uploading}
+            onOversize={() =>
+              toast({
+                title: "Archivo muy grande",
+                description: "El archivo no puede exceder 10MB.",
+                variant: "destructive",
+              })
+            }
+            onFiles={handleFileUpload}
+          />
+        )}
 
         <Separator />
 

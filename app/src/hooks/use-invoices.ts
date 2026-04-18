@@ -9,17 +9,25 @@ export function useMyInvoices(params?: { status?: string; page?: number; page_le
   return useSWR(key, () => api.getMyInvoices(params));
 }
 
+// Stages that never change once reached — no point polling them.
+const TERMINAL_INVOICE_STAGES = new Set(["Pagada", "Anulada"]);
+
 export function useInvoiceDetail(name: string) {
   // Staff actions (payment review, NCF assignment, annulment review) happen
-  // against the CRM. The storefront should pick those changes up promptly
-  // when the customer returns to the tab, so we revalidate on focus. 30s
-  // dedupe keeps rapid re-focuses from hammering the backend.
+  // on the CRM. Poll every 10s so the customer's open tab reflects those
+  // changes within ~10s without a manual reload. SWR auto-pauses polling
+  // when the tab is hidden and we stop entirely once the invoice is in a
+  // terminal state.
   return useSWR(
     name ? `invoice:${name}` : null,
     () => api.getInvoiceDetail(name),
     {
       revalidateOnFocus: true,
-      dedupingInterval: 30_000,
+      dedupingInterval: 5_000,
+      refreshInterval: (latest) => {
+        const stage = latest?.stage ?? latest?.invoice_stage;
+        return stage && TERMINAL_INVOICE_STAGES.has(stage) ? 0 : 10_000;
+      },
     }
   );
 }

@@ -8,18 +8,24 @@ export function useMyQuotations(stage?: string) {
   return useSWR(key, () => api.getMyQuotations(stage));
 }
 
+// Stages that never change once reached — no point polling them.
+const TERMINAL_QUOTE_STAGES = new Set(["Aceptada", "Rechazada", "Expirada"]);
+
 export function useQuotationDetail(name: string | null) {
-  // Staff actions (Confirmada transition, document review, etc.) are made
-  // against the CRM and should be reflected in the storefront quickly when
-  // the user returns to the tab. SWR defaults to `revalidateOnFocus: true`
-  // already; we set it explicitly for clarity and raise the dedupe interval
-  // to 30s so rapid re-focuses don't hammer the backend.
-  return useSWR(
+  // Staff actions (Confirmada transition, document review, etc.) happen on
+  // the CRM. We want the customer's open tab to reflect those within ~10s
+  // without a manual reload. Polling pauses automatically when the tab is
+  // hidden (SWR's refreshWhenHidden default = false) and stops once the
+  // quote reaches a terminal state.
+  const result = useSWR(
     name ? `quotation:${name}` : null,
     () => (name ? api.getQuotationDetail(name) : null),
     {
       revalidateOnFocus: true,
-      dedupingInterval: 30_000,
+      dedupingInterval: 5_000,
+      refreshInterval: (latest) =>
+        latest && TERMINAL_QUOTE_STAGES.has(latest.stage) ? 0 : 10_000,
     },
   );
+  return result;
 }

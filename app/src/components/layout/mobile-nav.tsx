@@ -43,14 +43,17 @@ export function MobileNav() {
         <span className="sr-only">Menú</span>
       </Button>
       <Sheet open={open} onOpenChange={setOpen}>
-        <SheetContent side="right">
-          <SheetHeader>
+        {/* flex-col + the nav as flex-1 overflow-y-auto so a long item list
+            (Cerrar Sesión at the very bottom + many seasons) stays reachable
+            on small viewports instead of getting cut off below the fold. */}
+        <SheetContent side="right" className="flex flex-col">
+          <SheetHeader className="shrink-0">
             <SheetTitle>
               <Image src="/logo_merkley.svg" alt="Merkley Details" width={120} height={32} className="h-8 w-auto" />
             </SheetTitle>
             <SheetDescription className="sr-only">Menú de navegación</SheetDescription>
           </SheetHeader>
-          <nav className="mt-6 flex flex-col gap-1 px-6">
+          <nav className="flex-1 overflow-y-auto flex flex-col gap-1 px-6 pt-2 pb-[max(env(safe-area-inset-bottom),1.5rem)]">
             {NAV_LINKS.map((link) => (
               <Link
                 key={link.href}

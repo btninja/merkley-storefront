@@ -34,7 +34,10 @@ export function WhatsAppFab() {
       target="_blank"
       rel="noopener noreferrer"
       onClick={() => trackWhatsAppClick("fab")}
-      className="fixed bottom-6 right-5 z-[9999] flex h-14 w-14 items-center justify-center rounded-full bg-[#25D366] shadow-lg transition-transform duration-200 hover:scale-110 hover:shadow-xl focus:outline-none focus:ring-2 focus:ring-[#25D366]/50 focus:ring-offset-2"
+      // Stacked ABOVE the chat-widget support bubble (which lives at
+      // bottom-4 right-4 with h-14 footprint). bottom-24 = 96px keeps a
+      // 24px gap between the two FABs. right-4 aligns vertical edges.
+      className="fixed bottom-24 right-4 z-[9999] flex h-14 w-14 items-center justify-center rounded-full bg-[#25D366] shadow-lg transition-transform duration-200 hover:scale-110 hover:shadow-xl focus:outline-none focus:ring-2 focus:ring-[#25D366]/50 focus:ring-offset-2"
       aria-label="Contáctanos por WhatsApp"
     >
       <WhatsAppIcon className="h-7 w-7" />

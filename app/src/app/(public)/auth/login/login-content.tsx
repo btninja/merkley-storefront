@@ -24,6 +24,7 @@ function isSafeNext(next: string | null): next is string {
   if (!next.startsWith("/")) return false;
   if (next.startsWith("//")) return false;
   if (next.includes("://")) return false;
+  if (/[\s\\]/.test(next)) return false;
   return true;
 }
 

@@ -12,6 +12,21 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
+/**
+ * Validates the `next` query param to prevent open-redirect attacks.
+ * Only accepts same-origin absolute paths (e.g. "/cotizaciones").
+ * Rejects protocol-relative URLs ("//evil.com"), absolute URLs
+ * ("http://evil.com"), and anything too long.
+ */
+function isSafeNext(next: string | null): next is string {
+  if (!next) return false;
+  if (next.length > 200) return false;
+  if (!next.startsWith("/")) return false;
+  if (next.startsWith("//")) return false;
+  if (next.includes("://")) return false;
+  return true;
+}
+
 export default function LoginPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -27,8 +42,8 @@ export default function LoginPage() {
   useEffect(() => {
     if (!isLoading && isAuthenticated) {
       const next = searchParams.get("next");
-      const safeNext = next && next.startsWith("/") && !next.startsWith("//") ? next : "/cuenta";
-      router.push(safeNext);
+      const dest = isSafeNext(next) ? next : "/cuenta";
+      router.replace(dest);
     }
   }, [isLoading, isAuthenticated, router, searchParams]);
 
@@ -74,8 +89,8 @@ export default function LoginPage() {
         variant: "success",
       });
       const next = searchParams.get("next");
-      const safeNext = next && next.startsWith("/") && !next.startsWith("//") ? next : "/cuenta";
-      router.push(safeNext);
+      const dest = isSafeNext(next) ? next : "/cuenta";
+      router.replace(dest);
     } catch (err: unknown) {
       const message =
         err instanceof Error ? err.message : "Error al iniciar sesión. Verifica tus credenciales.";

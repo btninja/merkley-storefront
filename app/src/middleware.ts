@@ -58,12 +58,13 @@ export async function middleware(request: NextRequest) {
   const hasSession = request.cookies.get("mw_session")?.value === "1";
 
   if (!hasSession) {
-    // Build redirect URL preserving the original destination
+    // Build redirect URL preserving the original destination (path + query)
     const proto = request.headers.get("x-forwarded-proto") || "https";
     const host = request.headers.get("host") || "merkleydetails.com";
     const origin = `${proto}://${host}`;
     const loginUrl = new URL("/auth/login", origin);
-    loginUrl.searchParams.set("next", pathname);
+    const { search } = request.nextUrl;
+    loginUrl.searchParams.set("next", pathname + search);
     return NextResponse.redirect(loginUrl);
   }
 

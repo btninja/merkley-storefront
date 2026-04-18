@@ -24,7 +24,7 @@ export function StateBanner({ stage, meta, cta }: StateBannerProps) {
         "rounded-md border-l-4 px-4 py-3 flex items-center justify-between gap-4",
         COLOR_MAP[meta.color]
       )}
-      role="status"
+      role={meta.color === "red" ? "alert" : "status"}
       data-stage={stage}
     >
       <div className="flex-1">

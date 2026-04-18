@@ -228,25 +228,44 @@ function MobileAccountNav() {
   );
 }
 
+// Read the same-domain session-marker cookie set by AuthProvider after
+// login. Used as an "authentication is in flight, just propagating" hint
+// to avoid bouncing users to /login during the brief window between
+// login() resolving and React state catching up.
+function hasSessionCookie(): boolean {
+  if (typeof document === "undefined") return false;
+  return document.cookie.split("; ").some((c) => c.startsWith("mw_session=1"));
+}
+
 export default function AccountLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const { isLoading, isAuthenticated } = useAuth();
+  const { isLoading, isAuthenticated, refreshSession } = useAuth();
   const router = useRouter();
   const pathname = usePathname();
 
   useEffect(() => {
-    if (!isLoading && !isAuthenticated) {
-      router.push(`/auth/login?next=${encodeURIComponent(pathname)}`);
+    if (isLoading || isAuthenticated) return;
+    // No React state yet — but if mw_session=1 is set, the user just
+    // authenticated and the AuthProvider hasn't finished refreshing.
+    // Pull the session instead of bouncing to /login (which would be a
+    // jarring "logged in → redirected back to login" flicker).
+    if (hasSessionCookie()) {
+      void refreshSession();
+      return;
     }
-  }, [isLoading, isAuthenticated, router, pathname]);
+    router.push(`/auth/login?next=${encodeURIComponent(pathname)}`);
+  }, [isLoading, isAuthenticated, refreshSession, router, pathname]);
 
   if (isLoading) {
     return <AccountLoadingSkeleton />;
   }
 
+  // Show skeleton (not bounce) while we resolve the session via the cookie
+  // hint. The effect above handles the actual redirect when there's truly
+  // no session.
   if (!isAuthenticated) {
     return <AccountLoadingSkeleton />;
   }

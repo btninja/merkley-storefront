@@ -2,16 +2,35 @@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import type { ReactNode } from "react";
 
+export type DocTabValue = "details" | "documents" | "history";
+
 interface DocTabsProps {
   details: ReactNode;
   documents: ReactNode;
   history: ReactNode;
-  defaultTab?: "details" | "documents" | "history";
+  defaultTab?: DocTabValue;
+  /** Controlled mode — pass with onValueChange to drive tab from outside
+   *  (e.g. an action button that needs to switch tabs before scrolling
+   *  into content that only mounts when its tab is active). */
+  value?: DocTabValue;
+  onValueChange?: (value: DocTabValue) => void;
 }
 
-export function DocTabs({ details, documents, history, defaultTab = "details" }: DocTabsProps) {
+export function DocTabs({
+  details,
+  documents,
+  history,
+  defaultTab = "details",
+  value,
+  onValueChange,
+}: DocTabsProps) {
   return (
-    <Tabs defaultValue={defaultTab} className="w-full">
+    <Tabs
+      className="w-full"
+      defaultValue={value === undefined ? defaultTab : undefined}
+      value={value}
+      onValueChange={onValueChange as ((v: string) => void) | undefined}
+    >
       <TabsList>
         <TabsTrigger value="details">Detalles</TabsTrigger>
         <TabsTrigger value="documents">Documentos</TabsTrigger>

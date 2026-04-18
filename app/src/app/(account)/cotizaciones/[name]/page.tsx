@@ -30,7 +30,7 @@ import {
   HistoryTimeline,
   type HistoryEntry,
 } from "@/components/shared/history-timeline";
-import { DocTabs } from "@/components/shared/doc-tabs";
+import { DocTabs, type DocTabValue } from "@/components/shared/doc-tabs";
 import { ApprovalUpload } from "@/components/documents/acceptance-upload";
 import {
   Accordion,
@@ -146,6 +146,7 @@ export default function QuotationDetailPage() {
   const [declineOpen, setDeclineOpen] = useState(false);
   const [declineReason, setDeclineReason] = useState("");
   const [isDeclining, setIsDeclining] = useState(false);
+  const [activeTab, setActiveTab] = useState<DocTabValue>("details");
 
   const quote = data?.quote;
 
@@ -316,10 +317,19 @@ export default function QuotationDetailPage() {
         key: "upload",
         label: "Subir documentos",
         onClick: () => {
-          if (typeof document !== "undefined") {
-            document
-              .getElementById("approval-upload-section")
-              ?.scrollIntoView({ behavior: "smooth", block: "start" });
+          // Switch to the Documentos tab first — Radix unmounts inactive
+          // tab content, so #approval-upload-section doesn't exist in the
+          // DOM until that tab is active. Scroll on the next paint after
+          // the tab content has mounted.
+          setActiveTab("documents");
+          if (typeof window !== "undefined") {
+            window.requestAnimationFrame(() => {
+              window.requestAnimationFrame(() => {
+                document
+                  .getElementById("approval-upload-section")
+                  ?.scrollIntoView({ behavior: "smooth", block: "start" });
+              });
+            });
           }
         },
         primary: true,
@@ -996,6 +1006,8 @@ export default function QuotationDetailPage() {
           details={detailsContent}
           documents={documentsContent}
           history={historyContent}
+          value={activeTab}
+          onValueChange={setActiveTab}
         />
 
         <div className="flex justify-start">

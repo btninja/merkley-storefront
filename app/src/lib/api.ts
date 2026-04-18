@@ -838,3 +838,112 @@ export async function getSupportConversations(): Promise<{
 }
 
 export { ApiError };
+
+// ── Generic RPC bridge ──
+// Exposes a typed `frappeCall` that accepts a *fully-qualified* Frappe method
+// path (e.g. "merkley_web.state_machine.api.get_state_metadata"). The rest of
+// this module's helpers live under the "merkley_web.api.*" namespace and
+// internally use the private `frappeCall` above, which auto-prefixes that
+// namespace. Newer state-machine endpoints live under
+// "merkley_web.state_machine.*" which is outside that prefix, so we need a
+// callable that does no rewriting.
+async function frappeCallAbsolute<T>(
+  method: string,
+  params?: Record<string, unknown>,
+  options?: { method?: "GET" | "POST"; revalidate?: number | false }
+): Promise<T> {
+  const httpMethod = options?.method || "POST";
+  let url = `${ERP_BASE}/api/method/${method}`;
+
+  const headers: Record<string, string> = {
+    Accept: "application/json",
+  };
+
+  if (httpMethod === "POST") {
+    try {
+      const token = await getCsrfToken();
+      headers["X-Frappe-CSRF-Token"] = token;
+    } catch {
+      // proceed without token
+    }
+  }
+
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 15000);
+
+  const fetchOptions: RequestInit & { next?: { revalidate?: number | false } } = {
+    method: httpMethod,
+    credentials: "include",
+    headers,
+    signal: controller.signal,
+    ...(options?.revalidate !== undefined ? { next: { revalidate: options.revalidate } } : {}),
+  };
+
+  if (httpMethod === "GET" && params) {
+    const searchParams = new URLSearchParams();
+    for (const [key, value] of Object.entries(params)) {
+      if (value != null) searchParams.set(key, String(value));
+    }
+    url += `?${searchParams.toString()}`;
+  } else if (httpMethod === "POST" && params) {
+    headers["Content-Type"] = "application/json";
+    fetchOptions.body = JSON.stringify(params);
+  }
+
+  let response: Response;
+  try {
+    response = await fetch(url, fetchOptions);
+  } catch (err) {
+    clearTimeout(timeoutId);
+    if (err instanceof DOMException && err.name === "AbortError") {
+      throw new ApiError("La solicitud tardo demasiado. Intenta de nuevo.", 408);
+    }
+    throw err;
+  }
+  clearTimeout(timeoutId);
+
+  if (response.status === 403 && httpMethod === "POST") {
+    try {
+      clearCsrfToken();
+      const freshToken = await fetchCsrfToken();
+      headers["X-Frappe-CSRF-Token"] = freshToken;
+      fetchOptions.headers = headers;
+      response = await fetch(url, fetchOptions);
+    } catch {
+      // fall through
+    }
+  }
+
+  if (!response.ok) {
+    let serverMessage: string | undefined;
+    try {
+      const errorData = await response.json();
+      const raw =
+        errorData?.exc_type === "ValidationError" || errorData?.exc_type === "DuplicateEntryError"
+          ? errorData?._server_messages
+            ? JSON.parse(errorData._server_messages)?.[0]
+              ? JSON.parse(JSON.parse(errorData._server_messages)[0])?.message
+              : undefined
+            : undefined
+          : errorData?.message;
+      if (typeof raw === "string" && raw.length > 0) {
+        serverMessage = stripHtml(raw);
+      }
+    } catch {
+      // ignore
+    }
+    throw new ApiError(
+      serverMessage || `Request failed: ${response.status}`,
+      response.status,
+      serverMessage
+    );
+  }
+
+  const data = await response.json();
+  return data.message as T;
+}
+
+export const api = {
+  /** Call a fully-qualified Frappe whitelisted method (no prefix rewriting). */
+  frappeCall: frappeCallAbsolute,
+};

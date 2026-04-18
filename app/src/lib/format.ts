@@ -28,6 +28,18 @@ export function formatDateShort(dateStr: string | null | undefined): string {
   });
 }
 
+export function formatDateTime(dateStr: string | null | undefined): string {
+  if (!dateStr) return "";
+  const date = new Date(dateStr);
+  return date.toLocaleString("es-DO", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+}
+
 export function formatNumber(value: number): string {
   return value.toLocaleString("es-DO");
 }

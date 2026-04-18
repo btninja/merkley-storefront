@@ -23,9 +23,9 @@ const FILTER_TABS = [
   { value: "todas", label: "Todas", stage: undefined },
   { value: "borrador", label: "Borrador", stage: "Borrador" },
   { value: "enviada", label: "Enviada", stage: "Enviada" },
-  { value: "en-revision", label: "En Revisión", stage: "En Revision" },
-  { value: "aprobada", label: "Aprobada", stage: "Aprobada" },
-  { value: "aceptada", label: "Aceptada", stage: "Aceptada por Cliente" },
+  { value: "confirmada", label: "Confirmada", stage: "Confirmada" },
+  { value: "en-revision", label: "En Revisión", stage: "En Revisión" },
+  { value: "aceptada", label: "Aceptada", stage: "Aceptada" },
 ] as const;
 
 function QuotationListSkeleton() {

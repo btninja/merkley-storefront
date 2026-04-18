@@ -278,6 +278,7 @@ export interface Quotation {
   rejection_reason: string | null;
   can_approve: boolean;
   has_personalizable_items: boolean;
+  mw_approval_doc_required: number;
   shipping: QuotationShipping | null;
 }
 

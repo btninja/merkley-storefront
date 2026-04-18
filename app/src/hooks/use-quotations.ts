@@ -9,7 +9,17 @@ export function useMyQuotations(stage?: string) {
 }
 
 export function useQuotationDetail(name: string | null) {
-  return useSWR(name ? `quotation:${name}` : null, () =>
-    name ? api.getQuotationDetail(name) : null
+  // Staff actions (Confirmada transition, document review, etc.) are made
+  // against the CRM and should be reflected in the storefront quickly when
+  // the user returns to the tab. SWR defaults to `revalidateOnFocus: true`
+  // already; we set it explicitly for clarity and raise the dedupe interval
+  // to 30s so rapid re-focuses don't hammer the backend.
+  return useSWR(
+    name ? `quotation:${name}` : null,
+    () => (name ? api.getQuotationDetail(name) : null),
+    {
+      revalidateOnFocus: true,
+      dedupingInterval: 30_000,
+    },
   );
 }

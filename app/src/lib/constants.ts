@@ -1,23 +1,42 @@
+// Canonical post-migration stage values. See
+// merkley_web.state_machine.quotation.STATES for the authoritative source.
 export const QUOTE_STAGES = [
   "Borrador",
   "Enviada",
-  "En Revision",
-  "Aprobada",
-  "Aceptada por Cliente",
+  "Confirmada",
+  "En Revisión",
+  "Aceptada",
   "Rechazada",
   "Expirada",
 ] as const;
 
-export type QuoteStage = (typeof QUOTE_STAGES)[number];
+// Pre-migration stage values still returned by a handful of derived-status
+// code paths on the backend (see get_synced_quote_stage in quotations.py).
+// We widen the type so callers can render them without an `as QuoteStage`
+// cast — the canonical list stays strict.
+export const LEGACY_QUOTE_STAGES = [
+  "En Revision",
+  "Aprobada",
+  "Aceptada por Cliente",
+] as const;
+
+export type QuoteStage =
+  | (typeof QUOTE_STAGES)[number]
+  | (typeof LEGACY_QUOTE_STAGES)[number];
 
 export const QUOTE_STAGE_COLORS: Record<QuoteStage, { bg: string; text: string }> = {
   Borrador: { bg: "bg-surface-muted", text: "text-muted" },
   Enviada: { bg: "bg-info-soft", text: "text-info" },
-  "En Revision": { bg: "bg-warning-soft", text: "text-warning" },
-  Aprobada: { bg: "bg-success-soft", text: "text-success" },
-  "Aceptada por Cliente": { bg: "bg-success-soft", text: "text-success" },
+  Confirmada: { bg: "bg-warning-soft", text: "text-warning" },
+  "En Revisión": { bg: "bg-info-soft", text: "text-info" },
+  Aceptada: { bg: "bg-success-soft", text: "text-success" },
   Rechazada: { bg: "bg-destructive-soft", text: "text-destructive" },
   Expirada: { bg: "bg-surface-muted", text: "text-muted" },
+  // Legacy aliases — preserved so the list views don't crash if the backend
+  // occasionally surfaces a pre-migration stage on older records.
+  "En Revision": { bg: "bg-info-soft", text: "text-info" },
+  Aprobada: { bg: "bg-info-soft", text: "text-info" },
+  "Aceptada por Cliente": { bg: "bg-success-soft", text: "text-success" },
 };
 
 export const APPROVAL_METHODS = [

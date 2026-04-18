@@ -20,6 +20,14 @@ function mapStageToStep(stage: QuoteStage): VisualStepKey {
       return "Borrador";
     case "Enviada":
       return "Enviada";
+    // Post-migration names
+    case "Confirmada":
+      return "En Revision";
+    case "En Revisión":
+      return "Aprobada";
+    case "Aceptada":
+      return "Aceptada";
+    // Pre-migration aliases — still accepted defensively
     case "En Revision":
       return "En Revision";
     case "Aprobada":

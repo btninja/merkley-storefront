@@ -37,7 +37,7 @@ const MONTH_NAMES: Record<number, string> = {
   9: "Septiembre", 10: "Octubre", 11: "Noviembre", 12: "Diciembre",
 };
 
-export function Header() {
+export function Header({ showMobileMenu = true }: { showMobileMenu?: boolean } = {}) {
   const pathname = usePathname();
   const { isAuthenticated, customer, logout, isLoading } = useAuth();
   const { itemCount, lastAddedAt } = useCart();
@@ -271,8 +271,10 @@ export function Header() {
               </>
             )}
 
-            {/* Mobile menu */}
-            <MobileNav />
+            {/* Mobile menu — hidden when caller opts out (e.g. inside the
+                authenticated account layout, where the bottom-nav Menú
+                button covers all navigation). */}
+            {showMobileMenu && <MobileNav />}
           </div>
         </div>
       </Container>

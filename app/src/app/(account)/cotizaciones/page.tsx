@@ -73,16 +73,18 @@ function QuotationRow({ quote }: { quote: QuotationSummary }) {
   return (
     <Link
       href={`/cotizaciones/${quote.name}`}
-      className="flex items-center justify-between rounded-lg border border-border p-4 transition-colors hover:bg-surface-muted"
+      className="flex items-center justify-between gap-4 rounded-lg border border-border p-4 transition-colors hover:bg-surface-muted"
     >
       <div className="min-w-0 flex-1">
-        <div className="flex items-center gap-2">
-          <p className="text-sm font-semibold">{quote.name}</p>
+        {/* flex-wrap so the badge drops to the next line on narrow viewports
+            instead of pushing the row total off-screen */}
+        <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+          <p className="text-sm font-semibold truncate">{quote.name}</p>
           <Badge
             className={
               stageColors
-                ? `${stageColors.bg} ${stageColors.text}`
-                : undefined
+                ? `${stageColors.bg} ${stageColors.text} whitespace-nowrap`
+                : "whitespace-nowrap"
             }
           >
             {quote.stage}
@@ -92,7 +94,7 @@ function QuotationRow({ quote }: { quote: QuotationSummary }) {
           {formatDateShort(quote.transaction_date)}
         </p>
       </div>
-      <div className="flex items-center gap-3">
+      <div className="flex shrink-0 items-center gap-2">
         <span className="text-sm font-semibold whitespace-nowrap">
           {formatCurrency(quote.grand_total)}
         </span>
@@ -138,10 +140,14 @@ export default function QuotationsPage() {
       </PageHeader>
 
       <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <div className="overflow-x-auto">
-          <TabsList className="w-full sm:w-auto">
+        {/* w-max + inline-flex on the list so it can grow past the viewport
+            on mobile and the parent's overflow-x-auto actually scrolls.
+            Previous w-full forced the list to fit, squishing the labels
+            until they truncated/cut off. */}
+        <div className="-mx-4 overflow-x-auto px-4 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+          <TabsList className="inline-flex w-max">
             {FILTER_TABS.map((tab) => (
-              <TabsTrigger key={tab.value} value={tab.value}>
+              <TabsTrigger key={tab.value} value={tab.value} className="whitespace-nowrap">
                 {tab.label}
               </TabsTrigger>
             ))}

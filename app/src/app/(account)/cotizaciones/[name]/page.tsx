@@ -7,6 +7,7 @@ import Link from "next/link";
 import {
   Calendar,
   CalendarCheck,
+  Download,
   FileText,
   Info,
   Landmark,
@@ -959,6 +960,26 @@ export default function QuotationDetailPage() {
         />
 
         <StateBanner stage={quote.stage} meta={meta} />
+
+        {/* Prominent PDF download CTA — the action rail is easy to miss on
+            mobile (sticky bottom) and on desktop (right column). Duplicating
+            it here at the top of the page puts the single most-requested
+            action in the customer's primary scan path. */}
+        {canDownloadPdf && (
+          <Button
+            size="lg"
+            className="w-full gap-2"
+            onClick={handleDownloadPdf}
+            disabled={isDownloading}
+          >
+            {isDownloading ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <Download className="h-4 w-4" />
+            )}
+            {isDownloading ? "Descargando..." : "Descargar PDF"}
+          </Button>
+        )}
 
         {/* PDF-not-yet-available hint — surfaced inline for early stages so the
             user understands why the "Descargar PDF" action isn't on the rail. */}

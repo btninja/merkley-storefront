@@ -523,8 +523,8 @@ export async function approveQuotation(
   approvalMethod: string,
   approvalDocumentFileUrl: string,
   logoFileUrl?: string,
-): Promise<QuotationDetailResponse> {
-  return frappeCall<QuotationDetailResponse>("quotations.approve_quotation", {
+): Promise<{ ok: boolean; stage: string }> {
+  return frappeCall<{ ok: boolean; stage: string }>("quotations.approve_quotation", {
     name,
     approval_method: approvalMethod,
     approval_document_file: approvalDocumentFileUrl,

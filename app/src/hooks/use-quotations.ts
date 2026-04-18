@@ -24,7 +24,9 @@ export function useQuotationDetail(name: string | null) {
       revalidateOnFocus: true,
       dedupingInterval: 5_000,
       refreshInterval: (latest) =>
-        latest && TERMINAL_QUOTE_STAGES.has(latest.stage) ? 0 : 10_000,
+        latest?.quote?.stage && TERMINAL_QUOTE_STAGES.has(latest.quote.stage)
+          ? 0
+          : 10_000,
     },
   );
   return result;

@@ -25,7 +25,7 @@ export function useInvoiceDetail(name: string) {
       revalidateOnFocus: true,
       dedupingInterval: 5_000,
       refreshInterval: (latest) => {
-        const stage = latest?.stage ?? latest?.invoice_stage;
+        const stage = latest?.invoice?.stage ?? latest?.invoice?.invoice_stage;
         return stage && TERMINAL_INVOICE_STAGES.has(stage) ? 0 : 10_000;
       },
     }

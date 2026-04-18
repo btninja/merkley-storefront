@@ -340,14 +340,9 @@ export default function QuotationDetailPage() {
       });
     }
 
-    if (canDownloadPdf) {
-      list.push({
-        key: "pdf",
-        label: isDownloading ? "Descargando..." : "Descargar PDF",
-        onClick: handleDownloadPdf,
-        disabled: isDownloading,
-      });
-    }
+    // PDF intentionally NOT pushed onto the rail — the prominent top-of-page
+    // button covers this action in both desktop and mobile layouts. Listing
+    // it twice (the rail is a sticky bottom bar on mobile) confused users.
 
     if (!isDraft && quote.items && quote.items.length > 0) {
       list.push({

@@ -374,7 +374,7 @@ export async function getBankInfo(): Promise<{
 export async function submitPaymentProof(
   name: string,
   fileUrl: string
-): Promise<{ ok: boolean; invoice_stage: string }> {
+): Promise<{ ok: boolean; stage: string }> {
   return frappeCall("invoices.submit_payment_proof", { name, file_url: fileUrl });
 }
 
@@ -435,7 +435,7 @@ export async function uploadInvoiceFile(file: File, invoiceName: string): Promis
 export async function requestAnnulment(
   name: string,
   reason: string
-): Promise<{ ok: boolean; invoice_stage: string }> {
+): Promise<{ ok: boolean; stage: string }> {
   return frappeCall("invoices.request_annulment", { name, reason });
 }
 

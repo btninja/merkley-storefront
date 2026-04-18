@@ -43,15 +43,19 @@ const PAYMENT_STATUS_STYLES: Record<string, { bg: string; text: string }> = {
 };
 
 const STAGE_BADGE_MAP: Record<InvoiceStage, { label: string; variant: "default" | "secondary" | "outline" | "destructive" | "success" | "warning" | "info" }> = {
+  // Post-migration stages
   "Pendiente de Pago": { label: "Pendiente", variant: "warning" },
-  "Pago Sometido": { label: "Sometido", variant: "info" },
-  "Pago en Revisión": { label: "En Revisión", variant: "info" },
+  "Comprobante en Revisión": { label: "En Revisión", variant: "info" },
   "Pago Aprobado": { label: "Aprobado", variant: "success" },
+  "Pago Parcial": { label: "Pago Parcial", variant: "warning" },
   "Pagada": { label: "Pagada", variant: "success" },
   "Vencida": { label: "Vencida", variant: "destructive" },
-  "Recargo Aplicado": { label: "Recargo", variant: "destructive" },
   "Anulación Solicitada": { label: "Anulación", variant: "warning" },
   "Anulada": { label: "Anulada", variant: "destructive" },
+  // Legacy aliases preserved so list rows from un-migrated invoices still render
+  "Pago Sometido": { label: "Sometido", variant: "info" },
+  "Pago en Revisión": { label: "En Revisión", variant: "info" },
+  "Recargo Aplicado": { label: "Recargo", variant: "destructive" },
 };
 
 function ListSkeleton() {
@@ -150,9 +154,10 @@ export default function FacturasPage() {
               PAYMENT_STATUS_STYLES[invoice.payment_status.color] ||
               PAYMENT_STATUS_STYLES.warning;
 
-            const stageInfo = invoice.invoice_stage
-              ? STAGE_BADGE_MAP[invoice.invoice_stage]
-              : null;
+            // Prefer the canonical `stage` field; fall back to the deprecated
+            // `invoice_stage` for older responses during the rollout window.
+            const currentStage = invoice.stage ?? invoice.invoice_stage;
+            const stageInfo = currentStage ? STAGE_BADGE_MAP[currentStage] : null;
 
             return (
               <Link

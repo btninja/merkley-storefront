@@ -422,16 +422,31 @@ export interface InvoiceTax {
   tax_amount: number;
 }
 
+// Canonical post-migration stages. See
+// merkley_web.state_machine.invoice.STATES for the authoritative source.
+export const INVOICE_STAGES = [
+  "Pendiente de Pago",
+  "Comprobante en Revisión",
+  "Pago Aprobado",
+  "Pago Parcial",
+  "Pagada",
+  "Vencida",
+  "Anulación Solicitada",
+  "Anulada",
+] as const;
+
+// Pre-migration stage values we still accept defensively so legacy rows
+// surfaced from the backend don't crash list rendering. New work should
+// target the canonical values only.
+export const LEGACY_INVOICE_STAGES = [
+  "Pago Sometido",
+  "Pago en Revisión",
+  "Recargo Aplicado",
+] as const;
+
 export type InvoiceStage =
-  | "Pendiente de Pago"
-  | "Pago Sometido"
-  | "Pago en Revisión"
-  | "Pago Aprobado"
-  | "Pagada"
-  | "Vencida"
-  | "Recargo Aplicado"
-  | "Anulación Solicitada"
-  | "Anulada";
+  | (typeof INVOICE_STAGES)[number]
+  | (typeof LEGACY_INVOICE_STAGES)[number];
 
 export interface InvoiceSummary {
   name: string;
@@ -444,6 +459,9 @@ export interface InvoiceSummary {
   status: string;
   is_return: number;
   payment_status: InvoicePaymentStatus;
+  // Current post-migration field name is `stage`. `invoice_stage` is kept for
+  // backward compatibility with mid-rollout responses.
+  stage: InvoiceStage | null;
   invoice_stage: InvoiceStage | null;
   ncf: string | null;
   late_fee_applied: boolean;
@@ -471,6 +489,10 @@ export interface Invoice {
   is_return: number;
   return_against: string | null;
   payment_status: InvoicePaymentStatus;
+  // Canonical post-migration stage field. `invoice_stage` is a deprecated
+  // alias kept transiently so older client bundles don't crash during a
+  // deploy window.
+  stage: InvoiceStage | null;
   invoice_stage: InvoiceStage | null;
   ncf: string | null;
   ncf_expiry: string | null;
@@ -479,6 +501,9 @@ export interface Invoice {
   payment_rejection_reason: string | null;
   late_fee_applied: boolean;
   late_fee_amount: number;
+  // Recargo por mora stamped on the invoice itself by the late-fee scheduler.
+  // Shown inline in the Details tab when > 0.
+  custom_recargo_amount: number;
   original_invoice: string | null;
   annulment_reason: string | null;
   annulment_requested_at: string | null;

@@ -38,8 +38,15 @@ export function PaymentForm({ invoice, onPaymentSubmitted }: PaymentFormProps) {
   const [fileName, setFileName] = useState<string | null>(null);
 
   const bankInfo = invoice.bank_info;
-  const stage = invoice.invoice_stage;
-  const isPaymentPending = stage === "Pendiente de Pago";
+  // Prefer the canonical `stage` but fall back to the deprecated
+  // `invoice_stage` to remain compatible with mid-rollout responses.
+  const stage = invoice.stage ?? invoice.invoice_stage;
+  // Upload-proof flow is open in any of the three "awaiting payment" stages
+  // (see merkley_web.api.invoices.submit_payment_proof).
+  const isPaymentPending =
+    stage === "Pendiente de Pago" ||
+    stage === "Vencida" ||
+    stage === "Pago Parcial";
   const wasRejected = !!invoice.payment_rejection_reason;
 
   const handleFileUpload = async (files: File[]) => {

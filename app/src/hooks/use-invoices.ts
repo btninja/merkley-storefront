@@ -10,7 +10,16 @@ export function useMyInvoices(params?: { status?: string; page?: number; page_le
 }
 
 export function useInvoiceDetail(name: string) {
-  return useSWR(name ? `invoice:${name}` : null, () =>
-    api.getInvoiceDetail(name)
+  // Staff actions (payment review, NCF assignment, annulment review) happen
+  // against the CRM. The storefront should pick those changes up promptly
+  // when the customer returns to the tab, so we revalidate on focus. 30s
+  // dedupe keeps rapid re-focuses from hammering the backend.
+  return useSWR(
+    name ? `invoice:${name}` : null,
+    () => api.getInvoiceDetail(name),
+    {
+      revalidateOnFocus: true,
+      dedupingInterval: 30_000,
+    }
   );
 }

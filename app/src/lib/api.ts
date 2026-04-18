@@ -327,13 +327,30 @@ export async function updateQuotation(
 }
 
 export async function submitQuotation(
-  name: string,
-  generalNotes?: string
-): Promise<QuotationDetailResponse> {
-  return frappeCall<QuotationDetailResponse>("quotations.submit_quotation", {
+  name: string
+): Promise<{ ok: boolean; stage: string }> {
+  return frappeCall<{ ok: boolean; stage: string }>("quotations.submit_quotation", {
     name,
-    general_notes: generalNotes,
   });
+}
+
+export async function declineQuotation(
+  name: string,
+  reason?: string
+): Promise<{ ok: boolean; stage: string }> {
+  return frappeCall<{ ok: boolean; stage: string }>("quotations.decline_quotation", {
+    name,
+    reason,
+  });
+}
+
+export async function acceptQuotationWithoutDocs(
+  name: string
+): Promise<{ ok: boolean; stage: string; sales_order?: string }> {
+  return frappeCall<{ ok: boolean; stage: string; sales_order?: string }>(
+    "quotations.accept_quotation_without_docs",
+    { name },
+  );
 }
 
 export async function downloadQuotationPdf(name: string): Promise<void> {

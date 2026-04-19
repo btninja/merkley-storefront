@@ -556,6 +556,46 @@ export async function downloadCartaResponsabilidad(name: string): Promise<void> 
   setTimeout(() => URL.revokeObjectURL(link.href), 1000);
 }
 
+/**
+ * Download a pre-filled Carta de Responsabilidad PDF. The storefront dialog
+ * collects the field values and POSTs them here; backend renders them into
+ * the template and returns a flat (non-fillable) PDF blob.
+ *
+ * Replaces the legacy fillable-PDF flow (downloadCartaResponsabilidad) where
+ * users filled form fields inside their PDF reader.
+ */
+export async function downloadCartaResponsabilidadFilled(
+  name: string,
+  fields: {
+    rep_nombre: string;
+    rep_cedula: string;
+    rep_cargo: string;
+    firma_fecha: string;
+    firma_ciudad: string;
+    firma_nombre?: string; // defaults server-side to rep_nombre
+    firma_cargo?: string;  // defaults server-side to rep_cargo
+  },
+): Promise<Blob> {
+  const params = new URLSearchParams({ name });
+  for (const [k, v] of Object.entries(fields)) {
+    if (v) params.set(k, v);
+  }
+  const url = `${ERP_BASE}/api/method/merkley_web.api.quotations.generate_carta_responsabilidad_filled?${params.toString()}`;
+  let csrfToken: string | undefined;
+  try {
+    csrfToken = await getCsrfToken();
+  } catch {
+    // proceed without token
+  }
+  const response = await fetch(url, {
+    method: "POST",
+    credentials: "include",
+    headers: csrfToken ? { "X-Frappe-CSRF-Token": csrfToken } : {},
+  });
+  if (!response.ok) throw new ApiError(`Generando carta: HTTP ${response.status}`, response.status);
+  return response.blob();
+}
+
 // ── Shipping ──
 
 export async function getShippingZones(): Promise<ShippingZonesResponse> {

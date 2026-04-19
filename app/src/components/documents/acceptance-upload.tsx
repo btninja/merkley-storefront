@@ -6,7 +6,6 @@ import {
   AlertTriangle,
   Loader2,
   X,
-  Download,
   ShieldCheck,
   Landmark,
   ImagePlus,
@@ -24,6 +23,7 @@ import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/hooks/use-toast";
 import { FileDropzone } from "@/components/shared/file-dropzone";
 import * as api from "@/lib/api";
+import { ResponsibilityLetterDialog } from "./responsibility-letter-dialog";
 import { APPROVAL_METHODS, PAYMENT_INFO } from "@/lib/constants";
 import type { ApprovalMethod } from "@/lib/constants";
 import type { QuotationDocuments } from "@/lib/types";
@@ -49,7 +49,7 @@ export function ApprovalUpload({
   const [approvalDoc, setApprovalDoc] = useState<File | null>(null);
   const [logoFile, setLogoFile] = useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
-  const [downloadingCarta, setDownloadingCarta] = useState(false);
+  const [cartaDialogOpen, setCartaDialogOpen] = useState(false);
 
   const rejectionNotes = documents?.rejection_notes;
   const isCartaMethod = approvalMethod === "Carta de responsabilidad firmada y sellada";
@@ -72,22 +72,6 @@ export function ApprovalUpload({
         description: "Solo se aceptan archivos PDF, JPG o PNG.",
         variant: "destructive",
       });
-    }
-  }
-
-  async function handleDownloadCarta() {
-    setDownloadingCarta(true);
-    try {
-      await api.downloadCartaResponsabilidad(quotationName);
-    } catch (err) {
-      toast({
-        title: "Error",
-        description:
-          err instanceof Error ? err.message : "No se pudo descargar la plantilla.",
-        variant: "destructive",
-      });
-    } finally {
-      setDownloadingCarta(false);
     }
   }
 
@@ -187,34 +171,34 @@ export function ApprovalUpload({
           </div>
         </div>
 
-        {/* Carta de responsabilidad download */}
+        {/* Carta de responsabilidad */}
         {isCartaMethod && (
-          <div className="flex items-start gap-3 rounded-lg border border-info/30 bg-info-soft p-4">
-            <Download className="mt-0.5 h-5 w-5 shrink-0 text-info" />
-            <div className="flex-1">
-              <p className="text-sm font-medium text-info">
-                Plantilla de Carta de Responsabilidad
-              </p>
-              <p className="mt-1 text-sm text-muted">
-                Descarga la plantilla, imprímela, completa los datos, firma y sella.
-                Luego escanea o fotografía el documento y súbelo abajo.
-              </p>
-              <Button
-                variant="outline"
-                size="sm"
-                className="mt-2"
-                onClick={handleDownloadCarta}
-                disabled={downloadingCarta}
-              >
-                {downloadingCarta ? (
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                ) : (
-                  <Download className="h-4 w-4" />
-                )}
-                Descargar Plantilla PDF
-              </Button>
+          <>
+            <div className="flex items-start gap-3 rounded-lg border border-info/30 bg-info-soft p-4">
+              <FileText className="mt-0.5 h-5 w-5 shrink-0 text-info" />
+              <div className="flex-1">
+                <p className="text-sm font-medium text-info">
+                  Carta de Responsabilidad
+                </p>
+                <p className="mt-1 text-sm text-muted">
+                  Completa los datos de tu empresa, descarga la carta, imprímela,
+                  fírmala, séllala y súbela abajo.
+                </p>
+                <Button
+                  size="sm"
+                  className="mt-2"
+                  onClick={() => setCartaDialogOpen(true)}
+                >
+                  Completar y descargar carta
+                </Button>
+              </div>
             </div>
-          </div>
+            <ResponsibilityLetterDialog
+              open={cartaDialogOpen}
+              onOpenChange={setCartaDialogOpen}
+              quotationName={quotationName}
+            />
+          </>
         )}
 
         {/* Payment info (shown for voucher method or always as reference) */}

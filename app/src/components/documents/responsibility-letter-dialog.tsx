@@ -36,7 +36,7 @@ export function ResponsibilityLetterDialog({
     const now = new Date();
     return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
   });
-  const [firmaCiudad, setFirmaCiudad] = useState("Santo Domingo");
+  const [firmaCiudad, setFirmaCiudad] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
   const allFilled =
@@ -147,7 +147,7 @@ export function ResponsibilityLetterDialog({
               />
             </div>
           </div>
-          <DialogFooter className="pt-2">
+          <DialogFooter className="mt-4 border-t pt-4">
             <Button
               type="button"
               variant="outline"

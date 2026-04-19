@@ -15,6 +15,7 @@ import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { Loader2, FileDown } from "lucide-react";
 import { downloadCartaResponsabilidadFilled } from "@/lib/api";
+import { CitySearchInput } from "@/components/ui/city-search-input";
 
 interface ResponsibilityLetterDialogProps {
   open: boolean;
@@ -138,10 +139,10 @@ export function ResponsibilityLetterDialog({
             </div>
             <div className="space-y-1.5">
               <Label htmlFor="firma_ciudad">Ciudad</Label>
-              <Input
+              <CitySearchInput
                 id="firma_ciudad"
                 value={firmaCiudad}
-                onChange={(e) => setFirmaCiudad(e.target.value)}
+                onChange={setFirmaCiudad}
                 required
               />
             </div>

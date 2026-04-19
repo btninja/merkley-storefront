@@ -544,18 +544,6 @@ export async function approveQuotation(
   });
 }
 
-export async function downloadCartaResponsabilidad(name: string): Promise<void> {
-  const url = `${ERP_BASE}/api/method/merkley_web.api.quotations.download_carta_responsabilidad?name=${encodeURIComponent(name)}`;
-  const response = await fetch(url, { credentials: "include" });
-  if (!response.ok) throw new ApiError("Failed to download PDF", response.status);
-  const blob = await response.blob();
-  const link = document.createElement("a");
-  link.href = URL.createObjectURL(blob);
-  link.download = `Carta_Responsabilidad_${name}.pdf`;
-  link.click();
-  setTimeout(() => URL.revokeObjectURL(link.href), 1000);
-}
-
 /**
  * Download a pre-filled Carta de Responsabilidad PDF. The storefront dialog
  * collects the field values and POSTs them here; backend renders them into
@@ -581,17 +569,37 @@ export async function downloadCartaResponsabilidadFilled(
     if (v) params.set(k, v);
   }
   const url = `${ERP_BASE}/api/method/merkley_web.api.quotations.generate_carta_responsabilidad_filled?${params.toString()}`;
-  let csrfToken: string | undefined;
+  const headers: Record<string, string> = {};
+
   try {
-    csrfToken = await getCsrfToken();
+    const token = await getCsrfToken();
+    headers["X-Frappe-CSRF-Token"] = token;
   } catch {
     // proceed without token
   }
-  const response = await fetch(url, {
+
+  let response = await fetch(url, {
     method: "POST",
     credentials: "include",
-    headers: csrfToken ? { "X-Frappe-CSRF-Token": csrfToken } : {},
+    headers,
   });
+
+  // Retry on 403 (stale CSRF token)
+  if (response.status === 403) {
+    try {
+      clearCsrfToken();
+      const freshToken = await fetchCsrfToken();
+      headers["X-Frappe-CSRF-Token"] = freshToken;
+      response = await fetch(url, {
+        method: "POST",
+        credentials: "include",
+        headers,
+      });
+    } catch {
+      // fall through to error handling
+    }
+  }
+
   if (!response.ok) throw new ApiError(`Generando carta: HTTP ${response.status}`, response.status);
   return response.blob();
 }

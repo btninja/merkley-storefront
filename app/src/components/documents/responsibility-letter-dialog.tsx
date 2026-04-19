@@ -33,7 +33,7 @@ export function ResponsibilityLetterDialog({
   const [repCargo, setRepCargo] = useState("");
   const [firmaFecha, setFirmaFecha] = useState(() => {
     const now = new Date();
-    return `${String(now.getDate()).padStart(2, "0")}/${String(now.getMonth() + 1).padStart(2, "0")}/${now.getFullYear()}`;
+    return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
   });
   const [firmaCiudad, setFirmaCiudad] = useState("Santo Domingo");
   const [submitting, setSubmitting] = useState(false);
@@ -50,11 +50,15 @@ export function ResponsibilityLetterDialog({
     if (!allFilled || submitting) return;
     setSubmitting(true);
     try {
+      // Convert YYYY-MM-DD to DD/MM/YYYY format
+      const [y, m, d] = firmaFecha.split("-");
+      const firmaFechaFormatted = `${d}/${m}/${y}`;
+
       const blob = await downloadCartaResponsabilidadFilled(quotationName, {
         rep_nombre: repNombre.trim(),
         rep_cedula: repCedula.trim(),
         rep_cargo: repCargo.trim(),
-        firma_fecha: firmaFecha.trim(),
+        firma_fecha: firmaFechaFormatted,
         firma_ciudad: firmaCiudad.trim(),
       });
       const url = URL.createObjectURL(blob);
@@ -126,9 +130,9 @@ export function ResponsibilityLetterDialog({
               <Label htmlFor="firma_fecha">Fecha</Label>
               <Input
                 id="firma_fecha"
+                type="date"
                 value={firmaFecha}
                 onChange={(e) => setFirmaFecha(e.target.value)}
-                placeholder="DD/MM/YYYY"
                 required
               />
             </div>

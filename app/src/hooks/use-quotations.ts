@@ -12,11 +12,11 @@ export function useMyQuotations(stage?: string) {
 const TERMINAL_QUOTE_STAGES = new Set(["Aceptada", "Rechazada", "Expirada"]);
 
 export function useQuotationDetail(name: string | null) {
-  // Staff actions (Confirmada transition, document review, etc.) happen on
-  // the CRM. We want the customer's open tab to reflect those within ~10s
-  // without a manual reload. Polling pauses automatically when the tab is
-  // hidden (SWR's refreshWhenHidden default = false) and stops once the
-  // quote reaches a terminal state.
+  // Primary path is realtime push via useRealtimeDoc ("Quotation", name)
+  // + Frappe socket.io. This polling interval is a safety net — catches
+  // state changes if the socket is dropped, the user is on flaky wifi,
+  // or the backend's publish_realtime fails for any reason. 60s keeps
+  // load trivial while guaranteeing state eventually converges.
   const result = useSWR(
     name ? `quotation:${name}` : null,
     () => (name ? api.getQuotationDetail(name) : null),
@@ -26,7 +26,7 @@ export function useQuotationDetail(name: string | null) {
       refreshInterval: (latest) =>
         latest?.quote?.stage && TERMINAL_QUOTE_STAGES.has(latest.quote.stage)
           ? 0
-          : 10_000,
+          : 60_000,
     },
   );
   return result;

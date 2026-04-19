@@ -15,6 +15,7 @@ import {
   Receipt,
 } from "lucide-react";
 import { useInvoiceDetail } from "@/hooks/use-invoices";
+import { useRealtimeDoc } from "@/hooks/use-realtime-doc";
 import { DocHeader } from "@/components/shared/doc-header";
 import { StateBanner } from "@/components/shared/state-banner";
 import { ActionRail, type Action } from "@/components/shared/action-rail";
@@ -92,6 +93,13 @@ export default function InvoiceDetailPage() {
   const { customer } = useAuth();
   const { data, isLoading, error, mutate } = useInvoiceDetail(name);
   const { toast } = useToast();
+
+  // Real-time push: when staff reviews payment / assigns NCF / marks
+  // annulment on the CRM, the backend fires mw_doc_update via Frappe
+  // socket.io scoped to this user. Receiving it triggers SWR to refetch
+  // — ~100ms end-to-end vs 60s polling. Silently no-ops if the socket
+  // fails to connect.
+  useRealtimeDoc("Sales Invoice", name, name ? `invoice:${name}` : null);
 
   // State metadata — fetched once per doctype and cached for 5 minutes so
   // every page that composes StateBanner uses the same labels/hints/colors.

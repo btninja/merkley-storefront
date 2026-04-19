@@ -23,6 +23,7 @@ import {
 import { useCart } from "@/context/cart-context";
 import { useAuth } from "@/context/auth-context";
 import { useQuotationDetail } from "@/hooks/use-quotations";
+import { useRealtimeDoc } from "@/hooks/use-realtime-doc";
 import { DocHeader } from "@/components/shared/doc-header";
 import { StateBanner } from "@/components/shared/state-banner";
 import { ActionRail, type Action } from "@/components/shared/action-rail";
@@ -127,6 +128,12 @@ export default function QuotationDetailPage() {
     error,
     mutate,
   } = useQuotationDetail(name);
+
+  // Real-time push: when staff saves the Quotation on the CRM, the backend
+  // fires mw_doc_update via Frappe socket.io scoped to this user. Receiving
+  // it triggers SWR to refetch — ~100ms end-to-end vs 60s polling. Falls
+  // back silently if the socket can't connect.
+  useRealtimeDoc("Quotation", name, name ? `quotation:${name}` : null);
 
   // State metadata — fetched once per doctype and cached for 5 minutes so
   // every page that composes StateBanner gets consistent labels/hints/colors

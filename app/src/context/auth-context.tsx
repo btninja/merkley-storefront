@@ -5,6 +5,11 @@ import type { SessionCustomer, SessionResponse, SessionSettings, PriceContext, R
 import * as api from "@/lib/api";
 import { trackLogin, trackRegistration } from "@/lib/analytics";
 
+interface SocketAuth {
+  api_key: string;
+  api_secret: string;
+}
+
 interface AuthState {
   isLoading: boolean;
   isAuthenticated: boolean;
@@ -12,6 +17,10 @@ interface AuthState {
   customer: SessionCustomer | null;
   priceContext: PriceContext | null;
   settings: SessionSettings | null;
+  /** Per-user Frappe API credentials used by the realtime socket. Fetched
+   *  asynchronously after auth succeeds; realtime features fall back to
+   *  polling while this is null. */
+  socketAuth: SocketAuth | null;
 }
 
 /** Return value of register(): either the user got logged in, verification is required, or approval is pending. */
@@ -42,7 +51,7 @@ function setSessionMarker(authenticated: boolean) {
   }
 }
 
-function applySession(response: SessionResponse): AuthState {
+function applySession(response: SessionResponse, socketAuth: SocketAuth | null = null): AuthState {
   setSessionMarker(response.user.is_authenticated);
   return {
     isLoading: false,
@@ -51,6 +60,7 @@ function applySession(response: SessionResponse): AuthState {
     customer: response.customer,
     priceContext: response.price_context,
     settings: response.settings,
+    socketAuth,
   };
 }
 
@@ -74,15 +84,26 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     customer: null,
     priceContext: null,
     settings: null,
+    socketAuth: null,
   });
 
   const refreshSession = useCallback(async () => {
     try {
       const response = await api.getSessionContext();
       setState(applySession(response));
+      // Fire-and-forget: fetch the realtime socket token so the next page
+      // navigation can subscribe. Best-effort — if this fails (missing
+      // perm, network blip) the storefront still works via polling.
+      if (response.user.is_authenticated) {
+        api.ensureSocketToken()
+          .then((socketAuth) => setState((prev) => ({ ...prev, socketAuth })))
+          .catch(() => {
+            // socket is optional — polling fallback keeps everything working
+          });
+      }
     } catch {
       setSessionMarker(false);
-      setState((prev) => ({ ...prev, isLoading: false, isAuthenticated: false }));
+      setState((prev) => ({ ...prev, isLoading: false, isAuthenticated: false, socketAuth: null }));
     }
   }, []);
 
@@ -90,6 +111,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const response = await api.login(email, password);
     setState(applySession(response));
     trackLogin();
+    // Grab the socket token in the background — not awaited so login
+    // UX stays fast.
+    api.ensureSocketToken()
+      .then((socketAuth) => setState((prev) => ({ ...prev, socketAuth })))
+      .catch(() => { /* polling fallback keeps everything working */ });
   }, []);
 
   const register = useCallback(async (data: RegistrationData): Promise<RegisterResult> => {
@@ -153,6 +179,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         customer: null,
         priceContext: null,
         settings: null,
+        socketAuth: null,
       });
       try {
         sessionStorage.removeItem("md_login_email");

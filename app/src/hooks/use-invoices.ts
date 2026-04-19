@@ -13,11 +13,10 @@ export function useMyInvoices(params?: { status?: string; page?: number; page_le
 const TERMINAL_INVOICE_STAGES = new Set(["Pagada", "Anulada"]);
 
 export function useInvoiceDetail(name: string) {
-  // Staff actions (payment review, NCF assignment, annulment review) happen
-  // on the CRM. Poll every 10s so the customer's open tab reflects those
-  // changes within ~10s without a manual reload. SWR auto-pauses polling
-  // when the tab is hidden and we stop entirely once the invoice is in a
-  // terminal state.
+  // Primary path is realtime push via useRealtimeDoc ("Sales Invoice", name)
+  // + Frappe socket.io. This polling interval is a safety net for dropped
+  // sockets / flaky wifi / missed broadcasts. 60s keeps the load trivial
+  // while guaranteeing state eventually converges.
   return useSWR(
     name ? `invoice:${name}` : null,
     () => api.getInvoiceDetail(name),
@@ -26,7 +25,7 @@ export function useInvoiceDetail(name: string) {
       dedupingInterval: 5_000,
       refreshInterval: (latest) => {
         const stage = latest?.invoice?.stage ?? latest?.invoice?.invoice_stage;
-        return stage && TERMINAL_INVOICE_STAGES.has(stage) ? 0 : 10_000;
+        return stage && TERMINAL_INVOICE_STAGES.has(stage) ? 0 : 60_000;
       },
     }
   );

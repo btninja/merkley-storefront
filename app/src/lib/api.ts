@@ -280,6 +280,18 @@ export async function getSessionContext(): Promise<SessionResponse> {
   return session;
 }
 
+/** Issue / fetch the current website user's Frappe api_key + api_secret so
+ *  the storefront can authenticate with the socket.io server via an
+ *  Authorization header. Lives on the full merkley_web namespace (not the
+ *  default auth namespace), so we use the absolute helper. */
+export async function ensureSocketToken(): Promise<{ api_key: string; api_secret: string }> {
+  return api.frappeCall<{ api_key: string; api_secret: string }>(
+    "merkley_web.realtime.ensure_socket_token",
+    undefined,
+    { method: "GET" },
+  );
+}
+
 // ── Catalog ──
 
 export async function getBootstrap(): Promise<BootstrapResponse> {

@@ -7,7 +7,6 @@ import {
   DialogHeader,
   DialogTitle,
   DialogDescription,
-  DialogFooter,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -90,7 +89,7 @@ export function ResponsibilityLetterDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-md">
+      <DialogContent className="max-w-md max-h-none overflow-visible">
         <DialogHeader>
           <DialogTitle>Completa los datos para la carta</DialogTitle>
           <DialogDescription>
@@ -147,7 +146,7 @@ export function ResponsibilityLetterDialog({
               />
             </div>
           </div>
-          <DialogFooter className="mt-4 border-t pt-4">
+          <div className="mt-6 flex flex-col-reverse gap-2 border-t pt-4 sm:flex-row sm:justify-end">
             <Button
               type="button"
               variant="outline"
@@ -169,7 +168,7 @@ export function ResponsibilityLetterDialog({
                 </>
               )}
             </Button>
-          </DialogFooter>
+          </div>
         </form>
       </DialogContent>
     </Dialog>

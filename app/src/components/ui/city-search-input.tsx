@@ -20,15 +20,12 @@ interface CitySearchInputProps {
  *  accepts any free-text value. Keyboard-accessible: ArrowDown opens,
  *  ArrowUp/Down navigates, Enter picks, Escape closes.
  *
- *  The dropdown uses `position: fixed` (viewport-anchored) so it
- *  escapes ancestor overflow:hidden — but stays INSIDE the React/DOM
- *  tree so Radix Dialog's `contains()` check keeps the dialog open
- *  when the user clicks a suggestion. Coords are recomputed on scroll
- *  + resize.
- *
- *  NOTE: CRM's `Input` wrapper does not forward refs; the input-
- *  wrapper `<div>` is used for getBoundingClientRect in both repos so
- *  the component stays identical across them. */
+ *  Dropdown uses `position: absolute` inside the wrapper — stays in
+ *  the DOM tree (so Radix Dialog's contains() check keeps the dialog
+ *  open on pick), and positioning isn't broken by transformed
+ *  ancestors (DialogContent uses transform for centering). Caller is
+ *  expected to pass className="max-h-none overflow-visible" to the
+ *  enclosing DialogContent so the dropdown isn't clipped. */
 export function CitySearchInput({
   value,
   onChange,
@@ -40,9 +37,7 @@ export function CitySearchInput({
 }: CitySearchInputProps) {
   const [open, setOpen] = useState(false);
   const [active, setActive] = useState(0);
-  const [coords, setCoords] = useState({ top: 0, left: 0, width: 0 });
   const wrapRef = useRef<HTMLDivElement>(null);
-  const anchorRef = useRef<HTMLDivElement>(null);
 
   const suggestions = useMemo(() => {
     const q = value.trim().toLowerCase();
@@ -57,29 +52,6 @@ export function CitySearchInput({
     if (active >= suggestions.length) setActive(0);
   }, [suggestions.length, active]);
 
-  const updateCoords = () => {
-    if (!anchorRef.current) return;
-    const rect = anchorRef.current.getBoundingClientRect();
-    setCoords({
-      top: rect.bottom + 4,
-      left: rect.left,
-      width: rect.width,
-    });
-  };
-
-  useEffect(() => {
-    if (!open) return;
-    updateCoords();
-    window.addEventListener("scroll", updateCoords, true);
-    window.addEventListener("resize", updateCoords);
-    return () => {
-      window.removeEventListener("scroll", updateCoords, true);
-      window.removeEventListener("resize", updateCoords);
-    };
-  }, [open]);
-
-  // Close on clicks outside the wrapper (dropdown is inside the wrapper
-  // now, so no separate portal check needed).
   useEffect(() => {
     if (!open) return;
     const onDocClick = (e: MouseEvent) => {
@@ -112,7 +84,7 @@ export function CitySearchInput({
 
   return (
     <div ref={wrapRef} className={cn("relative", className)}>
-      <div ref={anchorRef} className="relative">
+      <div className="relative">
         <MapPin className="pointer-events-none absolute left-2 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
         <Input
           id={id}
@@ -133,13 +105,7 @@ export function CitySearchInput({
       {open && suggestions.length > 0 && (
         <ul
           role="listbox"
-          style={{
-            position: "fixed",
-            top: coords.top,
-            left: coords.left,
-            width: coords.width,
-          }}
-          className="z-[100] max-h-60 overflow-y-auto rounded-md border bg-white py-1 shadow-lg dark:bg-slate-900 dark:border-slate-700"
+          className="absolute left-0 right-0 top-full z-50 mt-1 max-h-60 overflow-y-auto rounded-md border bg-white py-1 shadow-lg dark:bg-slate-900 dark:border-slate-700"
         >
           {suggestions.map((city, idx) => (
             <li
@@ -147,7 +113,6 @@ export function CitySearchInput({
               role="option"
               aria-selected={idx === active}
               onMouseDown={(e) => {
-                // onMouseDown (not onClick) so this fires before input blur
                 e.preventDefault();
                 onChange(city);
                 setOpen(false);

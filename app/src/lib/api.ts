@@ -867,68 +867,6 @@ export async function getDownloadCenter(year?: number): Promise<DownloadCenterRe
   );
 }
 
-export interface SupportMessage {
-  id: string;
-  sender: string;
-  sender_name: string;
-  content: string;
-  timestamp: string;
-  direction: "in" | "out";
-}
-
-export interface SupportConversation {
-  conversation_id: string;
-  subject: string;
-  created_at: string;
-  last_message_at: string;
-  status: string;
-}
-
-export interface SupportMessagesResponse {
-  conversation: SupportConversation;
-  messages: SupportMessage[];
-}
-
-export interface InitiateChatResponse {
-  conversation_id: string;
-  subject: string;
-}
-
-export async function initiateSupportChat(
-  message: string,
-  subject: string
-): Promise<InitiateChatResponse> {
-  return frappeCall("portal.initiate_support_chat", { message, subject });
-}
-
-export async function getSupportMessages(
-  conversationId: string
-): Promise<SupportMessagesResponse> {
-  return frappeCall<SupportMessagesResponse>(
-    "portal.get_support_messages",
-    { conversation_id: conversationId },
-    { method: "GET" }
-  );
-}
-
-export async function sendSupportMessage(
-  conversationId: string,
-  message: string
-): Promise<{ ok: boolean; message: SupportMessage }> {
-  return frappeCall("portal.send_support_message", {
-    conversation_id: conversationId,
-    message,
-  });
-}
-
-export async function getSupportConversations(): Promise<{
-  conversations: SupportConversation[];
-}> {
-  return frappeCall("portal.get_support_conversations", undefined, {
-    method: "GET",
-  });
-}
-
 export { ApiError };
 
 // ── Generic RPC bridge ──

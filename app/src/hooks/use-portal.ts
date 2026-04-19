@@ -24,10 +24,3 @@ export function useDownloadCenter(year?: number) {
   return useSWR(key, () => api.getDownloadCenter(year));
 }
 
-export function useSupportMessages(conversationId?: string) {
-  return useSWR(
-    conversationId ? `portal:support:${conversationId}` : null,
-    () => api.getSupportMessages(conversationId!),
-    { refreshInterval: 10000 }
-  );
-}

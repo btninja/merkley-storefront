@@ -15,6 +15,7 @@ import {
 } from "lucide-react";
 import { usePurchaseHistory } from "@/hooks/use-portal";
 import { PageHeader } from "@/components/layout/page-header";
+import { CompanyFilterChips, CompanyBadge } from "@/components/account/company-filter";
 import {
   Card,
   CardHeader,
@@ -47,7 +48,11 @@ function ListSkeleton() {
 
 export default function HistorialPage() {
   const [year, setYear] = useState<number | undefined>(undefined);
-  const { data, isLoading } = usePurchaseHistory(year ? { year } : undefined);
+  const [companyFilter, setCompanyFilter] = useState<string | null>(null);
+  const { data, isLoading } = usePurchaseHistory({
+    year,
+    customer: companyFilter,
+  });
   const { toast } = useToast();
   const router = useRouter();
   const [reorderingId, setReorderingId] = useState<string | null>(null);
@@ -100,6 +105,9 @@ export default function HistorialPage() {
           </select>
         )}
       </PageHeader>
+
+      {/* Company filter row — auto-hidden for single-company users. */}
+      <CompanyFilterChips value={companyFilter} onChange={setCompanyFilter} />
 
       {isLoading ? (
         <ListSkeleton />
@@ -236,6 +244,7 @@ export default function HistorialPage() {
                             <Badge variant="outline" className="text-[10px] px-2 py-0.5">
                               {isInvoice ? "Factura" : "Cotización"}
                             </Badge>
+                            <CompanyBadge customer={doc.customer} customerName={doc.customer_name} />
                           </div>
                           <p className="text-xs text-muted">
                             {formatDateShort(doc.date)} &middot;{" "}

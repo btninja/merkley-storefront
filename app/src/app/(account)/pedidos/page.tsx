@@ -14,6 +14,7 @@ import {
 } from "lucide-react";
 import { useOrderPipeline } from "@/hooks/use-portal";
 import { PageHeader } from "@/components/layout/page-header";
+import { CompanyFilterChips, CompanyBadge } from "@/components/account/company-filter";
 import {
   Card,
   CardHeader,
@@ -117,6 +118,7 @@ function OrderCard({
                 <Badge className={`${statusStyle.bg} ${statusStyle.text} text-[10px] px-2 py-0.5`}>
                   {order.status}
                 </Badge>
+                <CompanyBadge customer={order.customer} customerName={order.customer_name} />
               </div>
               <p className="text-xs text-muted">
                 {formatDateShort(order.date)}
@@ -204,7 +206,8 @@ function ListSkeleton() {
 }
 
 export default function PedidosPage() {
-  const { data, isLoading, error } = useOrderPipeline();
+  const [companyFilter, setCompanyFilter] = useState<string | null>(null);
+  const { data, isLoading, error } = useOrderPipeline(companyFilter);
 
   return (
     <div className="space-y-6">
@@ -212,6 +215,9 @@ export default function PedidosPage() {
         title="Pedidos"
         description="Seguimiento de tus pedidos activos"
       />
+
+      {/* Company filter row — auto-hidden for single-company users. */}
+      <CompanyFilterChips value={companyFilter} onChange={setCompanyFilter} />
 
       {isLoading ? (
         <ListSkeleton />

@@ -12,6 +12,7 @@ import {
 } from "lucide-react";
 import { useDownloadCenter } from "@/hooks/use-portal";
 import { PageHeader } from "@/components/layout/page-header";
+import { CompanyFilterChips, CompanyBadge } from "@/components/account/company-filter";
 import {
   Card,
   CardHeader,
@@ -119,6 +120,7 @@ function MonthGroup({
                               {doc.ncf}
                             </Badge>
                           )}
+                          <CompanyBadge customer={doc.customer} customerName={doc.customer_name} />
                         </div>
                         <p className="text-xs text-muted">
                           {formatDateShort(doc.date)} &middot;{" "}
@@ -153,7 +155,8 @@ function MonthGroup({
 
 export default function DescargasPage() {
   const [year, setYear] = useState<number | undefined>(undefined);
-  const { data, isLoading } = useDownloadCenter(year);
+  const [companyFilter, setCompanyFilter] = useState<string | null>(null);
+  const { data, isLoading } = useDownloadCenter(year, companyFilter);
 
   // Group documents by month
   const grouped = data?.documents.reduce<
@@ -188,6 +191,9 @@ export default function DescargasPage() {
           </select>
         )}
       </PageHeader>
+
+      {/* Company filter row — auto-hidden for single-company users. */}
+      <CompanyFilterChips value={companyFilter} onChange={setCompanyFilter} />
 
       {isLoading ? (
         <ListSkeleton />

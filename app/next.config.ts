@@ -24,11 +24,31 @@ const nextConfig: NextConfig = {
   // all land on the right page.
   async redirects() {
     return [
+      // Legacy product URL patterns that Google Merchant Center /
+      // Meta Catalog feeds may still reference. 301 so the policy
+      // system sees the canonical /catalogo target.
       { source: "/producto/:slug", destination: "/catalogo/:slug", permanent: true },
       { source: "/productos/:slug", destination: "/catalogo/:slug", permanent: true },
       { source: "/productos", destination: "/catalogo", permanent: true },
       { source: "/regalos-corporativos", destination: "/catalogo", permanent: true },
       { source: "/regalos-corporativos/:path*", destination: "/catalogo", permanent: true },
+
+      // Google Ads sitelink landing pages that 404 today because the
+      // URLs were invented in the Ads console without matching real
+      // routes. Redirecting unblocks "Destination not working" policy.
+      // If/when these become dedicated landing pages, swap the 301
+      // for a real route.
+      { source: "/sobre-nosotros", destination: "/nosotros", permanent: true },
+      { source: "/solicitar-cotizacion", destination: "/contacto", permanent: true },
+      { source: "/solicitar", destination: "/contacto", permanent: true },
+      { source: "/cotizacion", destination: "/contacto", permanent: true },
+      { source: "/termos-personalizados", destination: "/catalogo?categoria=termos", permanent: true },
+      { source: "/termos", destination: "/catalogo?categoria=termos", permanent: true },
+      { source: "/tazas-de-ceramica", destination: "/catalogo?categoria=tazas", permanent: true },
+      { source: "/tazas", destination: "/catalogo?categoria=tazas", permanent: true },
+      { source: "/vasos-termicos", destination: "/catalogo?categoria=vasos", permanent: true },
+      { source: "/vasos", destination: "/catalogo?categoria=vasos", permanent: true },
+      { source: "/categoria/:slug", destination: "/catalogo?categoria=:slug", permanent: true },
     ];
   },
   images: {

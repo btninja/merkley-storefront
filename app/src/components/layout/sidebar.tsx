@@ -16,6 +16,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/context/auth-context";
+import { CompanySwitcher } from "@/components/account/company-switcher";
 
 const SIDEBAR_LINKS = [
   { href: "/cuenta", label: "Panel", icon: LayoutDashboard, exact: true },
@@ -37,7 +38,15 @@ export function Sidebar() {
 
   return (
     <aside className="hidden w-60 shrink-0 lg:block">
-      <nav className="sticky top-20 space-y-1">
+      <div className="sticky top-20 space-y-3">
+        {/* Company switcher — shows the current active company with a
+            dropdown of all companies the user has access to, plus a
+            "Solicitar otra empresa" action. Single-customer users see
+            a flat label + smaller request action. */}
+        <div className="rounded-lg border border-border bg-surface p-2">
+          <CompanySwitcher />
+        </div>
+        <nav className="space-y-1">
         {SIDEBAR_LINKS.filter((link) => !("adminOnly" in link && link.adminOnly) || isAdmin).map((link) => {
           const isActive = link.exact
             ? pathname === link.href
@@ -60,7 +69,8 @@ export function Sidebar() {
             </Link>
           );
         })}
-      </nav>
+        </nav>
+      </div>
     </aside>
   );
 }

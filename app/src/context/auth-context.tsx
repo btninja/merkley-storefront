@@ -1,7 +1,7 @@
 "use client";
 
 import React, { createContext, useContext, useCallback, useEffect, useState } from "react";
-import type { SessionCustomer, SessionResponse, SessionSettings, PriceContext, RegistrationData, RegisterResponse, ApprovalPendingResponse } from "@/lib/types";
+import type { AvailableCustomer, SessionCustomer, SessionResponse, SessionSettings, PriceContext, RegistrationData, RegisterResponse, ApprovalPendingResponse } from "@/lib/types";
 import * as api from "@/lib/api";
 import { trackLogin, trackRegistration } from "@/lib/analytics";
 
@@ -15,6 +15,10 @@ interface AuthState {
   isAuthenticated: boolean;
   email: string | null;
   customer: SessionCustomer | null;
+  /** Every Customer the current user has portal access to. Used to
+   *  render the company switcher. The `customer` field is the
+   *  currently-active one. */
+  availableCustomers: AvailableCustomer[];
   priceContext: PriceContext | null;
   settings: SessionSettings | null;
   /** Per-user Frappe API credentials used by the realtime socket. Fetched
@@ -38,6 +42,10 @@ interface AuthContextValue extends AuthState {
   logout: () => Promise<void>;
   refreshSession: () => Promise<void>;
   applyVerifiedSession: (session: SessionResponse) => void;
+  /** Switch the active Customer for the current session. Persists via
+   *  the mw_active_customer cookie (set server-side) and refreshes the
+   *  session so all scoped data re-resolves under the new customer. */
+  switchCustomer: (customerName: string) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null);
@@ -58,6 +66,7 @@ function applySession(response: SessionResponse, socketAuth: SocketAuth | null =
     isAuthenticated: response.user.is_authenticated,
     email: response.user.email,
     customer: response.customer,
+    availableCustomers: response.available_customers ?? [],
     priceContext: response.price_context,
     settings: response.settings,
     socketAuth,
@@ -82,6 +91,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     isAuthenticated: false,
     email: null,
     customer: null,
+    availableCustomers: [],
     priceContext: null,
     settings: null,
     socketAuth: null,
@@ -177,6 +187,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         isAuthenticated: false,
         email: null,
         customer: null,
+        availableCustomers: [],
         priceContext: null,
         settings: null,
         socketAuth: null,
@@ -188,12 +199,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }, []);
 
+  const switchCustomer = useCallback(async (customerName: string) => {
+    // Set the server-side cookie and then refresh the session so every
+    // scoped piece (price_context, customer meta, etc.) resolves under
+    // the new active customer. Refresh is awaited so callers can rely
+    // on `customer` being the new one by the time this resolves.
+    await api.setActiveCustomer(customerName);
+    await refreshSession();
+  }, [refreshSession]);
+
   useEffect(() => {
     refreshSession();
   }, [refreshSession]);
 
   return (
-    <AuthContext.Provider value={{ ...state, login, register, logout, refreshSession, applyVerifiedSession }}>
+    <AuthContext.Provider value={{ ...state, login, register, logout, refreshSession, applyVerifiedSession, switchCustomer }}>
       {children}
     </AuthContext.Provider>
   );

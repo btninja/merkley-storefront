@@ -292,6 +292,53 @@ export async function ensureSocketToken(): Promise<{ api_key: string; api_secret
   );
 }
 
+// ── Multi-company: customer switcher + access requests ──
+// Scoped under merkley_web.api.storefront_session.* — since these are
+// fully-qualified paths (no auto-prefix rewriting needed), we use the
+// public `api.frappeCall` helper which calls rawFrappeCall without
+// prefixing anything.
+
+export async function listMyCustomers(): Promise<{
+  customers: import("@/lib/types").AvailableCustomer[];
+  active_customer: string | null;
+}> {
+  return api.frappeCall(
+    "merkley_web.api.storefront_session.list_my_customers",
+    undefined,
+    { method: "GET" },
+  );
+}
+
+export async function setActiveCustomer(
+  customer: string,
+): Promise<{ ok: true; active_customer: string }> {
+  return api.frappeCall(
+    "merkley_web.api.storefront_session.set_active_customer",
+    { customer },
+  );
+}
+
+export async function requestCustomerAccess(data: {
+  company_name: string;
+  rnc?: string;
+  message?: string;
+}): Promise<{ ok: true; name: string; duplicate: boolean }> {
+  return api.frappeCall(
+    "merkley_web.api.storefront_session.request_customer_access",
+    data as unknown as Record<string, unknown>,
+  );
+}
+
+export async function listMyAccessRequests(): Promise<{
+  requests: import("@/lib/types").CustomerAccessRequest[];
+}> {
+  return api.frappeCall(
+    "merkley_web.api.storefront_session.list_my_access_requests",
+    undefined,
+    { method: "GET" },
+  );
+}
+
 // ── Catalog ──
 
 export async function getBootstrap(): Promise<BootstrapResponse> {

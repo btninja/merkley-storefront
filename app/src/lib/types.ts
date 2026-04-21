@@ -28,12 +28,37 @@ export interface SessionSettings {
   quote_expiry_days: number;
 }
 
+/** A small Customer summary shown in the company switcher dropdown. */
+export interface AvailableCustomer {
+  name: string;
+  customer_name: string | null;
+  tax_id: string | null;
+}
+
 export interface SessionResponse {
   csrf_token: string;
   user: SessionUser;
   customer: SessionCustomer;
+  /** Every Customer the current user has portal access to.
+   *  `customer` (above) is the currently-ACTIVE one; switching it
+   *  persists via a cookie (see switchCustomer in auth-context). */
+  available_customers: AvailableCustomer[];
   price_context: PriceContext;
   settings: SessionSettings;
+}
+
+// ── Customer Access Requests ──
+
+export interface CustomerAccessRequest {
+  name: string;
+  requested_company_name: string;
+  requested_rnc: string | null;
+  message: string | null;
+  status: "Pending" | "Approved" | "Rejected";
+  decline_reason: string | null;
+  resulting_customer: string | null;
+  creation: string;
+  modified: string;
 }
 
 // ── Catalog ──

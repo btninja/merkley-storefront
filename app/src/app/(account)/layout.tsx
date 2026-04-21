@@ -34,6 +34,7 @@ import {
   SheetDescription,
 } from "@/components/ui/sheet";
 import { Separator } from "@/components/ui/separator";
+import { CompanySwitcher } from "@/components/account/company-switcher";
 import { cn } from "@/lib/utils";
 
 // Bottom nav: 4 most-used direct links + a Menú button that opens a drawer
@@ -164,9 +165,9 @@ function MobileAccountNav() {
           </SheetHeader>
 
           <nav className="flex-1 overflow-y-auto flex flex-col gap-1 px-6 pt-2 pb-[max(env(safe-area-inset-bottom),1.5rem)]">
-            <p className="px-3 py-1 text-xs font-semibold uppercase tracking-wider text-muted">
-              {customer?.company_name || "Mi Cuenta"}
-            </p>
+            <div className="pb-2">
+              <CompanySwitcher onSwitched={() => setMenuOpen(false)} />
+            </div>
             {accountMenuLinks.map((link) => {
               const Icon = link.icon;
               const isActive = pathname.startsWith(link.href);

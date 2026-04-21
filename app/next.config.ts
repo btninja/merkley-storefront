@@ -13,6 +13,24 @@ const nextConfig: NextConfig = {
   // every auto-generated <link> and <script> tag, unlocking stylesheet
   // capture for Clarity (and replay pipelines generally).
   crossOrigin: "anonymous",
+  // Catch-all redirects for legacy / external-system URLs that 404.
+  //
+  // Google Ads crawler was flagging our asset group as "Destination not
+  // working" because Merchant Center URLs (generated from older code)
+  // point at /producto/* and /productos/* while the actual storefront
+  // routes live under /catalogo/*. Meanwhile ad campaigns reference
+  // /regalos-corporativos as a landing page that doesn't exist. 301s
+  // here make every historical URL resolve so Google, Meta, and humans
+  // all land on the right page.
+  async redirects() {
+    return [
+      { source: "/producto/:slug", destination: "/catalogo/:slug", permanent: true },
+      { source: "/productos/:slug", destination: "/catalogo/:slug", permanent: true },
+      { source: "/productos", destination: "/catalogo", permanent: true },
+      { source: "/regalos-corporativos", destination: "/catalogo", permanent: true },
+      { source: "/regalos-corporativos/:path*", destination: "/catalogo", permanent: true },
+    ];
+  },
   images: {
     formats: ["image/avif", "image/webp"],
     deviceSizes: [640, 750, 828, 1080, 1200],

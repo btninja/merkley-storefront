@@ -4,6 +4,7 @@ import React, { createContext, useContext, useCallback, useEffect, useState } fr
 import type { AvailableCustomer, SessionCustomer, SessionResponse, SessionSettings, PriceContext, RegistrationData, RegisterResponse, ApprovalPendingResponse } from "@/lib/types";
 import * as api from "@/lib/api";
 import { trackLogin, trackRegistration } from "@/lib/analytics";
+import { setSentryUser } from "@/lib/sentry-context";
 
 interface SocketAuth {
   api_key: string;
@@ -198,6 +199,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     refreshSession();
   }, [refreshSession]);
+
+  // Keep Sentry's user context in sync with auth state so every
+  // exception carries identifying business context without being called
+  // by hand at each error site.
+  useEffect(() => {
+    setSentryUser({
+      email: state.isAuthenticated ? state.email : null,
+      customerName: state.customer?.company_name || state.customer?.name || null,
+      customerNames: state.availableCustomers.map((c) => c.customer_name || c.name),
+    });
+  }, [state.isAuthenticated, state.email, state.customer, state.availableCustomers]);
 
   return (
     <AuthContext.Provider value={{ ...state, login, register, logout, refreshSession, applyVerifiedSession }}>

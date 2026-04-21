@@ -211,6 +211,7 @@ export interface BootstrapResponse {
 }
 
 export interface AnalyticsConfig {
+  gtm_id: string;
   umami_website_id: string;
   umami_script_url: string;
   meta_pixel_id: string;

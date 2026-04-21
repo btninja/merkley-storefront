@@ -20,6 +20,7 @@ import {
   ArrowLeft,
 } from "lucide-react";
 import { trackBeginRegistration } from "@/lib/analytics";
+import { useFormTracking } from "@/hooks/use-form-tracking";
 import { useAuth } from "@/context/auth-context";
 import { toast } from "@/hooks/use-toast";
 import { INDUSTRIES, REFERRAL_SOURCES } from "@/lib/constants";
@@ -108,6 +109,7 @@ export default function RegistroPage() {
   const [step, setStep] = useState(1);
   const [showPassword, setShowPassword] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const formTracking = useFormTracking("registration");
 
   // DGII validation state
   const [dgiiResult, setDgiiResult] = useState<DgiiValidationResult | null>(
@@ -163,6 +165,7 @@ export default function RegistroPage() {
   }, [form.email]);
 
   function updateField(field: string, value: string) {
+    formTracking.markDirty();
     setForm((prev) => ({ ...prev, [field]: value }));
   }
 
@@ -296,6 +299,7 @@ export default function RegistroPage() {
         ...(form.referral_source && { referral_source: form.referral_source }),
         ...(form.position && { position: form.position }),
       });
+      formTracking.markSubmitted();
 
       if (result.approvalPending) {
         clearStoredForm();

@@ -1,6 +1,7 @@
 "use client";
 
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
+import { setSentryAttribution } from "@/lib/sentry-context";
 
 type UtmSnapshot = {
   utm_source?: string;
@@ -35,11 +36,42 @@ const UtmCtx = createContext<UtmContextValue>(DEFAULT_CTX);
 
 const CURRENT_KEY = "mw_utm_current";
 const HISTORY_KEY = "mw_utm_history";
+const SESSION_KEY = "mw_client_session";
 const TTL_MS = 90 * 24 * 60 * 60 * 1000; // 90 days
 const HISTORY_CAP = 20;
 
 const UTM_KEYS = ["utm_source", "utm_medium", "utm_campaign", "utm_content", "utm_term"] as const;
 const CLICK_ID_KEYS = ["gclid", "fbclid", "msclkid"] as const;
+
+/**
+ * Get-or-create a stable client session ID in localStorage. Lets us
+ * join backend Quotation/Lead records to Umami/Clarity sessions that
+ * use the same ID as session_id/uvid. Scoped to 90-day TTL same as
+ * UTM history.
+ *
+ * The ID is crypto-random (UUID v4-style) so it's infeasible to guess
+ * another user's session.
+ */
+function readOrCreateSessionId(): string {
+  if (typeof window === "undefined") return "";
+  try {
+    const existing = window.localStorage.getItem(SESSION_KEY);
+    if (existing) {
+      const parsed = JSON.parse(existing) as { id: string; ts: number };
+      if (parsed?.id && Date.now() - parsed.ts < TTL_MS) {
+        return parsed.id;
+      }
+    }
+    const fresh =
+      typeof crypto !== "undefined" && "randomUUID" in crypto
+        ? (crypto as Crypto & { randomUUID(): string }).randomUUID()
+        : `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 12)}`;
+    window.localStorage.setItem(SESSION_KEY, JSON.stringify({ id: fresh, ts: Date.now() }));
+    return fresh;
+  } catch {
+    return "";
+  }
+}
 
 function readSnapshot(): UtmSnapshot | null {
   if (typeof window === "undefined") return null;
@@ -118,6 +150,28 @@ export function UtmProvider({ children }: { children: ReactNode }) {
         window.localStorage.setItem(HISTORY_KEY, JSON.stringify(nextHistory));
         setCurrent(fresh);
         setHistory(nextHistory);
+        // Propagate to Sentry tags so exceptions are segmentable by
+        // acquisition channel ("does this error hit Google Ads leads
+        // more than organic?").
+        setSentryAttribution({
+          utm_source: fresh.utm_source,
+          utm_medium: fresh.utm_medium,
+          utm_campaign: fresh.utm_campaign,
+          gclid: fresh.gclid,
+          fbclid: fresh.fbclid,
+        });
+      } else {
+        // Restore tags from existing snapshot on subsequent loads
+        const existing = readSnapshot();
+        if (existing) {
+          setSentryAttribution({
+            utm_source: existing.utm_source,
+            utm_medium: existing.utm_medium,
+            utm_campaign: existing.utm_campaign,
+            gclid: existing.gclid,
+            fbclid: existing.fbclid,
+          });
+        }
       }
     } catch {
       // localStorage may be unavailable (private browsing, etc.) — fail silently
@@ -142,10 +196,12 @@ export function useUtm(): UtmContextValue {
   return useContext(UtmCtx);
 }
 
-/** Convenience: get UTM params + click IDs + referrer as a plain object
- *  ready for API payload. Every conversion endpoint (access request,
- *  quotation create, checkout, registration) should attach this so the
- *  Lead is enriched before it's persisted. */
+/** Convenience: get UTM params + click IDs + referrer + session id as
+ *  a plain object ready for API payload. Every conversion endpoint
+ *  (access request, quotation create, checkout, registration) should
+ *  attach this so the Lead is enriched before it's persisted AND so
+ *  server-side records can be joined back to client-side session
+ *  tools (Umami, Clarity) via session_id. */
 export function useUtmParams(): {
   utm_source?: string;
   utm_medium?: string;
@@ -158,10 +214,18 @@ export function useUtmParams(): {
   referrer?: string;
   landing_page?: string;
   utm_history_json?: string;
+  session_id?: string;
 } {
   const { current, history } = useUtm();
-  if (!current) return {};
   const out: Record<string, string> = {};
+  // Session id is independent of UTMs — a user may have none of the
+  // UTM params set (direct traffic) but we still want the session id
+  // on every conversion submit.
+  if (typeof window !== "undefined") {
+    const sid = readOrCreateSessionId();
+    if (sid) out.session_id = sid;
+  }
+  if (!current) return out;
   for (const k of [...UTM_KEYS, ...CLICK_ID_KEYS] as const) {
     const v = (current as unknown as Record<string, string | undefined>)[k];
     if (v) out[k] = v;

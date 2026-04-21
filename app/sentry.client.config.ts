@@ -10,8 +10,10 @@ Sentry.init({
   // Profiling
   profilesSampleRate: 0.1,
 
-  // Session Replay
-  replaysSessionSampleRate: 0,
+  // Session Replay — sample 5% of sessions proactively so we can
+  // diagnose UX friction (rage clicks, silent dead ends) even when
+  // no exception fires. 100% of error-adjacent sessions still captured.
+  replaysSessionSampleRate: 0.05,
   replaysOnErrorSampleRate: 1.0,
 
   integrations: [

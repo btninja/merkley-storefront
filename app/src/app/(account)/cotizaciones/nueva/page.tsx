@@ -55,6 +55,7 @@ import { formatCurrency } from "@/lib/format";
 import { calculateDeliveryTier, SMALL_ORDER_QTY_THRESHOLD, SMALL_ORDER_SURCHARGE_PERCENT } from "@/lib/constants";
 import { trackBeginCheckout, trackQuoteSubmitted } from "@/lib/analytics";
 import { useUtmParams } from "@/context/utm-context";
+import { useFormTracking } from "@/hooks/use-form-tracking";
 import type { QuotationLineInput, Product, ShippingZone, ShippingCalculation, CategoryTreeNode } from "@/lib/types";
 import { useAuth } from "@/context/auth-context";
 import { cn } from "@/lib/utils";
@@ -110,6 +111,7 @@ export default function NewQuotationPage() {
   const { toast } = useToast();
   const { items: cartItems, clearCart, replaceItems } = useCart();
   const utmParams = useUtmParams();
+  const formTracking = useFormTracking("quote_builder");
 
   // Product search + filters
   const [searchQuery, setSearchQuery] = useState("");
@@ -302,6 +304,7 @@ export default function NewQuotationPage() {
 
   // Add item to cart
   const addItem = useCallback((product: Product) => {
+    formTracking.markDirty();
     setItems((prev) => {
       const existing = prev.find((item) => item.item_code === product.sku);
       if (existing) {
@@ -479,6 +482,7 @@ export default function NewQuotationPage() {
           // all quotations so the conversion event reflects total value.
           const totalValue = created.reduce((s, q) => s + (q.grand_total || 0), 0);
           trackQuoteSubmitted(created[0].name, totalValue, items.length);
+          formTracking.markSubmitted();
         }
 
         clearCart();

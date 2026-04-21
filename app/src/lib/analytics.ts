@@ -13,6 +13,7 @@
 // ── Types ──
 
 interface AnalyticsConfig {
+  gtm_id: string;
   umami_website_id: string;
   umami_script_url: string;
   meta_pixel_id: string;
@@ -57,7 +58,17 @@ declare global {
 
 function trackUmami(event: string, data?: EventData) {
   if (typeof window !== "undefined" && window.umami) {
-    window.umami.track(event, data);
+    // Auto-attach mw_session_id to every event so Umami sessions can be
+    // joined to backend records (Leads, Quotations) that carry the same
+    // identifier. Reading from localStorage is safe at track-time since
+    // the session is minted on first UtmProvider load.
+    let sid: string | undefined;
+    try {
+      const raw = window.localStorage.getItem("mw_client_session");
+      if (raw) sid = (JSON.parse(raw) as { id?: string }).id;
+    } catch { /* ignore */ }
+    const payload = sid ? { ...(data || {}), mw_session_id: sid } : data;
+    window.umami.track(event, payload);
   }
 }
 
@@ -472,5 +483,22 @@ export function trackPaymentProofUploaded(invoiceName: string, amount: number) {
   trackUmami("payment_proof_uploaded", {
     invoice: invoiceName,
     value: amount,
+  });
+}
+
+/** User started filling a multi-step form (first field focused/changed).
+ *  Pair with trackFormAbandon to measure dropout rate — Umami's
+ *  built-in funnels can then show "where does the B2B access-request
+ *  form lose people?" */
+export function trackFormStart(formName: string) {
+  trackUmami("form_start", { form: formName });
+}
+
+/** User left a form without submitting (beforeunload or route change
+ *  with unsaved dirty state). Dropout rate = form_abandon / form_start. */
+export function trackFormAbandon(formName: string, fieldsFilled?: number) {
+  trackUmami("form_abandon", {
+    form: formName,
+    fields_filled: fieldsFilled ?? 0,
   });
 }

@@ -13,8 +13,8 @@
  * data is unified across companies via filter chips on the list pages.
  */
 
-import { useEffect, useState } from "react";
-import { Building2, Plus, Loader2, Clock, CheckCircle2, XCircle } from "lucide-react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { Building2, Plus, Loader2, Clock, CheckCircle2, XCircle, ShieldCheck, AlertTriangle } from "lucide-react";
 import { useAuth } from "@/context/auth-context";
 import { useToast } from "@/hooks/use-toast";
 import { PageHeader } from "@/components/layout/page-header";
@@ -35,7 +35,7 @@ import {
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 import * as api from "@/lib/api";
-import type { CustomerAccessRequest } from "@/lib/types";
+import type { CustomerAccessRequest, DgiiValidationResult } from "@/lib/types";
 
 const STATUS_META: Record<CustomerAccessRequest["status"], { label: string; icon: React.ComponentType<{ className?: string }>; className: string }> = {
   Pending: { label: "Pendiente", icon: Clock, className: "bg-warning-soft text-warning" },
@@ -219,21 +219,110 @@ function RequestAccessDialog({
   const [message, setMessage] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
-  const resetAndClose = () => {
+  // DGII validation state — mirrors the registration flow.
+  // When the RNC is a valid 9 or 11 digit input and the user tabs
+  // out, we auto-fire validate_rnc against the DGII registry. The
+  // dialog won't let them submit a clearly-invalid RNC (but we still
+  // allow submitting without an RNC at all, in case the user only
+  // knows the company name).
+  const [dgiiLoading, setDgiiLoading] = useState(false);
+  const [dgiiResult, setDgiiResult] = useState<DgiiValidationResult | null>(null);
+  const [dgiiChecked, setDgiiChecked] = useState(false);
+  // Prevent racing requests if the user re-blurs the same value.
+  const lastValidatedRnc = useRef<string | null>(null);
+
+  const cleanedRnc = rnc.replace(/\D/g, "");
+  const rncLongEnough = cleanedRnc.length >= 9;
+  const rncInvalid = dgiiChecked && dgiiResult !== null && !dgiiResult.valid;
+  const rncValid = dgiiChecked && dgiiResult?.valid === true;
+
+  const resetAndClose = useCallback(() => {
     setCompanyName("");
     setRnc("");
     setMessage("");
+    setDgiiResult(null);
+    setDgiiChecked(false);
+    setDgiiLoading(false);
+    lastValidatedRnc.current = null;
     onOpenChange(false);
-  };
+  }, [onOpenChange]);
+
+  // Reset DGII state whenever the user changes the RNC digits.
+  useEffect(() => {
+    if (cleanedRnc !== lastValidatedRnc.current) {
+      setDgiiChecked(false);
+      setDgiiResult(null);
+    }
+  }, [cleanedRnc]);
+
+  const runDgiiValidation = useCallback(async () => {
+    if (!rncLongEnough || dgiiLoading) return;
+    if (cleanedRnc === lastValidatedRnc.current && dgiiChecked) return;
+    setDgiiLoading(true);
+    try {
+      const result = await api.validateRnc(cleanedRnc);
+      setDgiiResult(result);
+      setDgiiChecked(true);
+      lastValidatedRnc.current = cleanedRnc;
+      if (result.valid) {
+        // Only auto-fill the company name if the user hasn't typed
+        // their own — respect their input otherwise.
+        const resolvedName =
+          result.existing_company_name || result.trade_name || result.full_name;
+        if (resolvedName && !companyName.trim()) {
+          setCompanyName(resolvedName);
+        }
+      } else {
+        toast({
+          title: "RNC no encontrado",
+          description: result.message || "No se pudo validar el RNC contra la DGII.",
+          variant: "destructive",
+        });
+      }
+    } catch {
+      // Network / CORS failure — let user retry via the "Verificar"
+      // button. No toast on silent blur failures to avoid spam.
+      setDgiiChecked(false);
+      setDgiiResult(null);
+    } finally {
+      setDgiiLoading(false);
+    }
+  }, [cleanedRnc, rncLongEnough, dgiiLoading, dgiiChecked, companyName, toast]);
+
+  const handleRncBlur = useCallback(() => {
+    if (rncLongEnough && !dgiiChecked && !dgiiLoading) {
+      runDgiiValidation();
+    }
+  }, [rncLongEnough, dgiiChecked, dgiiLoading, runDgiiValidation]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!companyName.trim()) return;
+    // If they entered an RNC, it must be DGII-valid. A user who just
+    // doesn't know the RNC can leave it blank.
+    if (cleanedRnc) {
+      if (!dgiiChecked) {
+        toast({
+          title: "Verifica el RNC",
+          description: "Haz clic en Verificar para validar el RNC contra la DGII.",
+          variant: "destructive",
+        });
+        return;
+      }
+      if (dgiiResult && !dgiiResult.valid) {
+        toast({
+          title: "RNC inválido",
+          description: "No podemos enviar la solicitud con un RNC que no existe en la DGII.",
+          variant: "destructive",
+        });
+        return;
+      }
+    }
     setSubmitting(true);
     try {
       const res = await api.requestCustomerAccess({
         company_name: companyName.trim(),
-        rnc: rnc.trim() || undefined,
+        rnc: cleanedRnc || undefined,
         message: message.trim() || undefined,
       });
       if (res.duplicate) {
@@ -250,7 +339,7 @@ function RequestAccessDialog({
       onSubmitted({
         name: res.name,
         requested_company_name: companyName.trim(),
-        requested_rnc: rnc.trim() || null,
+        requested_rnc: cleanedRnc || null,
         message: message.trim() || null,
         status: "Pending",
         decline_reason: null,
@@ -270,6 +359,12 @@ function RequestAccessDialog({
     }
   };
 
+  const canSubmit =
+    !!companyName.trim() &&
+    !submitting &&
+    !dgiiLoading &&
+    (!cleanedRnc || rncValid);
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md">
@@ -280,6 +375,72 @@ function RequestAccessDialog({
           </DialogDescription>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
+          {/* RNC goes first so the DGII auto-fill populates the
+              company name below, matching the registration flow. */}
+          <div className="space-y-1.5">
+            <Label htmlFor="ca-rnc">RNC o Cédula</Label>
+            <div className="flex items-stretch gap-2">
+              <Input
+                id="ca-rnc"
+                value={rnc}
+                onChange={(e) => setRnc(e.target.value.replace(/\D/g, ""))}
+                onBlur={handleRncBlur}
+                placeholder="000000000"
+                inputMode="numeric"
+                maxLength={11}
+                autoFocus
+                className={cn(
+                  rncInvalid && "border-destructive focus-visible:ring-destructive",
+                  rncValid && "border-success",
+                )}
+              />
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="shrink-0"
+                disabled={!rncLongEnough || dgiiLoading}
+                onClick={runDgiiValidation}
+              >
+                {dgiiLoading ? (
+                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                ) : rncValid ? (
+                  <ShieldCheck className="h-3.5 w-3.5 text-success" />
+                ) : (
+                  "Verificar"
+                )}
+              </Button>
+            </div>
+            {rncValid && dgiiResult && (
+              <div className="flex items-start gap-1.5 rounded-md bg-success-soft px-2.5 py-1.5 text-xs text-success">
+                <ShieldCheck className="h-3.5 w-3.5 mt-0.5 shrink-0" />
+                <div className="min-w-0">
+                  <p className="font-medium truncate">
+                    {dgiiResult.trade_name || dgiiResult.full_name}
+                  </p>
+                  {dgiiResult.status && (
+                    <p className="opacity-80">Estado DGII: {dgiiResult.status}</p>
+                  )}
+                  {dgiiResult.company_exists && (
+                    <p className="opacity-80">
+                      Esta empresa ya está registrada en nuestro sistema — la vincularemos automáticamente al aprobar.
+                    </p>
+                  )}
+                </div>
+              </div>
+            )}
+            {rncInvalid && (
+              <div className="flex items-start gap-1.5 rounded-md bg-destructive-soft px-2.5 py-1.5 text-xs text-destructive">
+                <AlertTriangle className="h-3.5 w-3.5 mt-0.5 shrink-0" />
+                <span>
+                  {dgiiResult?.message || "Este RNC/Cédula no se encontró en la DGII."}
+                </span>
+              </div>
+            )}
+            <p className="text-[11px] text-muted">
+              Valida contra el registro de la DGII. Déjalo vacío si no conoces el RNC.
+            </p>
+          </div>
           <div className="space-y-1.5">
             <Label htmlFor="ca-company">Nombre de la empresa *</Label>
             <Input
@@ -287,19 +448,13 @@ function RequestAccessDialog({
               value={companyName}
               onChange={(e) => setCompanyName(e.target.value)}
               placeholder="Ej: Distribuidora XYZ, SRL"
-              autoFocus
               required
             />
-          </div>
-          <div className="space-y-1.5">
-            <Label htmlFor="ca-rnc">RNC (opcional)</Label>
-            <Input
-              id="ca-rnc"
-              value={rnc}
-              onChange={(e) => setRnc(e.target.value.replace(/\D/g, ""))}
-              placeholder="000000000"
-              inputMode="numeric"
-            />
+            {rncValid && dgiiResult?.full_name && companyName.trim() !== (dgiiResult.trade_name || dgiiResult.full_name) && (
+              <p className="text-[11px] text-muted">
+                Según la DGII: {dgiiResult.trade_name || dgiiResult.full_name}
+              </p>
+            )}
           </div>
           <div className="space-y-1.5">
             <Label htmlFor="ca-message">Mensaje (opcional)</Label>
@@ -315,7 +470,7 @@ function RequestAccessDialog({
             <Button type="button" variant="outline" onClick={resetAndClose} disabled={submitting}>
               Cancelar
             </Button>
-            <Button type="submit" disabled={submitting || !companyName.trim()}>
+            <Button type="submit" disabled={!canSubmit}>
               {submitting && <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" />}
               Enviar solicitud
             </Button>

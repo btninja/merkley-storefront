@@ -26,6 +26,7 @@ import { useToast } from "@/hooks/use-toast";
 import * as api from "@/lib/api";
 import { formatCurrency, formatDate } from "@/lib/format";
 import type { InvoiceStage } from "@/lib/types";
+import { CompanyFilterChips, CompanyBadge } from "@/components/account/company-filter";
 
 const STATUS_FILTERS = [
   { value: "", label: "Todas" },
@@ -70,9 +71,10 @@ function ListSkeleton() {
 
 export default function FacturasPage() {
   const [statusFilter, setStatusFilter] = useState("");
+  const [companyFilter, setCompanyFilter] = useState<string | null>(null);
   const [limit, setLimit] = useState(20);
   const { data, isLoading, error } = useMyInvoices(
-    { status: statusFilter || undefined, page_length: limit }
+    { status: statusFilter || undefined, customer: companyFilter, page_length: limit }
   );
   const { toast } = useToast();
   const [downloadingId, setDownloadingId] = useState<string | null>(null);
@@ -103,7 +105,10 @@ export default function FacturasPage() {
         description="Historial de facturación"
       />
 
-      {/* Filters */}
+      {/* Company filter (multi-company users only) */}
+      <CompanyFilterChips value={companyFilter} onChange={setCompanyFilter} />
+
+      {/* Status filters */}
       <div className="flex flex-wrap items-center gap-2">
         <Filter className="h-4 w-4 text-muted" />
         {STATUS_FILTERS.map((filter) => (
@@ -171,6 +176,7 @@ export default function FacturasPage() {
                       <div className="flex-1 min-w-0 space-y-1">
                         <div className="flex items-center gap-2 flex-wrap">
                           <p className="text-sm font-semibold">{invoice.name}</p>
+                          <CompanyBadge customer={invoice.customer} customerName={invoice.customer_name} />
                           {stageInfo ? (
                             <Badge variant={stageInfo.variant} className="text-[10px] px-2 py-0.5">
                               {stageInfo.label}

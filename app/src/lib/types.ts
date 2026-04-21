@@ -39,9 +39,11 @@ export interface SessionResponse {
   csrf_token: string;
   user: SessionUser;
   customer: SessionCustomer;
-  /** Every Customer the current user has portal access to.
-   *  `customer` (above) is the currently-ACTIVE one; switching it
-   *  persists via a cookie (see switchCustomer in auth-context). */
+  /** Every Customer the current user has portal access to. The
+   *  storefront runs in unified mode — all listings span these
+   *  customers, with an optional filter. `customer` (above) stays
+   *  populated with the alphabetically-first customer as a
+   *  back-compat default for legacy endpoints. */
   available_customers: AvailableCustomer[];
   price_context: PriceContext;
   settings: SessionSettings;
@@ -284,8 +286,19 @@ export interface QuotationShipping {
   may_vary: boolean;
 }
 
+export interface QuotationSibling {
+  name: string;
+  customer: string | null;
+  customer_name: string | null;
+  grand_total: number;
+  currency: string;
+}
+
 export interface Quotation {
   name: string;
+  /** Customer this quotation was filed against (unified multi-company). */
+  customer: string | null;
+  customer_name: string | null;
   status: string;
   stage: QuoteStage;
   currency: string;
@@ -297,6 +310,11 @@ export interface Quotation {
   tax_total: number;
   grand_total: number;
   pdf_download_url: string;
+  /** Shared ID across Quotations created in one multi-company submit.
+   *  Null for single-company quotations. */
+  group_id: string | null;
+  /** Other Quotations in the same multi-company group (excluding this one). */
+  group_siblings: QuotationSibling[];
   items: QuotationItem[];
   taxes: QuotationTax[];
   documents: QuotationDocuments | null;
@@ -309,6 +327,9 @@ export interface Quotation {
 
 export interface QuotationSummary {
   name: string;
+  /** Customer this quote was filed against (unified multi-company). */
+  customer: string | null;
+  customer_name: string | null;
   transaction_date: string;
   valid_till: string;
   currency: string;
@@ -475,6 +496,9 @@ export type InvoiceStage =
 
 export interface InvoiceSummary {
   name: string;
+  /** Customer this invoice was billed to (unified multi-company). */
+  customer: string | null;
+  customer_name: string | null;
   posting_date: string;
   due_date: string | null;
   currency: string;

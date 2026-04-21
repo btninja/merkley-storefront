@@ -19,6 +19,7 @@ import {
   LogOut,
   Home,
   ShoppingBag,
+  Building2,
 } from "lucide-react";
 import { useAuth } from "@/context/auth-context";
 import { Header } from "@/components/layout/header";
@@ -34,7 +35,6 @@ import {
   SheetDescription,
 } from "@/components/ui/sheet";
 import { Separator } from "@/components/ui/separator";
-import { CompanySwitcher } from "@/components/account/company-switcher";
 import { cn } from "@/lib/utils";
 
 // Bottom nav: 4 most-used direct links + a Menú button that opens a drawer
@@ -49,12 +49,13 @@ const MOBILE_NAV_LINKS = [
 ];
 
 // Items shown inside the bottom-nav Menú drawer, in display order.
-const MENU_ACCOUNT_LINKS: Array<{ href: string; label: string; icon: React.ComponentType<{ className?: string }>; adminOnly?: boolean }> = [
+const MENU_ACCOUNT_LINKS: Array<{ href: string; label: string; icon: React.ComponentType<{ className?: string }>; adminOnly?: boolean; multiCompanyOnly?: boolean }> = [
   { href: "/catalogo-pdf", label: "Catálogo PDF", icon: BookOpen },
   { href: "/historial", label: "Historial", icon: History },
   { href: "/descargas", label: "Descargas", icon: Download },
   { href: "/soporte", label: "Soporte", icon: MessageCircle },
   { href: "/cuenta/equipo", label: "Equipo", icon: Users, adminOnly: true },
+  { href: "/cuenta/empresas", label: "Mis empresas", icon: Building2, multiCompanyOnly: true },
   { href: "/cuenta/perfil", label: "Perfil", icon: User },
 ];
 
@@ -94,13 +95,16 @@ function AccountLoadingSkeleton() {
 
 function MobileAccountNav() {
   const pathname = usePathname();
-  const { customer, logout } = useAuth();
+  const { customer, availableCustomers, logout } = useAuth();
   const isAdmin = customer?.is_company_admin === true;
+  const hasMultipleCustomers = (availableCustomers?.length ?? 0) > 1;
   const [menuOpen, setMenuOpen] = useState(false);
 
-  const accountMenuLinks = MENU_ACCOUNT_LINKS.filter(
-    (link) => !link.adminOnly || isAdmin
-  );
+  const accountMenuLinks = MENU_ACCOUNT_LINKS.filter((link) => {
+    if (link.adminOnly && !isAdmin) return false;
+    if (link.multiCompanyOnly && !hasMultipleCustomers) return false;
+    return true;
+  });
 
   const isMenuPathActive = accountMenuLinks.some((link) =>
     pathname.startsWith(link.href)
@@ -165,9 +169,9 @@ function MobileAccountNav() {
           </SheetHeader>
 
           <nav className="flex-1 overflow-y-auto flex flex-col gap-1 px-6 pt-2 pb-[max(env(safe-area-inset-bottom),1.5rem)]">
-            <div className="pb-2">
-              <CompanySwitcher onSwitched={() => setMenuOpen(false)} />
-            </div>
+            <p className="px-3 py-1 text-xs font-semibold uppercase tracking-wider text-muted">
+              Mi cuenta
+            </p>
             {accountMenuLinks.map((link) => {
               const Icon = link.icon;
               const isActive = pathname.startsWith(link.href);

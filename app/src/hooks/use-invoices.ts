@@ -1,12 +1,19 @@
 import useSWR from "swr";
 import * as api from "@/lib/api";
 
-export function useMyInvoices(params?: { status?: string; page?: number; page_length?: number }) {
+export function useMyInvoices(params?: { status?: string; customer?: string | null; page?: number; page_length?: number }) {
   const key = params
-    ? `invoices:${params.status || "all"}:${params.page || 1}:${params.page_length || 20}`
-    : "invoices:all:1:20";
+    ? `invoices:${params.status || "all"}:${params.customer || "all"}:${params.page || 1}:${params.page_length || 20}`
+    : "invoices:all:all:1:20";
 
-  return useSWR(key, () => api.getMyInvoices(params));
+  return useSWR(key, () =>
+    api.getMyInvoices({
+      status: params?.status,
+      customer: params?.customer || undefined,
+      page: params?.page,
+      page_length: params?.page_length,
+    }),
+  );
 }
 
 // Stages that never change once reached — no point polling them.

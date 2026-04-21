@@ -3,9 +3,13 @@
 import useSWR from "swr";
 import * as api from "@/lib/api";
 
-export function useMyQuotations(stage?: string) {
-  const key = stage ? `quotations:${stage}` : "quotations";
-  return useSWR(key, () => api.getMyQuotations(stage));
+export function useMyQuotations(stage?: string, customer?: string | null) {
+  // Cache key encodes both filters so switching them refetches cleanly.
+  const parts = ["quotations"];
+  if (stage) parts.push(`s:${stage}`);
+  if (customer) parts.push(`c:${customer}`);
+  const key = parts.join("|");
+  return useSWR(key, () => api.getMyQuotations(stage, customer || undefined));
 }
 
 // Stages that never change once reached — no point polling them.

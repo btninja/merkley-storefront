@@ -42,10 +42,6 @@ interface AuthContextValue extends AuthState {
   logout: () => Promise<void>;
   refreshSession: () => Promise<void>;
   applyVerifiedSession: (session: SessionResponse) => void;
-  /** Switch the active Customer for the current session. Persists via
-   *  the mw_active_customer cookie (set server-side) and refreshes the
-   *  session so all scoped data re-resolves under the new customer. */
-  switchCustomer: (customerName: string) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null);
@@ -199,21 +195,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }, []);
 
-  const switchCustomer = useCallback(async (customerName: string) => {
-    // Set the server-side cookie and then refresh the session so every
-    // scoped piece (price_context, customer meta, etc.) resolves under
-    // the new active customer. Refresh is awaited so callers can rely
-    // on `customer` being the new one by the time this resolves.
-    await api.setActiveCustomer(customerName);
-    await refreshSession();
-  }, [refreshSession]);
-
   useEffect(() => {
     refreshSession();
   }, [refreshSession]);
 
   return (
-    <AuthContext.Provider value={{ ...state, login, register, logout, refreshSession, applyVerifiedSession, switchCustomer }}>
+    <AuthContext.Provider value={{ ...state, login, register, logout, refreshSession, applyVerifiedSession }}>
       {children}
     </AuthContext.Provider>
   );

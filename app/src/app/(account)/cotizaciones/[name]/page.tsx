@@ -5,6 +5,7 @@ import { useParams } from "next/navigation";
 import useSWR from "swr";
 import Link from "next/link";
 import {
+  Building2,
   Calendar,
   CalendarCheck,
   Download,
@@ -453,10 +454,44 @@ export default function QuotationDetailPage() {
     ? calculateDeliveryTier(quote.desired_delivery_date)
     : null;
 
-  const customerName = customer?.company_name ?? "";
+  // Display the CURRENT quotation's customer if present (multi-company
+  // portal: each quotation belongs to one of the user's companies),
+  // falling back to the session's primary customer for legacy quotations
+  // that predate the customer field on the serializer.
+  const customerName = quote.customer_name || customer?.company_name || "";
 
   const detailsContent = (
     <div className="space-y-6">
+      {/* Multi-company sibling link — shown when this quotation was
+          created together with others ("same cart, different companies").
+          The backend stamps mw_quotation_group on every sibling so we
+          can cross-link them here for quick navigation. */}
+      {quote.group_siblings && quote.group_siblings.length > 0 && (
+        <Card className="border-primary/30 bg-primary-soft/40">
+          <CardContent className="p-3 sm:p-4">
+            <p className="text-xs font-semibold text-primary">
+              Parte de un grupo multi-empresa
+            </p>
+            <p className="mt-1 text-xs text-muted">
+              Esta cotización se creó junto con {quote.group_siblings.length} otra{quote.group_siblings.length === 1 ? "" : "s"} para distintas empresas desde el mismo carrito.
+            </p>
+            <div className="mt-2 flex flex-wrap gap-2">
+              {quote.group_siblings.map((sib) => (
+                <Link
+                  key={sib.name}
+                  href={`/cotizaciones/${sib.name}`}
+                  className="inline-flex items-center gap-1.5 rounded-md border border-primary/30 bg-surface px-2 py-1 text-xs hover:bg-surface-muted transition-colors"
+                >
+                  <span className="font-medium">{sib.customer_name || sib.customer}</span>
+                  <span className="text-muted">·</span>
+                  <span className="tabular-nums">{sib.name}</span>
+                </Link>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       {/* Quote info */}
       <div className="grid gap-4 sm:grid-cols-2">
         <Card>
@@ -464,6 +499,17 @@ export default function QuotationDetailPage() {
             <CardTitle className="text-base">Información General</CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
+            {quote.customer_name && (
+              <div className="flex items-center gap-3">
+                <Building2 className="h-4 w-4 text-muted" />
+                <div className="min-w-0">
+                  <p className="text-xs text-muted">Empresa</p>
+                  <p className="text-sm font-medium truncate">
+                    {quote.customer_name}
+                  </p>
+                </div>
+              </div>
+            )}
             <div className="flex items-center gap-3">
               <Calendar className="h-4 w-4 text-muted" />
               <div>

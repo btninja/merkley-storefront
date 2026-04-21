@@ -292,29 +292,18 @@ export async function ensureSocketToken(): Promise<{ api_key: string; api_secret
   );
 }
 
-// ── Multi-company: customer switcher + access requests ──
-// Scoped under merkley_web.api.storefront_session.* — since these are
-// fully-qualified paths (no auto-prefix rewriting needed), we use the
-// public `api.frappeCall` helper which calls rawFrappeCall without
-// prefixing anything.
+// ── Multi-company unified portal: list companies, request access,
+// multi-create quotations. The portal runs in unified mode (no
+// "active" customer) — every listing endpoint spans all customers by
+// default and accepts an optional ?customer=NAME filter.
 
 export async function listMyCustomers(): Promise<{
   customers: import("@/lib/types").AvailableCustomer[];
-  active_customer: string | null;
 }> {
   return api.frappeCall(
     "merkley_web.api.storefront_session.list_my_customers",
     undefined,
     { method: "GET" },
-  );
-}
-
-export async function setActiveCustomer(
-  customer: string,
-): Promise<{ ok: true; active_customer: string }> {
-  return api.frappeCall(
-    "merkley_web.api.storefront_session.set_active_customer",
-    { customer },
   );
 }
 
@@ -337,6 +326,49 @@ export async function listMyAccessRequests(): Promise<{
     undefined,
     { method: "GET" },
   );
+}
+
+/** Preview per-customer totals for a multi-company quotation before
+ *  actually creating the documents. Lets the UI show "Empresa A:
+ *  $1,500 · Empresa B: $1,820" if prices differ between companies. */
+export async function quotePreviewMulti(payload: {
+  customers: string[];
+  items: unknown[];
+  [key: string]: unknown;
+}): Promise<{
+  previews: Array<{
+    customer: string;
+    customer_name?: string | null;
+    price_list?: string;
+    grand_total?: number;
+    tax_total?: number;
+    currency?: string;
+    error?: string;
+  }>;
+}> {
+  return frappeCall("quotations.quote_preview_multi", payload as unknown as Record<string, unknown>);
+}
+
+/** Atomic multi-company quotation create — produces N Quotations in a
+ *  single transaction, each scoped to one of the selected Customers.
+ *  A shared `group_id` is stamped on each quotation so sibling links
+ *  work on the detail page. */
+export async function createQuotationsForCustomers(payload: {
+  customers: string[];
+  items: unknown[];
+  [key: string]: unknown;
+}): Promise<{
+  group_id: string | null;
+  quotations: Array<{
+    name: string;
+    customer: string;
+    customer_name: string | null;
+    grand_total: number;
+    currency: string;
+    stage: string;
+  }>;
+}> {
+  return frappeCall("quotations.create_quotations_for_customers", payload as unknown as Record<string, unknown>);
 }
 
 // ── Catalog ──
@@ -395,8 +427,14 @@ export async function generateCustomerCatalogPdf(params: {
 
 // ── Quotations ──
 
-export async function getMyQuotations(stage?: string): Promise<QuotationListResponse> {
-  return frappeCall<QuotationListResponse>("quotations.get_my_quotations", stage ? { stage } : undefined);
+export async function getMyQuotations(stage?: string, customer?: string): Promise<QuotationListResponse> {
+  const params: Record<string, unknown> = {};
+  if (stage) params.stage = stage;
+  if (customer) params.customer = customer;
+  return frappeCall<QuotationListResponse>(
+    "quotations.get_my_quotations",
+    Object.keys(params).length > 0 ? params : undefined,
+  );
 }
 
 export async function getQuotationDetail(name: string): Promise<QuotationDetailResponse> {
@@ -460,6 +498,7 @@ export async function downloadQuotationPdf(name: string): Promise<void> {
 
 export async function getMyInvoices(params?: {
   status?: string;
+  customer?: string;
   page?: number;
   page_length?: number;
 }): Promise<InvoiceListResponse> {
@@ -818,6 +857,8 @@ export interface OrderPipelineStep {
 export interface OrderPipelineOrder {
   name: string;
   doctype: string;
+  customer?: string | null;
+  customer_name?: string | null;
   date: string;
   status: string;
   current_step: string;
@@ -833,20 +874,28 @@ export interface OrderPipelineResponse {
   orders: OrderPipelineOrder[];
 }
 
-export async function getOrderPipeline(): Promise<OrderPipelineResponse> {
-  return frappeCall<OrderPipelineResponse>("portal.get_order_pipeline", undefined, {
-    method: "GET",
-  });
+export async function getOrderPipeline(customer?: string): Promise<OrderPipelineResponse> {
+  return frappeCall<OrderPipelineResponse>(
+    "portal.get_order_pipeline",
+    customer ? { customer } : undefined,
+    { method: "GET" },
+  );
 }
 
 export interface PurchaseHistoryItem {
   name: string;
   doctype: string;
+  doc_type?: string;
+  customer?: string | null;
+  customer_name?: string | null;
   date: string;
   grand_total: number;
   currency: string;
   status: string;
-  item_count: number;
+  item_count?: number;
+  outstanding_amount?: number;
+  ncf?: string | null;
+  stage?: string | null;
 }
 
 export interface MonthlySpending {
@@ -873,6 +922,7 @@ export interface PurchaseHistoryResponse {
 export async function getPurchaseHistory(params?: {
   year?: number;
   page?: number;
+  customer?: string;
 }): Promise<PurchaseHistoryResponse> {
   return frappeCall<PurchaseHistoryResponse>(
     "portal.get_purchase_history",
@@ -891,6 +941,9 @@ export async function reorderFromDocument(
 export interface DownloadDocument {
   name: string;
   doctype: string;
+  doc_type?: string;
+  customer?: string | null;
+  customer_name?: string | null;
   date: string;
   grand_total: number;
   currency: string;
@@ -906,10 +959,13 @@ export interface DownloadCenterResponse {
   available_years: number[];
 }
 
-export async function getDownloadCenter(year?: number): Promise<DownloadCenterResponse> {
+export async function getDownloadCenter(year?: number, customer?: string): Promise<DownloadCenterResponse> {
+  const params: Record<string, unknown> = {};
+  if (year) params.year = year;
+  if (customer) params.customer = customer;
   return frappeCall<DownloadCenterResponse>(
     "portal.get_download_center",
-    year ? { year } : undefined,
+    Object.keys(params).length > 0 ? params : undefined,
     { method: "GET" }
   );
 }

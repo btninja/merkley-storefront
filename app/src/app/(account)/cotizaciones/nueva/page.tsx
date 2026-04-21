@@ -21,6 +21,8 @@ import {
   Filter,
   ChevronDown,
   X,
+  Building2,
+  Check,
 } from "lucide-react";
 import Image from "next/image";
 import { useProducts, useBootstrap } from "@/hooks/use-catalog";
@@ -53,6 +55,8 @@ import { formatCurrency } from "@/lib/format";
 import { calculateDeliveryTier, SMALL_ORDER_QTY_THRESHOLD, SMALL_ORDER_SURCHARGE_PERCENT } from "@/lib/constants";
 import { trackBeginCheckout, trackQuoteSubmitted } from "@/lib/analytics";
 import type { QuotationLineInput, Product, ShippingZone, ShippingCalculation, CategoryTreeNode } from "@/lib/types";
+import { useAuth } from "@/context/auth-context";
+import { cn } from "@/lib/utils";
 
 const SORT_OPTIONS = [
   { value: "newest", label: "Más recientes" },
@@ -169,6 +173,27 @@ export default function NewQuotationPage() {
   const [shippingZones, setShippingZones] = useState<ShippingZone[]>([]);
   const [shippingEnabled, setShippingEnabled] = useState(false);
   const [selectedZone, setSelectedZone] = useState<string>("");
+
+  // ── Multi-company: user picks which Customer(s) to file the
+  //    quotation against. For single-company users, the one customer
+  //    is auto-used and the selector stays hidden. For multi-company
+  //    users, nothing is pre-checked — they explicitly pick every time.
+  const { availableCustomers } = useAuth();
+  const [selectedCustomers, setSelectedCustomers] = useState<string[]>([]);
+  const [pricingPreviews, setPricingPreviews] = useState<Array<{
+    customer: string;
+    customer_name?: string | null;
+    grand_total?: number;
+    currency?: string;
+    error?: string;
+  }>>([]);
+  const [previewLoading, setPreviewLoading] = useState(false);
+
+  const toggleCustomerSelection = useCallback((name: string) => {
+    setSelectedCustomers((prev) =>
+      prev.includes(name) ? prev.filter((n) => n !== name) : [...prev, name]
+    );
+  }, []);
 
   // Restore persisted form fields from sessionStorage on mount
   useEffect(() => {
@@ -355,7 +380,55 @@ export default function NewQuotationPage() {
     };
   }, [items, deliveryInfo.surchargePercent]);
 
-  // Submit handler
+  // Which customers the user can submit to. Single-company users have
+  // their one customer implicitly selected; multi-company users must
+  // tick at least one in the selector.
+  const effectiveCustomers = useMemo(() => {
+    if (availableCustomers.length <= 1) {
+      return availableCustomers.length === 1 ? [availableCustomers[0].name] : [];
+    }
+    return selectedCustomers;
+  }, [availableCustomers, selectedCustomers]);
+
+  const isMultiCompany = availableCustomers.length > 1;
+
+  // Debounced preview fetch — fires when selected customers or cart
+  // changes (2+ customers only, single is trivial). Shows per-company
+  // totals so users see the pricing delta before committing.
+  useEffect(() => {
+    if (!isMultiCompany) {
+      setPricingPreviews([]);
+      return;
+    }
+    if (selectedCustomers.length < 2 || items.length === 0) {
+      setPricingPreviews([]);
+      return;
+    }
+    let cancelled = false;
+    setPreviewLoading(true);
+    const handle = setTimeout(async () => {
+      try {
+        const res = await api.quotePreviewMulti({
+          customers: selectedCustomers,
+          items: items.map(({ item_code, qty, customization_notes }) => ({
+            item_code,
+            qty,
+            customization_notes: customization_notes || undefined,
+          })),
+          delivery_method: deliveryMethod === "shipping" ? "Envio estandar" : "Recoger en local",
+          shipping_zone: deliveryMethod === "shipping" ? selectedZone || undefined : undefined,
+        });
+        if (!cancelled) setPricingPreviews(res.previews);
+      } catch {
+        if (!cancelled) setPricingPreviews([]);
+      } finally {
+        if (!cancelled) setPreviewLoading(false);
+      }
+    }, 400);
+    return () => { cancelled = true; clearTimeout(handle); };
+  }, [isMultiCompany, selectedCustomers, items, deliveryMethod, selectedZone]);
+
+  // Submit handler — atomic multi-company create.
   const handleSubmit = useCallback(
     async (submit: boolean) => {
       if (items.length === 0) {
@@ -366,10 +439,19 @@ export default function NewQuotationPage() {
         });
         return;
       }
+      if (isMultiCompany && selectedCustomers.length === 0) {
+        toast({
+          title: "Selecciona una empresa",
+          description: "Marca al menos una empresa para la cotización.",
+          variant: "destructive",
+        });
+        return;
+      }
 
       setIsSubmitting(true);
       try {
-        const input = {
+        const payload = {
+          customers: effectiveCustomers,
           items: items.map(({ item_code, qty, customization_notes }) => ({
             item_code,
             qty,
@@ -382,26 +464,42 @@ export default function NewQuotationPage() {
           shipping_zone: deliveryMethod === "shipping" ? selectedZone || undefined : undefined,
         };
 
-        const result = await api.createQuotation(input);
+        const result = await api.createQuotationsForCustomers(payload);
+        const created = result.quotations || [];
 
-        // Track conversion event (only on submit, not draft save)
-        if (submit) {
-          trackQuoteSubmitted(result.quote.name, subtotal, items.length);
+        if (submit && created.length > 0) {
+          // Track once per successful create — amount is sum across
+          // all quotations so the conversion event reflects total value.
+          const totalValue = created.reduce((s, q) => s + (q.grand_total || 0), 0);
+          trackQuoteSubmitted(created[0].name, totalValue, items.length);
         }
 
-        // Clear the persistent cart and form after successful creation
         clearCart();
         sessionStorage.removeItem(QUOTE_STORAGE_KEY);
 
-        toast({
-          title: submit ? "Cotización enviada" : "Borrador guardado",
-          description: submit
-            ? "Tu cotización ha sido enviada para revisión."
-            : "Tu cotización se ha guardado como borrador.",
-          variant: "success",
-        });
+        if (created.length > 1) {
+          toast({
+            title: submit ? "Cotizaciones enviadas" : "Borradores guardados",
+            description: `Se crearon ${created.length} cotizaciones (una por empresa).`,
+            variant: "success",
+          });
+        } else {
+          toast({
+            title: submit ? "Cotización enviada" : "Borrador guardado",
+            description: submit
+              ? "Tu cotización ha sido enviada para revisión."
+              : "Tu cotización se ha guardado como borrador.",
+            variant: "success",
+          });
+        }
 
-        router.push(`/cotizaciones/${result.quote.name}`);
+        // Land the user on the FIRST quotation; the detail page will
+        // show sibling links to the others if this was a multi-create.
+        if (created.length > 0) {
+          router.push(`/cotizaciones/${created[0].name}`);
+        } else {
+          router.push("/cotizaciones");
+        }
       } catch (error) {
         toast({
           title: "Error",
@@ -415,7 +513,7 @@ export default function NewQuotationPage() {
         setIsSubmitting(false);
       }
     },
-    [items, generalNotes, desiredDeliveryDate, deliveryMethod, selectedZone, toast, router, clearCart]
+    [items, effectiveCustomers, isMultiCompany, selectedCustomers, generalNotes, desiredDeliveryDate, deliveryMethod, selectedZone, toast, router, clearCart]
   );
 
   const isInCart = useCallback(
@@ -1046,6 +1144,104 @@ export default function NewQuotationPage() {
                   onChange={(e) => setGeneralNotes(e.target.value)}
                 />
               </div>
+
+              {/* Multi-company selector — only shown for users with 2+
+                  linked Customers. Nothing pre-selected; user must tick
+                  every time (per UX decision). Picking 2+ triggers a
+                  pricing preview so the user sees per-company totals
+                  before submitting (different price lists / tax
+                  regimes can produce different totals for the same cart). */}
+              {isMultiCompany && (
+                <div className="space-y-3 rounded-lg border border-border p-3 bg-surface-muted/40">
+                  <div className="flex items-center gap-2">
+                    <Building2 className="h-4 w-4 text-muted" />
+                    <Label className="m-0 text-sm font-semibold">
+                      ¿Para cuál(es) empresa(s)?
+                    </Label>
+                  </div>
+                  <p className="text-xs text-muted">
+                    Marca una o varias. Si marcas varias se crearán N cotizaciones (una por empresa) en la misma transacción — todas o ninguna.
+                  </p>
+                  <div className="space-y-1.5">
+                    {availableCustomers.map((c) => {
+                      const checked = selectedCustomers.includes(c.name);
+                      return (
+                        <button
+                          key={c.name}
+                          type="button"
+                          onClick={() => toggleCustomerSelection(c.name)}
+                          className={cn(
+                            "w-full flex items-center gap-3 rounded-md border px-3 py-2 text-left transition-colors",
+                            checked
+                              ? "border-primary bg-primary-soft"
+                              : "border-border bg-surface hover:bg-surface-muted/50"
+                          )}
+                        >
+                          <span
+                            className={cn(
+                              "flex h-4 w-4 shrink-0 items-center justify-center rounded border",
+                              checked ? "border-primary bg-primary text-primary-foreground" : "border-border"
+                            )}
+                          >
+                            {checked && <Check className="h-3 w-3" />}
+                          </span>
+                          <span className="flex-1 min-w-0">
+                            <span className="block text-sm font-medium truncate">
+                              {c.customer_name || c.name}
+                            </span>
+                            {c.tax_id && (
+                              <span className="block text-xs text-muted">RNC {c.tax_id}</span>
+                            )}
+                          </span>
+                        </button>
+                      );
+                    })}
+                  </div>
+
+                  {/* Per-company pricing preview (2+ selected) */}
+                  {selectedCustomers.length >= 2 && items.length > 0 && (
+                    <div className="space-y-2 rounded-md border border-dashed border-border bg-surface p-2.5">
+                      <div className="flex items-center gap-1.5">
+                        <Info className="h-3.5 w-3.5 text-info" />
+                        <span className="text-xs font-medium">Totales por empresa</span>
+                        {previewLoading && <Loader2 className="h-3 w-3 animate-spin text-muted" />}
+                      </div>
+                      {pricingPreviews.length === 0 && !previewLoading && (
+                        <p className="text-[11px] text-muted">Calculando totales...</p>
+                      )}
+                      {pricingPreviews.map((p) => (
+                        <div
+                          key={p.customer}
+                          className="flex items-center justify-between gap-3 text-xs"
+                        >
+                          <span className="truncate">{p.customer_name || p.customer}</span>
+                          {p.error ? (
+                            <span className="text-destructive text-[11px]">{p.error}</span>
+                          ) : (
+                            <span className="font-semibold tabular-nums">
+                              {formatCurrency(p.grand_total || 0)}
+                            </span>
+                          )}
+                        </div>
+                      ))}
+                      {pricingPreviews.length >= 2 && (() => {
+                        const totals = pricingPreviews
+                          .filter((p) => !p.error)
+                          .map((p) => p.grand_total || 0);
+                        if (totals.length < 2) return null;
+                        const min = Math.min(...totals);
+                        const max = Math.max(...totals);
+                        if (max - min <= 0.01) return null;
+                        return (
+                          <p className="text-[11px] text-muted pt-1 border-t border-dashed">
+                            Las diferencias se deben a las listas de precios o impuestos de cada empresa.
+                          </p>
+                        );
+                      })()}
+                    </div>
+                  )}
+                </div>
+              )}
             </CardContent>
           </Card>
 
@@ -1055,26 +1251,30 @@ export default function NewQuotationPage() {
               variant="outline"
               className="flex-1"
               onClick={() => handleSubmit(false)}
-              disabled={isSubmitting || items.length === 0}
+              disabled={isSubmitting || items.length === 0 || (isMultiCompany && selectedCustomers.length === 0)}
             >
               {isSubmitting ? (
                 <Loader2 className="h-4 w-4 animate-spin" />
               ) : (
                 <Save className="h-4 w-4" />
               )}
-              Guardar Borrador
+              {isMultiCompany && selectedCustomers.length > 1
+                ? `Guardar ${selectedCustomers.length} borradores`
+                : "Guardar Borrador"}
             </Button>
             <Button
               className="flex-1"
               onClick={() => handleSubmit(true)}
-              disabled={isSubmitting || items.length === 0}
+              disabled={isSubmitting || items.length === 0 || (isMultiCompany && selectedCustomers.length === 0)}
             >
               {isSubmitting ? (
                 <Loader2 className="h-4 w-4 animate-spin" />
               ) : (
                 <Send className="h-4 w-4" />
               )}
-              Enviar Cotización
+              {isMultiCompany && selectedCustomers.length > 1
+                ? `Enviar ${selectedCustomers.length} cotizaciones`
+                : "Enviar Cotización"}
             </Button>
           </div>
         </div>

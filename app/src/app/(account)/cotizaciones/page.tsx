@@ -18,6 +18,7 @@ import { formatCurrency, formatDateShort } from "@/lib/format";
 import { QUOTE_STAGE_COLORS } from "@/lib/constants";
 import type { QuoteStage } from "@/lib/constants";
 import type { QuotationSummary } from "@/lib/types";
+import { CompanyFilterChips, CompanyBadge } from "@/components/account/company-filter";
 
 const FILTER_TABS = [
   { value: "todas", label: "Todas", stage: undefined },
@@ -89,6 +90,7 @@ function QuotationRow({ quote }: { quote: QuotationSummary }) {
           >
             {quote.stage}
           </Badge>
+          <CompanyBadge customer={quote.customer} customerName={quote.customer_name} />
         </div>
         <p className="mt-1 text-xs text-muted">
           {formatDateShort(quote.transaction_date)}
@@ -104,8 +106,8 @@ function QuotationRow({ quote }: { quote: QuotationSummary }) {
   );
 }
 
-function QuotationFilteredList({ stage }: { stage?: string }) {
-  const { data, isLoading, error } = useMyQuotations(stage);
+function QuotationFilteredList({ stage, customer }: { stage?: string; customer: string | null }) {
+  const { data, isLoading, error } = useMyQuotations(stage, customer);
   const quotations = data?.quotes ?? [];
 
   if (isLoading) return <QuotationListSkeleton />;
@@ -127,6 +129,7 @@ function QuotationFilteredList({ stage }: { stage?: string }) {
 
 export default function QuotationsPage() {
   const [activeTab, setActiveTab] = useState("todas");
+  const [companyFilter, setCompanyFilter] = useState<string | null>(null);
 
   return (
     <div className="space-y-6">
@@ -138,6 +141,11 @@ export default function QuotationsPage() {
           </Link>
         </Button>
       </PageHeader>
+
+      {/* Company filter row — auto-hidden for single-company users.
+          Chips sit below the title, above the stage tabs so the user
+          reads "which company" → "which stage" top-down. */}
+      <CompanyFilterChips value={companyFilter} onChange={setCompanyFilter} />
 
       <Tabs value={activeTab} onValueChange={setActiveTab}>
         {/* w-max + inline-flex on the list so it can grow past the viewport
@@ -156,7 +164,7 @@ export default function QuotationsPage() {
 
         {FILTER_TABS.map((tab) => (
           <TabsContent key={tab.value} value={tab.value}>
-            <QuotationFilteredList stage={tab.stage} />
+            <QuotationFilteredList stage={tab.stage} customer={companyFilter} />
           </TabsContent>
         ))}
       </Tabs>

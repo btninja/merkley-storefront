@@ -5,6 +5,14 @@ const nextConfig: NextConfig = {
   output: "standalone",
   poweredByHeader: false,
   compress: true,
+  // Microsoft Clarity needs `document.styleSheets[i].cssRules` to serialize
+  // stylesheets for session replay. Without CORS mode on <link> tags, the
+  // browser blocks cssRules access on cross-origin sheets — the side effect
+  // is that Clarity recordings play back as HTML-only (no styles). Setting
+  // `crossOrigin: 'anonymous'` makes Next emit `crossorigin="anonymous"` on
+  // every auto-generated <link> and <script> tag, unlocking stylesheet
+  // capture for Clarity (and replay pipelines generally).
+  crossOrigin: "anonymous",
   images: {
     formats: ["image/avif", "image/webp"],
     deviceSizes: [640, 750, 828, 1080, 1200],

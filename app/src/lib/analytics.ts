@@ -426,3 +426,51 @@ export function trackContactClick(method: string) {
 export function trackFilterUsed(filterType: string, value: string) {
   trackUmami("filter_used", { filter_type: filterType, value });
 }
+
+/** Track every SPA route change as a `page_view` event.
+ *
+ *  The automatic Umami `data-auto-track` only fires once per full page
+ *  load; SPA navigations (App Router push/replace) need to be reported
+ *  manually so Umami's dashboard reflects actual traffic.
+ */
+export function trackPageView(path: string, title?: string) {
+  trackUmami("page_view", { path, title: title || "" });
+}
+
+/** Product impression-to-click transition on catalog cards. Without
+ *  this event, "clicks per impression" on the catalog is invisible. */
+export function trackProductClick(itemCode: string, itemName: string, position?: number, listContext?: string) {
+  trackUmami("product_click", {
+    item_code: itemCode,
+    item_name: itemName,
+    position: position ?? 0,
+    list: listContext || "catalog",
+  });
+}
+
+/** B2B access-request submit — a high-value conversion on the
+ *  unified multi-company portal. Counts against CAC for B2B channels. */
+export function trackAccessRequestSubmitted(companyName: string, duplicate: boolean) {
+  trackUmami("access_request_submitted", {
+    company_name: companyName,
+    duplicate,
+  });
+  // Treat as a CompleteRegistration-equivalent conversion on Meta —
+  // signals the B2B funnel advancement.
+  if (!duplicate) {
+    trackMeta("CompleteRegistration", {
+      content_name: "b2b_access_request",
+      status: "pending_approval",
+    });
+  }
+}
+
+/** Invoice payment proof upload — closes the B2C payment loop.
+ *  Marks the moment a client self-reports payment, which is the
+ *  closest storefront-observable signal to "paid". */
+export function trackPaymentProofUploaded(invoiceName: string, amount: number) {
+  trackUmami("payment_proof_uploaded", {
+    invoice: invoiceName,
+    value: amount,
+  });
+}

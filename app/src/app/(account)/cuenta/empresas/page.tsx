@@ -35,6 +35,8 @@ import {
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 import * as api from "@/lib/api";
+import { useUtmParams } from "@/context/utm-context";
+import { trackAccessRequestSubmitted } from "@/lib/analytics";
 import type { CustomerAccessRequest, DgiiValidationResult } from "@/lib/types";
 
 const STATUS_META: Record<CustomerAccessRequest["status"], { label: string; icon: React.ComponentType<{ className?: string }>; className: string }> = {
@@ -214,6 +216,7 @@ function RequestAccessDialog({
   onSubmitted: (req: CustomerAccessRequest) => void;
 }) {
   const { toast } = useToast();
+  const utmParams = useUtmParams();
   const [companyName, setCompanyName] = useState("");
   const [rnc, setRnc] = useState("");
   const [message, setMessage] = useState("");
@@ -324,7 +327,12 @@ function RequestAccessDialog({
         company_name: companyName.trim(),
         rnc: cleanedRnc || undefined,
         message: message.trim() || undefined,
+        // Attribution forwarded from landing context — B2B access requests
+        // are a conversion point and should feed the revenue-by-channel
+        // pipeline same as quote submissions.
+        ...utmParams,
       });
+      trackAccessRequestSubmitted(companyName.trim(), !!res.duplicate);
       if (res.duplicate) {
         toast({
           title: "Ya tienes una solicitud pendiente",

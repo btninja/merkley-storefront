@@ -54,6 +54,7 @@ import * as api from "@/lib/api";
 import { formatCurrency } from "@/lib/format";
 import { calculateDeliveryTier, SMALL_ORDER_QTY_THRESHOLD, SMALL_ORDER_SURCHARGE_PERCENT } from "@/lib/constants";
 import { trackBeginCheckout, trackQuoteSubmitted } from "@/lib/analytics";
+import { useUtmParams } from "@/context/utm-context";
 import type { QuotationLineInput, Product, ShippingZone, ShippingCalculation, CategoryTreeNode } from "@/lib/types";
 import { useAuth } from "@/context/auth-context";
 import { cn } from "@/lib/utils";
@@ -108,6 +109,7 @@ export default function NewQuotationPage() {
   const router = useRouter();
   const { toast } = useToast();
   const { items: cartItems, clearCart, replaceItems } = useCart();
+  const utmParams = useUtmParams();
 
   // Product search + filters
   const [searchQuery, setSearchQuery] = useState("");
@@ -462,6 +464,11 @@ export default function NewQuotationPage() {
           submit,
           delivery_method: deliveryMethod === "shipping" ? "Envio estandar" : "Recoger en local",
           shipping_zone: deliveryMethod === "shipping" ? selectedZone || undefined : undefined,
+          // Attribution — captured on landing, preserved via localStorage,
+          // attached here so every Quotation is enriched with the original
+          // marketing source. Without this, the backend has no way to link
+          // revenue back to the campaign that produced the lead.
+          ...utmParams,
         };
 
         const result = await api.createQuotationsForCustomers(payload);

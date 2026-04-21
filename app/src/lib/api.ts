@@ -311,6 +311,20 @@ export async function requestCustomerAccess(data: {
   company_name: string;
   rnc?: string;
   message?: string;
+  // Attribution forwarded from utm-context — the B2B access-request
+  // form is a B2B conversion point and its attribution was previously
+  // dropped. Enables revenue-by-channel once these users close deals.
+  utm_source?: string;
+  utm_medium?: string;
+  utm_campaign?: string;
+  utm_content?: string;
+  utm_term?: string;
+  gclid?: string;
+  fbclid?: string;
+  msclkid?: string;
+  referrer?: string;
+  landing_page?: string;
+  utm_history_json?: string;
 }): Promise<{ ok: true; name: string; duplicate: boolean }> {
   return api.frappeCall(
     "merkley_web.api.storefront_session.request_customer_access",

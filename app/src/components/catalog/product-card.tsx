@@ -7,6 +7,7 @@ import { Package, Plus, Palette } from "lucide-react";
 import { formatCurrency } from "@/lib/format";
 import { useCart } from "@/context/cart-context";
 import { useToast } from "@/hooks/use-toast";
+import { trackProductClick } from "@/lib/analytics";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -56,8 +57,15 @@ export const ProductCard = memo(function ProductCard({ product }: { product: Pro
     });
   }
 
+  function handleCardClick() {
+    // Fire before navigation so the event lands even if the SPA
+    // transition unmounts us quickly. Non-blocking — doesn't
+    // prevent default on the <Link>.
+    trackProductClick(product.sku, product.name, undefined, "catalog");
+  }
+
   return (
-    <Link href={`/catalogo/${product.slug}`} className="group">
+    <Link href={`/catalogo/${product.slug}`} className="group" onClick={handleCardClick}>
       <Card className="h-full overflow-hidden transition-shadow hover:shadow-md">
         <div className="relative aspect-square overflow-hidden bg-surface-muted">
           {mainImage ? (

@@ -4,6 +4,8 @@ import "./globals.css";
 import { Providers } from "./providers";
 import { UmamiScript } from "@/components/analytics/umami-script";
 import { GtmScript, GtmNoScript } from "@/components/analytics/gtm-script";
+import { PageViewTracker } from "@/components/analytics/page-view-tracker";
+import { Suspense } from "react";
 import { WhatsAppFab } from "@/components/whatsapp-fab";
 import { ERP_BASE_URL, STOREFRONT_BASE_URL } from "@/lib/env";
 
@@ -182,6 +184,11 @@ export default async function RootLayout({
         <WhatsAppFab />
         <UmamiScript />
         <GtmScript />
+        {/* Suspense required because PageViewTracker reads useSearchParams
+            which forces a suspense boundary under App Router. */}
+        <Suspense fallback={null}>
+          <PageViewTracker />
+        </Suspense>
       </body>
     </html>
   );

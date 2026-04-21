@@ -23,6 +23,7 @@ import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/hooks/use-toast";
 import { FileDropzone } from "@/components/shared/file-dropzone";
 import * as api from "@/lib/api";
+import { trackPaymentProofUploaded } from "@/lib/analytics";
 import type { Invoice } from "@/lib/types";
 
 interface PaymentFormProps {
@@ -90,6 +91,7 @@ export function PaymentForm({ invoice, onPaymentSubmitted }: PaymentFormProps) {
     setSubmitting(true);
     try {
       await api.submitPaymentProof(invoice.name, uploadedFileUrl);
+      trackPaymentProofUploaded(invoice.name, invoice.grand_total || 0);
       toast({
         title: "Pago sometido",
         description: "Tu comprobante de pago ha sido enviado para revisión.",

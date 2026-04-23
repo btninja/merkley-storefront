@@ -1,6 +1,13 @@
 "use client";
 
-import { Suspense, useState, useEffect, useCallback, useRef } from "react";
+import {
+  Suspense,
+  useState,
+  useEffect,
+  useCallback,
+  useRef,
+  useMemo,
+} from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import {
@@ -22,25 +29,18 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 
-const RESEND_COOLDOWN_SECONDS = 60;
-const CODE_VALIDITY_SECONDS = 30 * 60;
+const RESEND_COOLDOWN_MS = 60 * 1000;
+const CODE_VALIDITY_MS = 30 * 60 * 1000;
 
-function formatMinSec(totalSec: number): string {
-  const m = Math.max(0, Math.floor(totalSec / 60));
-  const s = Math.max(0, totalSec % 60);
+function formatMinSec(ms: number): string {
+  const totalSec = Math.max(0, Math.ceil(ms / 1000));
+  const m = Math.floor(totalSec / 60);
+  const s = totalSec % 60;
   return `${m}:${s.toString().padStart(2, "0")}`;
 }
 
-function cleanErrorMessage(msg: string): string {
-  return msg
-    .replace(/^CODE_INVALID:\s*/, "")
-    .replace(/^CODE_EXPIRED:\s*/, "")
-    .replace(/^CODE_INCORRECT:\s*/, "")
-    .replace(/^CODE_LOCKED:\s*/, "");
-}
-
-function isExpiredOrLocked(msg: string): boolean {
-  return msg.startsWith("CODE_EXPIRED:") || msg.startsWith("CODE_LOCKED:");
+function cleanError(msg: string): string {
+  return msg.replace(/^CODE_INVALID:\s*/, "");
 }
 
 function VerificarCorreoContent() {
@@ -53,52 +53,50 @@ function VerificarCorreoContent() {
   const isPendingApproval = status === "pending_approval";
 
   const [code, setCode] = useState("");
-  const [cooldown, setCooldown] = useState(RESEND_COOLDOWN_SECONDS);
-  const [codeRemainingSec, setCodeRemainingSec] = useState(CODE_VALIDITY_SECONDS);
-  const [isResending, setIsResending] = useState(false);
-  const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState("");
-  const [needsNewCode, setNeedsNewCode] = useState(false);
+  // Wall-clock anchors so countdowns survive tab throttling.
+  const [resendUnlockAt, setResendUnlockAt] = useState(
+    () => Date.now() + RESEND_COOLDOWN_MS,
+  );
+  const [codeExpiresAt, setCodeExpiresAt] = useState(
+    () => Date.now() + CODE_VALIDITY_MS,
+  );
+  const [now, setNow] = useState(() => Date.now());
+
   const inputRef = useRef<HTMLInputElement>(null);
+  const submittingRef = useRef(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isResending, setIsResending] = useState(false);
 
-  // Resend cooldown countdown
+  // Single 1Hz tick drives both countdowns.
   useEffect(() => {
-    if (cooldown <= 0) return;
-    const t = setInterval(() => setCooldown((c) => Math.max(c - 1, 0)), 1000);
+    const t = setInterval(() => setNow(Date.now()), 1000);
     return () => clearInterval(t);
-  }, [cooldown]);
+  }, []);
 
-  // Code validity countdown
-  useEffect(() => {
-    if (codeRemainingSec <= 0) {
-      setNeedsNewCode(true);
-      return;
-    }
-    const t = setInterval(
-      () => setCodeRemainingSec((s) => Math.max(s - 1, 0)),
-      1000,
-    );
-    return () => clearInterval(t);
-  }, [codeRemainingSec]);
-
-  // Autofocus input on mount (skip on pending-approval branch)
   useEffect(() => {
     if (!isPendingApproval) inputRef.current?.focus();
   }, [isPendingApproval]);
 
+  const cooldownMs = Math.max(0, resendUnlockAt - now);
+  const codeRemainingMs = Math.max(0, codeExpiresAt - now);
+  const codeExpired = codeRemainingMs === 0;
+
   const handleSubmit = useCallback(
-    async (e?: React.FormEvent) => {
-      e?.preventDefault();
-      if (code.length !== 6 || isSubmitting) return;
+    async (override?: string) => {
+      const value = (override ?? code).replace(/\D/g, "").slice(0, 6);
+      if (value.length !== 6) return;
+      if (submittingRef.current) return;
       if (!email) {
         setError("Falta el correo. Vuelve a iniciar sesión o regístrate.");
         return;
       }
 
+      submittingRef.current = true;
       setIsSubmitting(true);
       setError("");
       try {
-        const result = await verifyEmail(code, email);
+        const result = await verifyEmail(value, email);
 
         if ("approval_pending" in result && result.approval_pending) {
           toast({
@@ -122,23 +120,19 @@ function VerificarCorreoContent() {
         router.push("/cuenta");
       } catch (err: unknown) {
         const raw = err instanceof Error ? err.message : "Error al verificar.";
-        setError(cleanErrorMessage(raw));
-        if (isExpiredOrLocked(raw)) {
-          setNeedsNewCode(true);
-          setCodeRemainingSec(0);
-        }
+        setError(cleanError(raw));
         setCode("");
-        setIsSubmitting(false);
         setTimeout(() => inputRef.current?.focus(), 0);
-        return;
+      } finally {
+        submittingRef.current = false;
+        setIsSubmitting(false);
       }
-      setIsSubmitting(false);
     },
-    [code, email, isSubmitting, applyVerifiedSession, router],
+    [code, email, applyVerifiedSession, router],
   );
 
   const handleResend = useCallback(async () => {
-    if (!email || cooldown > 0 || isResending) return;
+    if (!email || cooldownMs > 0 || isResending) return;
 
     setIsResending(true);
     setError("");
@@ -147,12 +141,14 @@ function VerificarCorreoContent() {
       toast({
         title: "Correo enviado",
         description:
-          "Si tu código anterior sigue activo, recibirás el mismo. Revisa tu bandeja.",
+          "Si tu código sigue activo, recibirás el mismo. Revisa tu bandeja y la carpeta de spam.",
         variant: "success",
       });
-      setCooldown(RESEND_COOLDOWN_SECONDS);
-      setCodeRemainingSec(CODE_VALIDITY_SECONDS);
-      setNeedsNewCode(false);
+      setResendUnlockAt(Date.now() + RESEND_COOLDOWN_MS);
+      // Optimistic: assume server generated a fresh code.
+      // If it actually reused an in-flight code, the displayed countdown
+      // will be slightly long; server is authoritative on real expiry.
+      setCodeExpiresAt(Date.now() + CODE_VALIDITY_MS);
       setCode("");
       setTimeout(() => inputRef.current?.focus(), 0);
     } catch (err: unknown) {
@@ -166,7 +162,12 @@ function VerificarCorreoContent() {
     } finally {
       setIsResending(false);
     }
-  }, [email, cooldown, isResending]);
+  }, [email, cooldownMs, isResending]);
+
+  const cooldownLabel = useMemo(
+    () => Math.ceil(cooldownMs / 1000),
+    [cooldownMs],
+  );
 
   if (isPendingApproval) {
     return (
@@ -218,7 +219,13 @@ function VerificarCorreoContent() {
           <p className="mt-1 font-semibold text-foreground">{email}</p>
         )}
 
-        <form onSubmit={handleSubmit} className="mt-6">
+        <form
+          onSubmit={(e) => {
+            e.preventDefault();
+            handleSubmit();
+          }}
+          className="mt-6"
+        >
           <Input
             ref={inputRef}
             type="text"
@@ -231,11 +238,9 @@ function VerificarCorreoContent() {
               const digits = e.target.value.replace(/\D/g, "").slice(0, 6);
               setCode(digits);
               setError("");
-              if (digits.length === 6 && !isSubmitting) {
-                setTimeout(() => handleSubmit(), 0);
-              }
+              if (digits.length === 6) handleSubmit(digits);
             }}
-            disabled={isSubmitting || needsNewCode}
+            disabled={isSubmitting}
             placeholder="000000"
             aria-label="Código de verificación"
             className="text-center text-2xl tracking-[0.5em] font-mono"
@@ -250,7 +255,7 @@ function VerificarCorreoContent() {
 
           <Button
             type="submit"
-            disabled={code.length !== 6 || isSubmitting || needsNewCode}
+            disabled={code.length !== 6 || isSubmitting}
             className="mt-4 w-full gap-2"
           >
             {isSubmitting ? (
@@ -267,13 +272,15 @@ function VerificarCorreoContent() {
           </Button>
         </form>
 
-        {/* Code validity timer */}
-        {!needsNewCode && (
-          <div className="mt-4 flex items-center justify-center gap-2 text-sm text-muted">
-            <Clock className="h-4 w-4" />
-            <span>Tu código vence en {formatMinSec(codeRemainingSec)}</span>
-          </div>
-        )}
+        {/* Code validity hint */}
+        <div className="mt-4 flex items-center justify-center gap-2 text-sm text-muted">
+          <Clock className="h-4 w-4" />
+          <span>
+            {codeExpired
+              ? "Solicita un código nuevo para continuar."
+              : `Tu código vence en ${formatMinSec(codeRemainingMs)}`}
+          </span>
+        </div>
 
         {/* Spam folder callout */}
         <div className="mt-6 flex gap-3 rounded-md border border-amber-200 bg-amber-50 p-4 text-left">
@@ -292,7 +299,7 @@ function VerificarCorreoContent() {
             type="button"
             variant="outline"
             onClick={handleResend}
-            disabled={cooldown > 0 || isResending}
+            disabled={cooldownMs > 0 || isResending}
             className="gap-2"
           >
             <RefreshCw
@@ -300,17 +307,12 @@ function VerificarCorreoContent() {
             />
             {isResending
               ? "Enviando..."
-              : needsNewCode
+              : codeExpired
                 ? "Enviar código nuevo"
-                : cooldown > 0
-                  ? `Reenviar en ${cooldown}s`
+                : cooldownMs > 0
+                  ? `Reenviar en ${cooldownLabel}s`
                   : "Reenviar código"}
           </Button>
-          {!needsNewCode && (
-            <p className="mt-2 text-xs text-muted">
-              Si reenvías, recibirás el mismo código mientras siga vigente.
-            </p>
-          )}
         </div>
 
         <div className="mt-6 border-t border-border pt-6">

@@ -255,8 +255,8 @@ export async function register(data: RegistrationData): Promise<RegisterResponse
   return result;
 }
 
-export async function verifyEmail(token: string, email: string): Promise<SessionResponse | { approval_pending: true }> {
-  const result = await frappeCall<SessionResponse | { approval_pending: true }>("auth.verify_email", { token, email });
+export async function verifyEmail(code: string, email: string): Promise<SessionResponse | { approval_pending: true }> {
+  const result = await frappeCall<SessionResponse | { approval_pending: true }>("auth.verify_email", { code, email });
   if ("csrf_token" in result) {
     setCsrfToken(result.csrf_token);
   }

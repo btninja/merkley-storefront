@@ -4,7 +4,7 @@ import { Suspense, useState, useEffect, useRef } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { CheckCircle2, XCircle, Loader2, RefreshCw, MessageCircle, Clock, ArrowRight } from "lucide-react";
-import { verifyEmail, resendVerificationEmail } from "@/lib/api";
+import { verifyEmail } from "@/lib/api";
 import type { SessionResponse } from "@/lib/types";
 import { useAuth } from "@/context/auth-context";
 import { toast } from "@/hooks/use-toast";
@@ -22,27 +22,28 @@ function VerificarContent() {
   const router = useRouter();
   const { applyVerifiedSession } = useAuth();
 
-  const token = searchParams.get("token") || "";
+  // Accept `code` (new) or `token` (legacy links still in inboxes — server
+  // treats either as a code value).
+  const code = searchParams.get("code") || searchParams.get("token") || "";
   const email = searchParams.get("email") || "";
 
   const [state, setState] = useState<VerifyState>("loading");
   const [errorMessage, setErrorMessage] = useState("");
-  const [isResending, setIsResending] = useState(false);
   const hasVerified = useRef(false);
 
   useEffect(() => {
     if (hasVerified.current) return;
     hasVerified.current = true;
 
-    if (!token || !email) {
+    if (!code || !email) {
       setState("error");
-      setErrorMessage("Enlace de verificación incompleto. Falta el token o el correo.");
+      setErrorMessage("Enlace de verificación incompleto. Falta el código o el correo.");
       return;
     }
 
     async function doVerify() {
       try {
-        const result = await verifyEmail(token, email);
+        const result = await verifyEmail(code, email);
 
         if ("approval_pending" in result && result.approval_pending) {
           setState("pending_approval");
@@ -56,7 +57,6 @@ function VerificarContent() {
           description: "Tu cuenta ha sido activada exitosamente.",
           variant: "success",
         });
-        // Redirect after a brief delay so the user sees the success state
         // Invited users (no self-set password) go to profile to set password
         const isInvited = searchParams.get("invited") === "1";
         setTimeout(() => {
@@ -65,46 +65,25 @@ function VerificarContent() {
       } catch (err: unknown) {
         const message =
           err instanceof Error ? err.message : "Error al verificar el correo.";
-        // Handle "already verified" as a friendly state, not an error
         if (message.includes("ya fue verificado")) {
           setState("already_verified");
           return;
         }
         setState("error");
-        // Clean up the prefixed error messages
         const cleanMessage = message
-          .replace("TOKEN_INVALID: ", "")
-          .replace("TOKEN_EXPIRED: ", "");
+          .replace(/^CODE_INVALID:\s*/, "")
+          .replace(/^CODE_EXPIRED:\s*/, "")
+          .replace(/^CODE_INCORRECT:\s*/, "")
+          .replace(/^CODE_LOCKED:\s*/, "")
+          .replace(/^TOKEN_INVALID:\s*/, "")
+          .replace(/^TOKEN_EXPIRED:\s*/, "");
         setErrorMessage(cleanMessage);
       }
     }
 
     doVerify();
   // eslint-disable-next-line react-hooks/exhaustive-deps -- searchParams accessed via ref guard; re-running is prevented by hasVerified
-  }, [token, email, applyVerifiedSession, router]);
-
-  const handleResend = async () => {
-    if (!email || isResending) return;
-    setIsResending(true);
-    try {
-      await resendVerificationEmail(email);
-      toast({
-        title: "Correo reenviado",
-        description: "Hemos enviado un nuevo enlace de verificación.",
-        variant: "success",
-      });
-    } catch (err: unknown) {
-      const message =
-        err instanceof Error ? err.message : "No se pudo reenviar el correo.";
-      toast({
-        title: "Error",
-        description: message,
-        variant: "destructive",
-      });
-    } finally {
-      setIsResending(false);
-    }
-  };
+  }, [code, email, applyVerifiedSession, router]);
 
   const whatsappUrl = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(
     `Hola, necesito ayuda con la verificación de mi correo (${email}) en Merkley Details.`
@@ -203,15 +182,13 @@ function VerificarContent() {
 
             <div className="mt-6 flex flex-col gap-3">
               {email && (
-                <Button
-                  variant="outline"
-                  onClick={handleResend}
-                  disabled={isResending}
-                  className="gap-2"
+                <Link
+                  href={`/auth/verificar-correo?email=${encodeURIComponent(email)}`}
+                  className="inline-flex items-center justify-center gap-2 rounded-lg border border-border bg-background px-4 py-2.5 text-sm font-medium transition-colors hover:bg-surface-muted"
                 >
-                  <RefreshCw className={`h-4 w-4 ${isResending ? "animate-spin" : ""}`} />
-                  {isResending ? "Reenviando..." : "Solicitar nuevo enlace"}
-                </Button>
+                  <RefreshCw className="h-4 w-4" />
+                  Ingresar código manualmente o solicitar uno nuevo
+                </Link>
               )}
 
               <a

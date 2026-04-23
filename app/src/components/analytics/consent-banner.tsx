@@ -25,6 +25,12 @@ const TTL_MS = 365 * 24 * 60 * 60 * 1000; // 12 months
 
 export type ConsentChoice = "accepted" | "rejected";
 
+// Default consent for users who haven't made an explicit choice. The banner
+// is currently suppressed (see layout.tsx), so this is what new DR visitors
+// effectively get. Flip to "rejected" if reactivating the banner / expanding
+// to a GDPR/LGPD jurisdiction.
+const DEFAULT_CONSENT: ConsentChoice = "accepted";
+
 interface StoredConsent {
   choice: ConsentChoice;
   ts: number;
@@ -118,7 +124,8 @@ export function useConsentGranted(): boolean {
   const [granted, setGranted] = useState(false);
 
   useEffect(() => {
-    setGranted(readConsent() === "accepted");
+    const stored = readConsent();
+    setGranted((stored ?? DEFAULT_CONSENT) === "accepted");
     const handler = (e: Event) => {
       const choice = (e as CustomEvent<ConsentChoice>).detail;
       setGranted(choice === "accepted");

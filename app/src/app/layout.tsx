@@ -184,7 +184,13 @@ export default async function RootLayout({
         <WhatsAppFab />
         <UmamiScript />
         <GtmScript />
-        <ConsentBanner />
+        {/*
+          Cookie consent banner suppressed — DR market doesn't require it
+          (no GDPR/LGPD). Analytics default-on via useConsentGranted().
+          To restore: uncomment <ConsentBanner /> below and flip
+          DEFAULT_CONSENT in consent-banner.tsx back to "rejected".
+        */}
+        {/* <ConsentBanner /> */}
         {/* Suspense required because PageViewTracker reads useSearchParams
             which forces a suspense boundary under App Router. */}
         <Suspense fallback={null}>

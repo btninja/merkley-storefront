@@ -27,6 +27,12 @@ const NAV_LINKS = [
 const ACCOUNT_LINKS = [
   { href: "/cuenta", label: "Mi Cuenta" },
   { href: "/cotizaciones", label: "Cotizaciones" },
+  // Surfaced in the mobile hamburger so single-company users can
+  // discover the "Solicitar otra empresa" flow. Without this entry,
+  // mobile clients had no path from the top-level nav to the
+  // request-access screen — they'd have to tap "Mi Cuenta" first
+  // and then find the "Mis empresas" button on the dashboard.
+  { href: "/cuenta/empresas", label: "Mis empresas" },
   { href: "/cuenta/perfil", label: "Perfil" },
 ];
 

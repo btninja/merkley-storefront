@@ -4,7 +4,7 @@ import { useRef, useState, useCallback, useEffect } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { User, LogOut, FileText, LayoutDashboard, ChevronDown, Calendar, ArrowRight, ShoppingBag, X } from "lucide-react";
+import { User, LogOut, FileText, LayoutDashboard, ChevronDown, Calendar, ArrowRight, ShoppingBag, X, Building2 } from "lucide-react";
 import { useAuth } from "@/context/auth-context";
 import { useCart } from "@/context/cart-context";
 import { CartDrawer } from "@/components/cart/cart-drawer";
@@ -235,6 +235,17 @@ export function Header({ showMobileMenu = true }: { showMobileMenu?: boolean } =
                         <Link href="/cotizaciones" className="flex items-center gap-2">
                           <FileText className="h-4 w-4" />
                           Cotizaciones
+                        </Link>
+                      </DropdownMenuItem>
+                      {/* Mis empresas — surfaced in the header dropdown so
+                          desktop users can discover the "Solicitar otra
+                          empresa" flow without first navigating to
+                          /cuenta dashboard. Always shown (single-company
+                          users still need to request additional access). */}
+                      <DropdownMenuItem asChild>
+                        <Link href="/cuenta/empresas" className="flex items-center gap-2">
+                          <Building2 className="h-4 w-4" />
+                          Mis empresas
                         </Link>
                       </DropdownMenuItem>
                       <DropdownMenuItem asChild>

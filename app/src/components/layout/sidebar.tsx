@@ -38,7 +38,9 @@ const SIDEBAR_LINKS: SidebarLink[] = [
   { href: "/descargas", label: "Descargas", icon: Download },
   { href: "/soporte", label: "Soporte", icon: MessageCircle },
   { href: "/cuenta/equipo", label: "Equipo", icon: Users, adminOnly: true },
-  { href: "/cuenta/empresas", label: "Mis empresas", icon: Building2, multiCompanyOnly: true },
+  // Always shown — even single-company users need to discover "Solicitar
+  // otra empresa" so they can request access to additional companies.
+  { href: "/cuenta/empresas", label: "Mis empresas", icon: Building2 },
   { href: "/cuenta/perfil", label: "Perfil", icon: User },
 ];
 

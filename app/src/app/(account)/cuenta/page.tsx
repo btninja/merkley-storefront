@@ -135,14 +135,14 @@ export default function DashboardPage() {
   return (
     <div className="space-y-8">
       <PageHeader title="Panel de Control" description={headerDescription}>
-        {isMultiCompany && (
-          <Button variant="outline" size="sm" asChild>
-            <Link href="/cuenta/empresas">
-              <Briefcase className="h-4 w-4" />
-              Mis empresas
-            </Link>
-          </Button>
-        )}
+        {/* Always shown so single-company users can discover
+            "Solicitar otra empresa" without hunting through the sidebar. */}
+        <Button variant="outline" size="sm" asChild>
+          <Link href="/cuenta/empresas">
+            <Briefcase className="h-4 w-4" />
+            Mis empresas
+          </Link>
+        </Button>
       </PageHeader>
 
       {/* Summary Cards */}

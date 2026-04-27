@@ -117,7 +117,7 @@ export function PaymentForm({ invoice, onPaymentSubmitted }: PaymentFormProps) {
     <div className="space-y-4">
       {/* Payment rejection banner */}
       {wasRejected && (
-        <div className="flex items-start gap-3 rounded-lg border border-destructive/30 bg-destructive-soft p-4">
+        <div className="flex items-start gap-3 rounded-lg border-2 border-destructive bg-destructive-soft p-4">
           <AlertCircle className="mt-0.5 h-5 w-5 shrink-0 text-destructive" />
           <div>
             <p className="text-sm font-medium text-destructive">

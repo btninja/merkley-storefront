@@ -94,6 +94,11 @@ export default function MisEmpresasPage() {
               <p className="mt-3 text-sm text-muted">
                 Tu cuenta no está vinculada a ninguna empresa todavía.
               </p>
+              <p className="mt-2 text-xs text-muted">
+                Haz clic en{" "}
+                <strong className="text-foreground">Solicitar otra empresa</strong>{" "}
+                arriba para pedir acceso a una empresa con su RNC.
+              </p>
             </CardContent>
           </Card>
         ) : (

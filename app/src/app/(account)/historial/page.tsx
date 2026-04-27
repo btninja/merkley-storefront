@@ -92,17 +92,21 @@ export default function HistorialPage() {
         description="Resumen de tu actividad"
       >
         {data?.available_years && data.available_years.length > 0 && (
-          <select
-            value={year || data.year}
-            onChange={(e) => setYear(Number(e.target.value))}
-            className="rounded-lg border border-border bg-surface px-3 py-2 text-sm"
-          >
-            {data.available_years.map((y) => (
-              <option key={y} value={y}>
-                {y}
-              </option>
-            ))}
-          </select>
+          <>
+            <label htmlFor="historial-year" className="sr-only">Año</label>
+            <select
+              id="historial-year"
+              value={year || data.year}
+              onChange={(e) => setYear(Number(e.target.value))}
+              className="rounded-lg border border-border bg-surface px-3 py-2 text-sm"
+            >
+              {data.available_years.map((y) => (
+                <option key={y} value={y}>
+                  {y}
+                </option>
+              ))}
+            </select>
+          </>
         )}
       </PageHeader>
 

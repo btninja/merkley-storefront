@@ -217,9 +217,14 @@ export default function ResetPasswordContent() {
                   aria-invalid={
                     confirmPassword.length > 0 && confirmPassword !== newPassword
                   }
+                  aria-describedby={
+                    confirmPassword.length > 0 && confirmPassword !== newPassword
+                      ? "confirm-pw-error"
+                      : undefined
+                  }
                 />
                 {confirmPassword.length > 0 && confirmPassword !== newPassword && (
-                  <p className="text-xs text-destructive">
+                  <p id="confirm-pw-error" className="text-xs text-destructive">
                     Las contraseñas no coinciden.
                   </p>
                 )}

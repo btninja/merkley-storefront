@@ -424,7 +424,7 @@ export default function TeamPage() {
       {/* Info footer */}
       <Separator />
       <div className="rounded-lg bg-surface-muted p-4">
-        <h3 className="text-sm font-medium">Sobre la gestion de equipo</h3>
+        <h3 className="text-sm font-medium">Sobre la gestión de equipo</h3>
         <ul className="mt-2 space-y-1 text-xs text-muted">
           <li>
             <strong>Invitar</strong> envio un correo para que el nuevo miembro

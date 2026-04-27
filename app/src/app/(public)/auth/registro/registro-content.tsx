@@ -640,14 +640,14 @@ export default function RegistroPage() {
                           className={emailDomainBlocked ? "border-destructive" : ""}
                         />
                         {emailDomainBlocked && (
-                          <div className="rounded-lg border border-amber-200 bg-amber-50 p-3">
+                          <div className="rounded-lg border border-amber-300 bg-amber-100 p-3">
                             <div className="flex items-start gap-2">
-                              <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-amber-600" />
+                              <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-amber-700" />
                               <div className="text-sm">
-                                <p className="font-medium text-amber-800">
+                                <p className="font-medium text-amber-900">
                                   Tu cuenta requerirá aprobación de un administrador antes de activarse.
                                 </p>
-                                <p className="mt-1 text-amber-700">
+                                <p className="mt-1 text-amber-900">
                                   Por favor usa tu correo corporativo si tienes uno para acceso inmediato.
                                 </p>
                               </div>

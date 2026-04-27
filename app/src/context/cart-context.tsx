@@ -36,13 +36,29 @@ const CartContext = createContext<CartContextValue | null>(null);
 
 // ── Helpers ──
 
+function isValidCartItem(x: unknown): x is CartItem {
+  if (!x || typeof x !== "object") return false;
+  const o = x as Record<string, unknown>;
+  return (
+    typeof o.item_code === "string" && o.item_code.length > 0 &&
+    typeof o.item_name === "string" &&
+    typeof o.qty === "number" && Number.isFinite(o.qty) && o.qty > 0 && o.qty <= MAX_QTY &&
+    typeof o.rate === "number" && Number.isFinite(o.rate) && o.rate >= 0 &&
+    typeof o.minimum_order_qty === "number" && Number.isFinite(o.minimum_order_qty)
+  );
+}
+
 function loadCart(): CartItem[] {
   if (typeof window === "undefined") return [];
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (!raw) return [];
     const parsed = JSON.parse(raw);
-    return Array.isArray(parsed) ? parsed : [];
+    if (!Array.isArray(parsed)) return [];
+    // Drop entries that don't match the CartItem shape — protects
+    // downstream code (totals, qty bumps) from TypeErrors when
+    // tampered/legacy localStorage carries malformed rows.
+    return parsed.filter(isValidCartItem);
   } catch {
     return [];
   }

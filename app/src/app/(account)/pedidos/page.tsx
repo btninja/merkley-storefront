@@ -108,8 +108,18 @@ function OrderCard({
     <Card>
       <CardContent className="p-4">
         <div
-          className="cursor-pointer"
+          className="cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 rounded"
           onClick={() => setExpanded(!expanded)}
+          onKeyDown={(e) => {
+            if (e.key === "Enter" || e.key === " ") {
+              e.preventDefault();
+              setExpanded(!expanded);
+            }
+          }}
+          role="button"
+          tabIndex={0}
+          aria-expanded={expanded}
+          aria-label={`${expanded ? "Contraer" : "Expandir"} pedido ${order.name}`}
         >
           <div className="flex items-start justify-between gap-3">
             <div className="flex-1 min-w-0 space-y-1">

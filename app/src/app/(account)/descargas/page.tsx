@@ -76,8 +76,18 @@ function MonthGroup({
   return (
     <Card>
       <CardHeader
-        className="cursor-pointer py-3"
+        className="cursor-pointer py-3 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
         onClick={() => setExpanded(!expanded)}
+        onKeyDown={(e) => {
+          if (e.key === "Enter" || e.key === " ") {
+            e.preventDefault();
+            setExpanded(!expanded);
+          }
+        }}
+        role="button"
+        tabIndex={0}
+        aria-expanded={expanded}
+        aria-label={`${expanded ? "Contraer" : "Expandir"} ${monthLabel}, ${documents.length} documentos`}
       >
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
@@ -178,17 +188,21 @@ export default function DescargasPage() {
         description="Descarga tus facturas y cotizaciones en PDF"
       >
         {data?.available_years && data.available_years.length > 0 && (
-          <select
-            value={year || data.year}
-            onChange={(e) => setYear(Number(e.target.value))}
-            className="rounded-lg border border-border bg-surface px-3 py-2 text-sm"
-          >
-            {data.available_years.map((y) => (
-              <option key={y} value={y}>
-                {y}
-              </option>
-            ))}
-          </select>
+          <>
+            <label htmlFor="descargas-year" className="sr-only">Año</label>
+            <select
+              id="descargas-year"
+              value={year || data.year}
+              onChange={(e) => setYear(Number(e.target.value))}
+              className="rounded-lg border border-border bg-surface px-3 py-2 text-sm"
+            >
+              {data.available_years.map((y) => (
+                <option key={y} value={y}>
+                  {y}
+                </option>
+              ))}
+            </select>
+          </>
         )}
       </PageHeader>
 

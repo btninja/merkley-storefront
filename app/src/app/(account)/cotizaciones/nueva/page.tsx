@@ -874,11 +874,28 @@ export default function NewQuotationPage() {
                         <div className="relative group">
                           <Input
                             type="number"
+                            inputMode="numeric"
                             min={item.minimum_order_qty || 1}
                             value={item.qty}
-                            onChange={(e) =>
-                              setDirectQty(item.item_code, parseInt(e.target.value) || (item.minimum_order_qty || 1))
-                            }
+                            onChange={(e) => {
+                              const val = parseInt(e.target.value, 10);
+                              const min = item.minimum_order_qty || 1;
+                              // Only commit when input is a valid integer at or
+                              // above the minimum. Mid-typing values (empty,
+                              // "0", or below min) leave the state alone so
+                              // the field doesn't snap back while the user is
+                              // still typing the next digit.
+                              if (!isNaN(val) && val >= min) {
+                                setDirectQty(item.item_code, val);
+                              }
+                            }}
+                            onBlur={(e) => {
+                              const val = parseInt(e.target.value, 10);
+                              const min = item.minimum_order_qty || 1;
+                              if (isNaN(val) || val < min) {
+                                setDirectQty(item.item_code, min);
+                              }
+                            }}
                             className={`h-7 w-16 text-center text-sm ${
                               item.qty <= (item.minimum_order_qty || 1) ? "border-destructive ring-destructive/20" : ""
                             }`}

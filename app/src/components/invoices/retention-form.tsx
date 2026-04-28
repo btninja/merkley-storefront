@@ -23,6 +23,29 @@ import * as api from "@/lib/api";
 import { formatCurrency, formatDate } from "@/lib/format";
 import type { Invoice } from "@/lib/types";
 
+// Parse a locale-formatted decimal string. Handles "1.234,56" (es-DO),
+// "1,234.56" (en-US), bare integers, and bare decimals. Returns NaN
+// when the input is empty or unparseable so callers can guard with
+// !isNaN(...) like parseFloat. Plain parseFloat truncates locale-grouped
+// strings like "1,234" -> 1, which silently understates retention amounts.
+function parseLocaleNumber(s: string): number {
+  if (!s) return NaN;
+  const cleaned = s.replace(/\s/g, "");
+  const lastComma = cleaned.lastIndexOf(",");
+  const lastDot = cleaned.lastIndexOf(".");
+  if (lastComma > -1 && lastDot > -1) {
+    if (lastComma > lastDot) {
+      return Number(cleaned.replace(/\./g, "").replace(",", "."));
+    } else {
+      return Number(cleaned.replace(/,/g, ""));
+    }
+  } else if (lastComma > -1) {
+    return Number(cleaned.replace(",", "."));
+  } else {
+    return Number(cleaned);
+  }
+}
+
 interface RetentionFormProps {
   invoice: Invoice;
   onRetentionSubmitted: () => void;
@@ -168,11 +191,13 @@ export function RetentionForm({ invoice, onRetentionSubmitted }: RetentionFormPr
 
     setSubmitting(true);
     try {
+      const parsedAmount = retentionAmount ? parseLocaleNumber(retentionAmount) : undefined;
+      const parsedPct = retentionPercentage ? parseLocaleNumber(retentionPercentage) : undefined;
       await api.submitRetentionLetter(
         invoice.name,
         uploadedFileUrl,
-        retentionAmount ? parseFloat(retentionAmount) : undefined,
-        retentionPercentage ? parseFloat(retentionPercentage) : undefined
+        parsedAmount !== undefined && !isNaN(parsedAmount) ? parsedAmount : undefined,
+        parsedPct !== undefined && !isNaN(parsedPct) ? parsedPct : undefined
       );
       sessionStorage.removeItem(RETENTION_KEY);
       toast({
@@ -196,7 +221,7 @@ export function RetentionForm({ invoice, onRetentionSubmitted }: RetentionFormPr
   // Auto-calculate percentage when amount changes
   const handleAmountChange = (value: string) => {
     setRetentionAmount(value);
-    const amount = parseFloat(value);
+    const amount = parseLocaleNumber(value);
     if (!isNaN(amount) && invoice.grand_total > 0) {
       const pct = (amount / invoice.grand_total) * 100;
       setRetentionPercentage(pct.toFixed(2));
@@ -206,7 +231,7 @@ export function RetentionForm({ invoice, onRetentionSubmitted }: RetentionFormPr
   // Auto-calculate amount when percentage changes
   const handlePercentageChange = (value: string) => {
     setRetentionPercentage(value);
-    const pct = parseFloat(value);
+    const pct = parseLocaleNumber(value);
     if (!isNaN(pct) && invoice.grand_total > 0) {
       const amount = (pct / 100) * invoice.grand_total;
       setRetentionAmount(amount.toFixed(2));

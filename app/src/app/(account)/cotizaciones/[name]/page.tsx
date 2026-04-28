@@ -273,10 +273,11 @@ export default function QuotationDetailPage() {
       item_name: item.item_name,
       qty: item.qty,
       rate: item.rate,
+      customization_notes: item.customization_notes,
       customization_options: item.customization_notes || null,
-      is_personalizable: false,
+      is_personalizable: item.is_personalizable ?? false,
       image_url: null,
-      minimum_order_qty: item.qty || 2,
+      minimum_order_qty: item.minimum_order_qty ?? 1,
     }));
     replaceItems(cartItems);
     window.location.href = "/cotizaciones/nueva";
@@ -289,10 +290,11 @@ export default function QuotationDetailPage() {
       item_name: item.item_name,
       qty: item.qty,
       rate: item.rate,
+      customization_notes: item.customization_notes,
       customization_options: item.customization_notes || null,
-      is_personalizable: false,
+      is_personalizable: item.is_personalizable ?? false,
       image_url: null,
-      minimum_order_qty: item.qty || 2,
+      minimum_order_qty: item.minimum_order_qty ?? 1,
     }));
     cartContext.replaceItems(cartItems);
     window.location.href = "/cotizaciones/nueva";

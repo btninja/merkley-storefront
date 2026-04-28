@@ -11,6 +11,11 @@ export interface CartItem {
   qty: number;
   rate: number;
   customization_options: string | null;
+  /** User-entered personalization notes (free text). Distinct from
+   *  customization_options (catalog-side prompt). Survives the cart →
+   *  quote-builder hydration round-trip so reorder / edit flows preserve
+   *  what the user already typed. */
+  customization_notes?: string | null;
   is_personalizable: boolean;
   image_url: string | null;
   minimum_order_qty: number;

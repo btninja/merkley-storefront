@@ -238,7 +238,7 @@ export default function NewQuotationPage() {
         item_name: ci.item_name,
         qty: ci.qty,
         rate: ci.rate,
-        customization_notes: "",
+        customization_notes: ci.customization_notes ?? "",
         customization_options: ci.customization_options,
         is_personalizable: ci.is_personalizable ?? false,
         minimum_order_qty: ci.minimum_order_qty || 1,
@@ -256,12 +256,13 @@ export default function NewQuotationPage() {
   useEffect(() => {
     if (!cartHydrated) return;
     replaceItems(
-      items.map(({ item_code, item_name, qty, rate, customization_options, is_personalizable, minimum_order_qty }) => ({
+      items.map(({ item_code, item_name, qty, rate, customization_options, customization_notes, is_personalizable, minimum_order_qty }) => ({
         item_code,
         item_name,
         qty,
         rate,
         customization_options,
+        customization_notes: customization_notes ?? null,
         is_personalizable,
         image_url: null,
         minimum_order_qty: minimum_order_qty || 1,

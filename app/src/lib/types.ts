@@ -260,6 +260,8 @@ export interface QuotationItem {
   requested_delivery_date: string | null;
   customization_notes: string | null;
   logo_file_url: string | null;
+  is_personalizable: boolean;
+  minimum_order_qty: number;
 }
 
 export interface QuotationTax {

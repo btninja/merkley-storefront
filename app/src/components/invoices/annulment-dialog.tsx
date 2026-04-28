@@ -90,6 +90,7 @@ export function AnnulmentDialog({
               placeholder="Describe por qué deseas anular esta factura..."
               value={reason}
               onChange={(e) => setReason(e.target.value)}
+              maxLength={1000}
               className="min-h-[100px]"
             />
           </div>

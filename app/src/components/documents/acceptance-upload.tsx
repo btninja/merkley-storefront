@@ -58,6 +58,10 @@ export function ApprovalUpload({
   const [approvalDoc, setApprovalDoc] = useState<File | null>(null);
   const [logoFile, setLogoFile] = useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
+  // Aggregate upload percent across the 1-2 files this flow uploads
+  // (approval doc + optional logo). Updated by callbacks from each
+  // upload helper; reset to null when the upload completes/errors.
+  const [uploadProgress, setUploadProgress] = useState<number | null>(null);
   const [cartaDialogOpen, setCartaDialogOpen] = useState(false);
   const logoSectionRef = useRef<HTMLDivElement | null>(null);
 
@@ -121,13 +125,26 @@ export function ApprovalUpload({
       return;
     }
     setUploading(true);
+    setUploadProgress(0);
     try {
-      // Upload files first (uses custom endpoint that verifies ownership)
+      // Upload files first (uses custom endpoint that verifies ownership).
+      // Track per-file progress and surface the average so the user sees
+      // a coherent 0-100 even with two parallel uploads.
+      const includesLogo = hasPersonalizableItems && !!logoFile;
+      const fileCount = includesLogo ? 2 : 1;
+      const perFile: number[] = new Array(fileCount).fill(0);
+      const updateAggregate = (idx: number, p: number) => {
+        perFile[idx] = p;
+        const avg = Math.round(perFile.reduce((a, b) => a + b, 0) / fileCount);
+        setUploadProgress(avg);
+      };
       const uploads: Promise<string>[] = [
-        api.uploadQuotationFile(approvalDoc, quotationName),
+        api.uploadQuotationFile(approvalDoc, quotationName, (p) => updateAggregate(0, p)),
       ];
-      if (hasPersonalizableItems && logoFile) {
-        uploads.push(api.uploadQuotationFile(logoFile, quotationName));
+      if (includesLogo) {
+        uploads.push(
+          api.uploadQuotationFile(logoFile!, quotationName, (p) => updateAggregate(1, p)),
+        );
       }
 
       const [docUrl, logoUrl] = await Promise.all(uploads);
@@ -156,6 +173,7 @@ export function ApprovalUpload({
       });
     } finally {
       setUploading(false);
+      setUploadProgress(null);
     }
   }
 
@@ -380,7 +398,9 @@ export function ApprovalUpload({
             {uploading ? (
               <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Enviando aprobación...
+                {uploadProgress != null
+                  ? `Subiendo... ${uploadProgress}%`
+                  : "Enviando aprobación..."}
               </>
             ) : (
               <>

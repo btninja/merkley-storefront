@@ -35,6 +35,12 @@ export interface FileDropzoneProps {
   className?: string;
   /** Show an uploading spinner over the dropzone. */
   isUploading?: boolean;
+  /**
+   * 0-100 upload progress. When set alongside isUploading, renders a
+   * thin progress bar in place of the spinner-only state. Caller is
+   * responsible for resetting to null on completion/error.
+   */
+  progress?: number | null;
   /** Files already uploaded — rendered as removable chips below the dropzone. */
   currentFiles?: FileDropzoneFile[];
   /** Called when user clicks the × on a current file chip. */
@@ -56,6 +62,7 @@ export function FileDropzone({
   variant = "default",
   className,
   isUploading = false,
+  progress = null,
   currentFiles,
   onRemove,
   icon,
@@ -221,10 +228,31 @@ export function FileDropzone({
             <Upload className="h-6 w-6 text-muted-foreground" />
           )
         )}
-        <div className={cn(compactLayout ? "flex-1 text-left" : "text-center")}>
+        <div className={cn(compactLayout ? "flex-1 text-left" : "text-center", "w-full")}>
           <p className={cn("text-sm font-medium", compactLayout && "text-xs")}>
-            {isConverting ? "Convirtiendo..." : isUploading ? "Subiendo..." : label}
+            {isConverting
+              ? "Convirtiendo..."
+              : isUploading
+                ? progress != null ? `Subiendo... ${progress}%` : "Subiendo..."
+                : label}
           </p>
+          {isUploading && progress != null && (
+            <div
+              className={cn(
+                "mt-1.5 h-1 w-full overflow-hidden rounded bg-muted",
+                compactLayout ? "max-w-[160px]" : "mx-auto max-w-xs",
+              )}
+              role="progressbar"
+              aria-valuenow={progress}
+              aria-valuemin={0}
+              aria-valuemax={100}
+            >
+              <div
+                className="h-full bg-primary transition-all"
+                style={{ width: `${progress}%` }}
+              />
+            </div>
+          )}
           {helperText && !isUploading && !isConverting && (
             <p className="text-xs text-muted-foreground">{helperText}</p>
           )}

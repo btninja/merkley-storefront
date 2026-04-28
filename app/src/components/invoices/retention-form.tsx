@@ -55,6 +55,7 @@ export function RetentionForm({ invoice, onRetentionSubmitted }: RetentionFormPr
   const { toast } = useToast();
   const RETENTION_KEY = `md_retention_${invoice.name}`;
   const [uploading, setUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState<number | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [uploadedFileUrl, setUploadedFileUrl] = useState<string | null>(null);
   const [fileName, setFileName] = useState<string | null>(null);
@@ -156,10 +157,11 @@ export function RetentionForm({ invoice, onRetentionSubmitted }: RetentionFormPr
     if (!file) return;
 
     setUploading(true);
+    setUploadProgress(0);
     setFileName(file.name);
 
     try {
-      const fileUrl = await api.uploadInvoiceFile(file, invoice.name);
+      const fileUrl = await api.uploadInvoiceFile(file, invoice.name, (p) => setUploadProgress(p));
       setUploadedFileUrl(fileUrl);
       toast({
         title: "Archivo subido",
@@ -176,6 +178,7 @@ export function RetentionForm({ invoice, onRetentionSubmitted }: RetentionFormPr
       setFileName(null);
     } finally {
       setUploading(false);
+      setUploadProgress(null);
     }
   };
 
@@ -298,6 +301,7 @@ export function RetentionForm({ invoice, onRetentionSubmitted }: RetentionFormPr
             accept=".pdf,image/jpeg,image/png,.heic,.heif"
             maxSizeBytes={10 * 1024 * 1024}
             isUploading={uploading}
+            progress={uploadProgress}
             onOversize={() =>
               toast({
                 title: "Archivo muy grande",

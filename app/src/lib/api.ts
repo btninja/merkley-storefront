@@ -138,6 +138,70 @@ function stripHtml(value: string): string {
     .trim();
 }
 
+// ── XHR Upload Helper (progress-aware) ──
+
+/** Callback fired during upload with 0-100 percent. */
+export type UploadProgressCallback = (percent: number) => void;
+
+interface XhrUploadOptions {
+  url: string;
+  formData: FormData;
+  headers?: Record<string, string>;
+  onProgress?: UploadProgressCallback;
+}
+
+/**
+ * fetch() doesn't expose upload progress, so the upload helpers route
+ * through XMLHttpRequest. Behavior mirrors the existing fetch path:
+ * credentials are sent, custom headers (incl. CSRF) attach, the JSON
+ * response body is parsed, and errors surface via Frappe's
+ * _server_messages envelope when present.
+ */
+function xhrUpload<T>(opts: XhrUploadOptions): Promise<T> {
+  return new Promise((resolve, reject) => {
+    const xhr = new XMLHttpRequest();
+    xhr.open("POST", opts.url, true);
+    xhr.withCredentials = true;
+    if (opts.headers) {
+      for (const [k, v] of Object.entries(opts.headers)) xhr.setRequestHeader(k, v);
+    }
+    if (opts.onProgress) {
+      xhr.upload.addEventListener("progress", (e) => {
+        if (e.lengthComputable) {
+          opts.onProgress!(Math.round((e.loaded / e.total) * 100));
+        }
+      });
+    }
+    xhr.onload = () => {
+      if (xhr.status >= 200 && xhr.status < 300) {
+        try {
+          resolve(JSON.parse(xhr.responseText) as T);
+        } catch {
+          reject(new ApiError("Respuesta inválida del servidor", xhr.status));
+        }
+      } else {
+        let msg = `Upload failed: ${xhr.status}`;
+        try {
+          const body = JSON.parse(xhr.responseText);
+          if (body?._server_messages) {
+            const msgs = JSON.parse(body._server_messages);
+            if (msgs?.[0]) {
+              const parsed = JSON.parse(msgs[0]);
+              if (parsed?.message) msg = stripHtml(parsed.message);
+            }
+          } else if (body?.exception || body?.message) {
+            msg = body.exception || body.message;
+          }
+        } catch { /* keep generic */ }
+        reject(new ApiError(msg, xhr.status));
+      }
+    };
+    xhr.onerror = () => reject(new ApiError("Error de red", 0));
+    xhr.onabort = () => reject(new ApiError("Cancelado", 0));
+    xhr.send(opts.formData);
+  });
+}
+
 // ── Core API Call ──
 
 /**
@@ -604,11 +668,16 @@ export async function submitPaymentProof(
   return frappeCall("invoices.submit_payment_proof", { name, file_url: fileUrl });
 }
 
-export async function uploadInvoiceFile(file: File, invoiceName: string): Promise<string> {
+export async function uploadInvoiceFile(
+  file: File,
+  invoiceName: string,
+  onProgress?: UploadProgressCallback,
+): Promise<string> {
   const formData = new FormData();
   formData.append("file", file);
   formData.append("name", invoiceName);
 
+  const url = `${ERP_BASE}/api/method/merkley_web.api.invoices.upload_invoice_file`;
   const headers: Record<string, string> = {
     Accept: "application/json",
   };
@@ -620,42 +689,28 @@ export async function uploadInvoiceFile(file: File, invoiceName: string): Promis
     // proceed without token
   }
 
-  let response = await fetch(
-    `${ERP_BASE}/api/method/merkley_web.api.invoices.upload_invoice_file`,
-    {
-      method: "POST",
-      credentials: "include",
-      headers,
-      body: formData,
+  try {
+    const data = await xhrUpload<{ message?: { file_url?: string } }>({
+      url, formData, headers, onProgress,
+    });
+    return data.message?.file_url || "";
+  } catch (err) {
+    // Retry once on 403 (stale CSRF token), preserving the existing
+    // CSRF refresh semantics from the prior fetch-based implementation.
+    if (err instanceof ApiError && err.status === 403) {
+      try {
+        clearCsrfToken();
+        headers["X-Frappe-CSRF-Token"] = await fetchCsrfToken();
+      } catch {
+        throw err;
+      }
+      const data = await xhrUpload<{ message?: { file_url?: string } }>({
+        url, formData, headers, onProgress,
+      });
+      return data.message?.file_url || "";
     }
-  );
-
-  // Retry on 403 (stale CSRF token)
-  if (response.status === 403) {
-    try {
-      clearCsrfToken();
-      const freshToken = await fetchCsrfToken();
-      headers["X-Frappe-CSRF-Token"] = freshToken;
-      response = await fetch(
-        `${ERP_BASE}/api/method/merkley_web.api.invoices.upload_invoice_file`,
-        {
-          method: "POST",
-          credentials: "include",
-          headers,
-          body: formData,
-        }
-      );
-    } catch {
-      // fall through
-    }
+    throw err;
   }
-
-  if (!response.ok) {
-    const errorText = await response.text().catch(() => "");
-    throw new ApiError(`Upload failed: ${errorText}`, response.status);
-  }
-  const data = await response.json();
-  return data.message?.file_url || "";
 }
 
 export async function requestAnnulment(
@@ -793,16 +848,20 @@ export async function calculateShippingCost(
  * Upload a file attached to a Quotation using our custom endpoint that
  * verifies ownership and bypasses the Quotation write-permission check.
  */
-export async function uploadQuotationFile(file: File, quotationName: string): Promise<string> {
+export async function uploadQuotationFile(
+  file: File,
+  quotationName: string,
+  onProgress?: UploadProgressCallback,
+): Promise<string> {
   const formData = new FormData();
   formData.append("file", file);
   formData.append("name", quotationName);
 
+  const url = `${ERP_BASE}/api/method/merkley_web.api.quotations.upload_quotation_file`;
   const headers: Record<string, string> = {
     Accept: "application/json",
   };
 
-  // Include CSRF token
   try {
     const token = await getCsrfToken();
     headers["X-Frappe-CSRF-Token"] = token;
@@ -810,42 +869,27 @@ export async function uploadQuotationFile(file: File, quotationName: string): Pr
     // proceed without token
   }
 
-  let response = await fetch(
-    `${ERP_BASE}/api/method/merkley_web.api.quotations.upload_quotation_file`,
-    {
-      method: "POST",
-      credentials: "include",
-      headers,
-      body: formData,
+  try {
+    const data = await xhrUpload<{ message?: { file_url?: string } }>({
+      url, formData, headers, onProgress,
+    });
+    return data.message?.file_url || "";
+  } catch (err) {
+    // Retry once on 403 (stale CSRF token).
+    if (err instanceof ApiError && err.status === 403) {
+      try {
+        clearCsrfToken();
+        headers["X-Frappe-CSRF-Token"] = await fetchCsrfToken();
+      } catch {
+        throw err;
+      }
+      const data = await xhrUpload<{ message?: { file_url?: string } }>({
+        url, formData, headers, onProgress,
+      });
+      return data.message?.file_url || "";
     }
-  );
-
-  // Retry on 403 (stale CSRF token)
-  if (response.status === 403) {
-    try {
-      clearCsrfToken();
-      const freshToken = await fetchCsrfToken();
-      headers["X-Frappe-CSRF-Token"] = freshToken;
-      response = await fetch(
-        `${ERP_BASE}/api/method/merkley_web.api.quotations.upload_quotation_file`,
-        {
-          method: "POST",
-          credentials: "include",
-          headers,
-          body: formData,
-        }
-      );
-    } catch {
-      // fall through to error handling
-    }
+    throw err;
   }
-
-  if (!response.ok) {
-    const errorText = await response.text().catch(() => "");
-    throw new ApiError(`Upload failed: ${errorText}`, response.status);
-  }
-  const data = await response.json();
-  return data.message?.file_url || "";
 }
 
 // ── Clients ──

@@ -34,6 +34,7 @@ interface PaymentFormProps {
 export function PaymentForm({ invoice, onPaymentSubmitted }: PaymentFormProps) {
   const { toast } = useToast();
   const [uploading, setUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState<number | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [uploadedFileUrl, setUploadedFileUrl] = useState<string | null>(null);
   const [fileName, setFileName] = useState<string | null>(null);
@@ -55,10 +56,11 @@ export function PaymentForm({ invoice, onPaymentSubmitted }: PaymentFormProps) {
     if (!file) return;
 
     setUploading(true);
+    setUploadProgress(0);
     setFileName(file.name);
 
     try {
-      const fileUrl = await api.uploadInvoiceFile(file, invoice.name);
+      const fileUrl = await api.uploadInvoiceFile(file, invoice.name, (p) => setUploadProgress(p));
       setUploadedFileUrl(fileUrl);
       toast({
         title: "Archivo subido",
@@ -75,6 +77,7 @@ export function PaymentForm({ invoice, onPaymentSubmitted }: PaymentFormProps) {
       setFileName(null);
     } finally {
       setUploading(false);
+      setUploadProgress(null);
     }
   };
 
@@ -222,6 +225,7 @@ export function PaymentForm({ invoice, onPaymentSubmitted }: PaymentFormProps) {
               accept=".pdf,image/jpeg,image/png,.heic,.heif"
               maxSizeBytes={10 * 1024 * 1024}
               isUploading={uploading}
+              progress={uploadProgress}
               onOversize={() =>
                 toast({
                   title: "Archivo muy grande",

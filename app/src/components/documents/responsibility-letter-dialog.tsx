@@ -22,6 +22,20 @@ interface ResponsibilityLetterDialogProps {
   quotationName: string;
 }
 
+/**
+ * Default the auto-fill date to today, but snap weekends to the next
+ * Monday — most legal docs are dated weekdays, so a Saturday/Sunday
+ * pre-fill looks off. Operators can still type a weekend date manually
+ * if they have a reason; only the auto-default is shifted.
+ */
+function todayOrNextBusinessDay(): string {
+  const d = new Date();
+  const day = d.getDay(); // 0=Sun, 6=Sat
+  if (day === 0) d.setDate(d.getDate() + 1); // Sun → Mon
+  else if (day === 6) d.setDate(d.getDate() + 2); // Sat → Mon
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+}
+
 export function ResponsibilityLetterDialog({
   open,
   onOpenChange,
@@ -31,10 +45,7 @@ export function ResponsibilityLetterDialog({
   const [repNombre, setRepNombre] = useState("");
   const [repCedula, setRepCedula] = useState("");
   const [repCargo, setRepCargo] = useState("");
-  const [firmaFecha, setFirmaFecha] = useState(() => {
-    const now = new Date();
-    return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
-  });
+  const [firmaFecha, setFirmaFecha] = useState(todayOrNextBusinessDay);
   const [firmaCiudad, setFirmaCiudad] = useState("");
   const [submitting, setSubmitting] = useState(false);
 

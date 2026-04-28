@@ -33,7 +33,11 @@ const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10 MB
 // the file from desktop file dialogs (OS greys out extensions not in
 // this list). FileDropzone converts HEIC→JPEG client-side before
 // upload, so the server still receives a clean JPEG.
-const ACCEPTED_TYPES = ".pdf,.jpg,.jpeg,.png,.heic,.heif";
+const APPROVAL_DOC_TYPES = ".pdf,.jpg,.jpeg,.png,.heic,.heif";
+// Brand books ship vector/source formats. Keep raster + Apple HEIC and
+// add the common vector / source-art extensions so designers can drop
+// the canonical file straight from the brand kit.
+const LOGO_FILE_TYPES = ".pdf,.jpg,.jpeg,.png,.heic,.heif,.svg,.webp,.eps,.ai,.psd,.tiff,.tif";
 
 interface ApprovalUploadProps {
   quotationName: string;
@@ -73,7 +77,7 @@ export function ApprovalUpload({
     if (reason === "type") {
       toast({
         title: "Tipo de archivo no permitido",
-        description: "Solo se aceptan archivos PDF, JPG o PNG.",
+        description: "El formato no está aceptado. Revisa los tipos permitidos en cada campo.",
         variant: "destructive",
       });
     }
@@ -274,7 +278,7 @@ export function ApprovalUpload({
                 <FileDropzone
                   label={approvalMethod}
                   helperText="PDF, JPG o PNG (máx 10 MB)"
-                  accept={ACCEPTED_TYPES}
+                  accept={APPROVAL_DOC_TYPES}
                   maxSizeBytes={MAX_FILE_SIZE}
                   onOversize={handleOversize}
                   onReject={handleReject}
@@ -318,8 +322,8 @@ export function ApprovalUpload({
               ) : (
                 <FileDropzone
                   label="Logo de empresa"
-                  helperText="Preferiblemente en formato PNG con fondo transparente"
-                  accept={ACCEPTED_TYPES}
+                  helperText="PNG, JPG, SVG, PDF, EPS, AI, PSD, TIFF, WEBP (máx 10 MB). Preferiblemente vector o PNG con fondo transparente."
+                  accept={LOGO_FILE_TYPES}
                   maxSizeBytes={MAX_FILE_SIZE}
                   onOversize={handleOversize}
                   onReject={handleReject}

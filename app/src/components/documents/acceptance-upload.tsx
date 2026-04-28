@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   FileText,
   AlertTriangle,
@@ -53,12 +53,33 @@ export function ApprovalUpload({
   onSuccess,
 }: ApprovalUploadProps) {
   const { toast } = useToast();
+  const STORAGE_KEY = `mw:quote-approval-draft:${quotationName}`;
   const [approvalMethod, setApprovalMethod] = useState<ApprovalMethod | null>(null);
   const [approvalDoc, setApprovalDoc] = useState<File | null>(null);
   const [logoFile, setLogoFile] = useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
   const [cartaDialogOpen, setCartaDialogOpen] = useState(false);
   const logoSectionRef = useRef<HTMLDivElement | null>(null);
+
+  // Restore approvalMethod from sessionStorage on mount. Files can't
+  // round-trip through storage; only the radio choice persists so users
+  // who navigate away mid-flow keep their selection.
+  useEffect(() => {
+    try {
+      const saved = sessionStorage.getItem(STORAGE_KEY);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (parsed.approvalMethod) setApprovalMethod(parsed.approvalMethod);
+      }
+    } catch { /* ignore */ }
+  }, [STORAGE_KEY]);
+
+  // Persist approvalMethod to sessionStorage so it survives reloads.
+  useEffect(() => {
+    if (approvalMethod) {
+      sessionStorage.setItem(STORAGE_KEY, JSON.stringify({ approvalMethod }));
+    }
+  }, [approvalMethod, STORAGE_KEY]);
 
   const rejectionNotes = documents?.rejection_notes;
   const isCartaMethod = approvalMethod === "Carta de responsabilidad firmada y sellada";
@@ -118,6 +139,7 @@ export function ApprovalUpload({
         logoUrl || undefined,
       );
 
+      sessionStorage.removeItem(STORAGE_KEY);
       toast({
         title: "Cotización aprobada",
         description:

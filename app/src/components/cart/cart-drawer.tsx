@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { ShoppingBag, ArrowRight } from "lucide-react";
+import { ShoppingBag, ArrowRight, AlertCircle } from "lucide-react";
 import {
   Sheet,
   SheetContent,
@@ -20,10 +20,16 @@ interface CartDrawerProps {
 
 export function CartDrawer({ open, onOpenChange }: CartDrawerProps) {
   const { items, itemCount, updateQty, removeItem } = useCart();
-  const { isAuthenticated, customer } = useAuth();
+  const { isAuthenticated, customer, availableCustomers } = useAuth();
   const router = useRouter();
 
   const subtotal = items.reduce((sum, item) => sum + item.qty * item.rate, 0);
+
+  // An authenticated user with zero linked Customers can't actually submit
+  // a quotation downstream. Block the proceed button here so they don't
+  // navigate into /cotizaciones/nueva only to find the submit silently
+  // gated.
+  const noLinkedCompany = isAuthenticated && availableCustomers.length === 0;
 
   const handleProceed = () => {
     onOpenChange(false);
@@ -84,7 +90,7 @@ export function CartDrawer({ open, onOpenChange }: CartDrawerProps) {
               <p className="text-[10px] text-muted-foreground">
                 ITBIS y envío se calculan al crear la cotización.
               </p>
-              {isAuthenticated && customer?.company_name && (
+              {isAuthenticated && customer?.company_name && !noLinkedCompany && (
                 <p className="text-xs text-muted-foreground">
                   Vas a cotizar como{" "}
                   <span className="font-medium text-foreground">
@@ -100,7 +106,28 @@ export function CartDrawer({ open, onOpenChange }: CartDrawerProps) {
                   </Link>
                 </p>
               )}
-              <Button className="w-full" size="lg" onClick={handleProceed}>
+              {noLinkedCompany && (
+                <div className="flex items-start gap-2 rounded-md border border-amber-300 bg-amber-50 p-2">
+                  <AlertCircle className="h-4 w-4 text-amber-600 shrink-0 mt-0.5" />
+                  <p className="text-xs text-amber-900">
+                    Tu cuenta no tiene una empresa vinculada.{" "}
+                    <Link
+                      href="/cuenta/empresas"
+                      onClick={() => onOpenChange(false)}
+                      className="font-medium underline"
+                    >
+                      Solicita acceso
+                    </Link>{" "}
+                    antes de cotizar.
+                  </p>
+                </div>
+              )}
+              <Button
+                className="w-full"
+                size="lg"
+                onClick={handleProceed}
+                disabled={noLinkedCompany}
+              >
                 {isAuthenticated ? "Continuar a cotización" : "Iniciar sesión para cotizar"}
                 <ArrowRight className="ml-2 h-4 w-4" />
               </Button>

@@ -23,6 +23,7 @@ import {
   X,
   Building2,
   Check,
+  AlertCircle,
 } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
@@ -539,6 +540,31 @@ export default function NewQuotationPage() {
         title="Nueva Cotización"
         description="Selecciona productos y configura tu cotización"
       />
+
+      {/* No-customer banner — without a linked Customer the submit button
+          stays disabled with no inline reason. Surface a clear next step
+          so the user doesn't fill the cart and bounce off a silent gate. */}
+      {effectiveCustomers.length === 0 && (
+        <div className="rounded-lg border border-amber-300 bg-amber-50 p-4">
+          <div className="flex items-start gap-3">
+            <AlertCircle className="h-5 w-5 text-amber-600 shrink-0 mt-0.5" />
+            <div>
+              <p className="font-semibold text-amber-900">
+                Tu cuenta no tiene una empresa vinculada
+              </p>
+              <p className="text-sm text-amber-800 mt-1">
+                Necesitas vincular o solicitar acceso a una empresa antes de poder cotizar.
+              </p>
+              <Link
+                href="/cuenta/empresas"
+                className="inline-block mt-2 text-sm font-medium text-amber-900 underline"
+              >
+                Ir a Mis empresas →
+              </Link>
+            </div>
+          </div>
+        </div>
+      )}
 
       <div className="grid gap-6 lg:grid-cols-5">
         {/* Left: Product selection */}

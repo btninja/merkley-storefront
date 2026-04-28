@@ -35,7 +35,7 @@ interface CartContextValue {
 }
 
 const STORAGE_KEY = "mw_cart";
-const MAX_QTY = 10000;
+const MAX_QTY = 100000;
 
 const CartContext = createContext<CartContextValue | null>(null);
 

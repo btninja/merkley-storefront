@@ -16,6 +16,7 @@ import {
   MapPin,
   Package,
   Pencil,
+  RefreshCw,
   ScrollText,
   StickyNote,
   Truck,
@@ -155,6 +156,16 @@ export default function QuotationDetailPage() {
   const [declineReason, setDeclineReason] = useState("");
   const [isDeclining, setIsDeclining] = useState(false);
   const [activeTab, setActiveTab] = useState<DocTabValue>("details");
+  const [isRefreshing, setIsRefreshing] = useState(false);
+
+  const handleRefresh = async () => {
+    setIsRefreshing(true);
+    try {
+      await mutate();
+    } finally {
+      setIsRefreshing(false);
+    }
+  };
 
   const quote = data?.quote;
 
@@ -1007,17 +1018,32 @@ export default function QuotationDetailPage() {
   return (
     <div className="grid gap-6 md:grid-cols-[1fr_260px]">
       <div className="space-y-6">
-        <DocHeader
-          title={quote.name}
-          customerName={customerName}
-          issuedLabel="Emitida"
-          issuedDate={quote.transaction_date}
-          dueLabel="Válida hasta"
-          dueDate={quote.valid_till}
-          subtotal={quote.subtotal}
-          taxes={quote.tax_total}
-          total={quote.grand_total}
-        />
+        <div className="flex items-start gap-2">
+          <div className="flex-1">
+            <DocHeader
+              title={quote.name}
+              customerName={customerName}
+              issuedLabel="Emitida"
+              issuedDate={quote.transaction_date}
+              dueLabel="Válida hasta"
+              dueDate={quote.valid_till}
+              subtotal={quote.subtotal}
+              taxes={quote.tax_total}
+              total={quote.grand_total}
+            />
+          </div>
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={handleRefresh}
+            disabled={isRefreshing}
+            className="shrink-0"
+            aria-label="Actualizar"
+            title="Actualizar"
+          >
+            <RefreshCw className={`h-4 w-4 ${isRefreshing ? "animate-spin" : ""}`} />
+          </Button>
+        </div>
 
         <StateBanner stage={quote.stage} meta={meta} />
 

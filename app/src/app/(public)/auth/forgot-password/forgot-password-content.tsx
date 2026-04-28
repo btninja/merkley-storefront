@@ -11,6 +11,13 @@ import { Label } from "@/components/ui/label";
 
 import { ERP_BASE_URL as ERP_BASE } from "@/lib/env";
 
+// Some Android keyboards reject "+" in <input type="email"> validity
+// checks, blocking valid Gmail "+tag" addresses. Use type="text" with
+// inputMode="email" and our own pattern check instead.
+function isValidEmailish(s: string): boolean {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(s.trim());
+}
+
 export default function ForgotPasswordContent() {
   const [email, setEmail] = useState("");
   const [loading, setLoading] = useState(false);
@@ -20,6 +27,10 @@ export default function ForgotPasswordContent() {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError("");
+    if (!isValidEmailish(email)) {
+      setError("Ingresa un correo electrónico válido.");
+      return;
+    }
     setLoading(true);
 
     try {
@@ -81,7 +92,9 @@ export default function ForgotPasswordContent() {
                   <Label htmlFor="email">Correo electrónico</Label>
                   <Input
                     id="email"
-                    type="email"
+                    type="text"
+                    inputMode="email"
+                    autoCapitalize="none"
                     placeholder="tu@empresa.com"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}

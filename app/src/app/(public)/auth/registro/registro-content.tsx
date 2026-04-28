@@ -85,6 +85,13 @@ const BLOCKED_DOMAINS = new Set([
 
 const STEP_LABELS = ["Empresa", "Contacto", "Adicional"] as const;
 
+// Some Android keyboards reject "+" in <input type="email"> validity
+// checks, blocking valid Gmail "+tag" addresses. Switch to type="text"
+// + inputMode="email" and run our own pattern check instead.
+function isValidEmailish(s: string): boolean {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(s.trim());
+}
+
 export default function RegistroPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -262,6 +269,15 @@ export default function RegistroPage() {
         });
         return;
       }
+    }
+
+    if (!isValidEmailish(form.email)) {
+      toast({
+        title: "Correo inválido",
+        description: "Ingresa un correo electrónico válido.",
+        variant: "destructive",
+      });
+      return;
     }
 
     if (!dgiiChecked || !dgiiResult?.valid) {
@@ -630,7 +646,9 @@ export default function RegistroPage() {
                         </Label>
                         <Input
                           id="email"
-                          type="email"
+                          type="text"
+                          inputMode="email"
+                          autoCapitalize="none"
                           placeholder="contacto@empresa.com"
                           value={form.email}
                           onChange={(e) => updateField("email", e.target.value)}

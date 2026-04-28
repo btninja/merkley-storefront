@@ -173,7 +173,17 @@ export default function InvoiceDetailPage() {
       });
     }
 
-    const canRequestAnnulment = ["Pendiente de Pago", "Vencida"].includes(stage);
+    // 30-day annulment window — DGII rules block credit-note style
+    // amendments after a month, so block the dialog upfront instead of
+    // letting the user fill the form and bounce off the backend gate.
+    const daysSincePosting = invoice.posting_date
+      ? Math.floor(
+          (Date.now() - new Date(invoice.posting_date).getTime()) / 86400000,
+        )
+      : 999;
+    const withinAnnulmentWindow = daysSincePosting <= 30;
+    const canRequestAnnulment =
+      ["Pendiente de Pago", "Vencida"].includes(stage) && withinAnnulmentWindow;
     if (canRequestAnnulment) {
       list.push({
         key: "annul",
@@ -192,7 +202,21 @@ export default function InvoiceDetailPage() {
 
     return list;
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [invoice?.stage, invoice?.invoice_stage, invoice?.retention_letter_file, isDownloading]);
+  }, [invoice?.stage, invoice?.invoice_stage, invoice?.posting_date, invoice?.retention_letter_file, isDownloading]);
+
+  // Surface the "annulment window expired" hint inline so users in
+  // Pendiente de Pago / Vencida stages who are past 30 days understand
+  // why the action isn't on the rail.
+  const showAnnulmentExpiredHint = (() => {
+    if (!invoice) return false;
+    const stage = invoice.stage ?? invoice.invoice_stage ?? "";
+    if (!["Pendiente de Pago", "Vencida"].includes(stage)) return false;
+    if (!invoice.posting_date) return false;
+    const days = Math.floor(
+      (Date.now() - new Date(invoice.posting_date).getTime()) / 86400000,
+    );
+    return days > 30;
+  })();
 
   // History timeline — pseudo-history derived from the timestamps we already
   // serialize (creation, proof upload, review, retention submission, annulment).
@@ -660,6 +684,12 @@ export default function InvoiceDetailPage() {
         />
 
         <StateBanner stage={rawStage} meta={meta} />
+
+        {showAnnulmentExpiredHint && (
+          <div className="text-xs text-muted-foreground">
+            Anulación fuera de plazo (más de 30 días). Contáctanos por WhatsApp.
+          </div>
+        )}
 
         <DocTabs
           details={detailsContent}

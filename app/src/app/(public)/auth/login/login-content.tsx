@@ -39,11 +39,34 @@ export default function LoginPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [fromRegistro, setFromRegistro] = useState(false);
 
-  // Redirect authenticated users away from login page
+  // Show "session expired" toast when arriving here via api.ts session
+  // expiry redirect (?expired=1). Strip the param after to keep the URL
+  // clean and prevent re-firing on hot reload.
+  useEffect(() => {
+    if (searchParams.get("expired") === "1") {
+      toast({
+        title: "Sesión expirada",
+        description: "Tu sesión expiró. Inicia sesión para continuar donde estabas.",
+        variant: "default",
+      });
+    }
+  }, [searchParams]);
+
+  // Redirect authenticated users away from login page. Prefer ?next=
+  // (set by middleware or the api.ts 401 handler). Fall back to a
+  // sessionStorage post-login destination so e.g. an in-flow expiry
+  // can return the user to /cotizaciones/QTN-XXXX after login.
   useEffect(() => {
     if (!isLoading && isAuthenticated) {
       const next = searchParams.get("next");
-      const dest = isSafeNext(next) ? next : "/cuenta";
+      let dest: string;
+      if (isSafeNext(next)) {
+        dest = next;
+      } else {
+        const stored = sessionStorage.getItem("md_post_login_redirect");
+        dest = isSafeNext(stored) ? stored : "/cuenta";
+      }
+      sessionStorage.removeItem("md_post_login_redirect");
       router.replace(dest);
     }
   }, [isLoading, isAuthenticated, router, searchParams]);
@@ -90,7 +113,14 @@ export default function LoginPage() {
         variant: "success",
       });
       const next = searchParams.get("next");
-      const dest = isSafeNext(next) ? next : "/cuenta";
+      let dest: string;
+      if (isSafeNext(next)) {
+        dest = next;
+      } else {
+        const stored = sessionStorage.getItem("md_post_login_redirect");
+        dest = isSafeNext(stored) ? stored : "/cuenta";
+      }
+      sessionStorage.removeItem("md_post_login_redirect");
       router.replace(dest);
     } catch (err: unknown) {
       const message =

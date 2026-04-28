@@ -71,6 +71,42 @@ function clearCsrfToken() {
   _csrfToken = null;
 }
 
+// ── Session Expiry ──
+
+let _redirectingForSessionExpiry = false;
+
+/**
+ * Called when an authenticated client-side request returns 401 — the user's
+ * session expired mid-flow. We surface a single toast (deduped via the
+ * module-scoped flag), preserve their current location so post-login
+ * routing returns them here, and route them to /auth/login. Form drafts
+ * stashed in sessionStorage by individual flows (quote-builder, retention,
+ * approval method) are unaffected.
+ *
+ * If the cookie says we were never authenticated, this is just an unauth
+ * RPC — skip the redirect so probes like getSessionContext on a logged-out
+ * user don't bounce around.
+ */
+function handleSessionExpiry() {
+  if (typeof window === "undefined") return;
+  if (_redirectingForSessionExpiry) return;
+  // Only redirect if the user thought they were logged in. AuthProvider
+  // sets `mw_session=1` on successful login.
+  if (!document.cookie.includes("mw_session=1")) return;
+  _redirectingForSessionExpiry = true;
+  try {
+    const here = window.location.pathname + window.location.search;
+    sessionStorage.setItem("md_post_login_redirect", here);
+  } catch { /* sessionStorage blocked */ }
+  // Best-effort: avoid bouncing if we're already on an auth page.
+  if (!window.location.pathname.startsWith("/auth/")) {
+    const next = encodeURIComponent(window.location.pathname + window.location.search);
+    window.location.href = `/auth/login?next=${next}&expired=1`;
+  } else {
+    _redirectingForSessionExpiry = false;
+  }
+}
+
 // ── Error Class ──
 
 class ApiError extends Error {
@@ -209,6 +245,14 @@ async function rawFrappeCall<T>(
       }
     } catch {
       // ignore
+    }
+    // Mid-flow session expiry: if the user thought they were logged in
+    // (mw_session cookie set by AuthProvider), preserve their location
+    // and bounce them through /auth/login so post-login they land back
+    // where they were. SessionStorage drafts already in place from
+    // earlier audit fixes survive the round-trip.
+    if (response.status === 401) {
+      handleSessionExpiry();
     }
     throw new ApiError(
       serverMessage || `Request failed: ${response.status}`,

@@ -29,7 +29,11 @@ import type { ApprovalMethod } from "@/lib/constants";
 import type { QuotationDocuments } from "@/lib/types";
 
 const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10 MB
-const ACCEPTED_TYPES = ".pdf,.jpg,.jpeg,.png";
+// .heic/.heif accepted at picker level so iPhone customers can SELECT
+// the file from desktop file dialogs (OS greys out extensions not in
+// this list). FileDropzone converts HEIC→JPEG client-side before
+// upload, so the server still receives a clean JPEG.
+const ACCEPTED_TYPES = ".pdf,.jpg,.jpeg,.png,.heic,.heif";
 
 interface ApprovalUploadProps {
   quotationName: string;

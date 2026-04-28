@@ -219,7 +219,7 @@ export function PaymentForm({ invoice, onPaymentSubmitted }: PaymentFormProps) {
             <FileDropzone
               label="Click para subir comprobante"
               helperText="PDF, JPG, PNG (máx. 10MB)"
-              accept=".pdf,image/jpeg,image/png"
+              accept=".pdf,image/jpeg,image/png,.heic,.heif"
               maxSizeBytes={10 * 1024 * 1024}
               isUploading={uploading}
               onOversize={() =>

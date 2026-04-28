@@ -1100,6 +1100,7 @@ export default function QuotationDetailPage() {
                 placeholder="Ej: cambio de prioridades, presupuesto, precio..."
                 value={declineReason}
                 onChange={(e) => setDeclineReason(e.target.value)}
+                maxLength={1000}
                 className="min-h-[100px]"
               />
             </div>

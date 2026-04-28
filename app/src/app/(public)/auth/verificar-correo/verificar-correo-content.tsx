@@ -78,6 +78,22 @@ function VerificarCorreoContent() {
     if (!isPendingApproval) inputRef.current?.focus();
   }, [isPendingApproval]);
 
+  // Auto-submit when 6 digits are entered. 200 ms debounce coalesces
+  // burst events from a paste (where onChange can fire twice as the
+  // browser commits the value), preventing two parallel verify calls.
+  useEffect(() => {
+    if (code.length !== 6 || submittingRef.current) return;
+    const timer = setTimeout(() => {
+      if (code.length === 6 && !submittingRef.current) {
+        handleSubmit(code);
+      }
+    }, 200);
+    return () => clearTimeout(timer);
+    // handleSubmit is stable enough; intentionally omit to avoid re-firing
+    // on every render due to its closure over `code`.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [code]);
+
   const cooldownMs = Math.max(0, resendUnlockAt - now);
   const codeRemainingMs = Math.max(0, codeExpiresAt - now);
   const codeExpired = codeRemainingMs === 0;
@@ -117,7 +133,12 @@ function VerificarCorreoContent() {
           description: "Tu cuenta ha sido activada.",
           variant: "success",
         });
-        router.push("/cuenta");
+        // Full reload (not router.push) so middleware re-evaluates with the
+        // freshly-set mw_session cookie. router.push can serve a cached
+        // "redirect to login" response from when this route was prefetched
+        // while still unauthenticated, which strands the user on /auth/login
+        // until they hard-refresh.
+        window.location.href = "/cuenta";
       } catch (err: unknown) {
         const raw = err instanceof Error ? err.message : "Error al verificar.";
         setError(cleanError(raw));
@@ -238,7 +259,6 @@ function VerificarCorreoContent() {
               const digits = e.target.value.replace(/\D/g, "").slice(0, 6);
               setCode(digits);
               setError("");
-              if (digits.length === 6) handleSubmit(digits);
             }}
             disabled={isSubmitting}
             placeholder="000000"

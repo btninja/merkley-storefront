@@ -12,7 +12,7 @@ interface CartItemRowProps {
 }
 
 export function CartItemRow({ item, onUpdateQty, onRemove }: CartItemRowProps) {
-  const minQty = item.minimum_order_qty || 2;
+  const minQty = item.minimum_order_qty || 1;
   const lineTotal = item.qty * item.rate;
   const canDecrement = item.qty > minQty;
 

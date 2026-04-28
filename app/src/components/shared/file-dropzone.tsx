@@ -5,6 +5,7 @@ import { cn } from "@/lib/utils";
 import { Paperclip, Upload, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { convertHeicToJpegIfNeeded } from "@/lib/convert-heic";
+import { compressImageIfOversize } from "@/lib/compress-image";
 
 export interface FileDropzoneFile {
   name: string;
@@ -123,12 +124,26 @@ export function FileDropzone({
           setIsConverting(false);
         }
       }
+      // Compress oversize JPEGs (and any other raster image) before
+      // validate() runs the maxSizeBytes gate. Non-images and
+      // already-small files pass through. On compression failure we
+      // fall through with originals so validate() still produces the
+      // expected oversize toast.
+      if (maxSizeBytes != null) {
+        try {
+          converted = await Promise.all(
+            converted.map((f) => compressImageIfOversize(f, maxSizeBytes)),
+          );
+        } catch {
+          // ignore — validate() will reject as oversize
+        }
+      }
       const valid = validate(converted);
       if (valid.length) {
         await onFiles(valid);
       }
     },
-    [disabled, multiple, onFiles, validate],
+    [disabled, multiple, onFiles, validate, maxSizeBytes],
   );
 
   const handleDrop = useCallback(

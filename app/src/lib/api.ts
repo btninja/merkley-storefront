@@ -115,9 +115,12 @@ function stripHtml(value: string): string {
 async function rawFrappeCall<T>(
   fullPath: string,
   params?: Record<string, unknown>,
-  options?: { method?: "GET" | "POST"; revalidate?: number | false }
+  options?: { method?: "GET" | "POST"; revalidate?: number | false; timeoutMs?: number }
 ): Promise<T> {
   const httpMethod = options?.method || "POST";
+  // Default 15s for typical RPCs; PDF generation and DGII verification
+  // call sites override to 60s via options.timeoutMs. Pass 0 to disable.
+  const timeoutMs = options?.timeoutMs ?? 15000;
   let url = `${ERP_BASE}/api/method/${fullPath}`;
 
   const headers: Record<string, string> = {
@@ -136,7 +139,7 @@ async function rawFrappeCall<T>(
   }
 
   const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), 15000);
+  const timeoutId = timeoutMs > 0 ? setTimeout(() => controller.abort(), timeoutMs) : null;
 
   const fetchOptions: RequestInit & { next?: { revalidate?: number | false } } = {
     method: httpMethod,
@@ -161,13 +164,13 @@ async function rawFrappeCall<T>(
   try {
     response = await fetch(url, fetchOptions);
   } catch (err) {
-    clearTimeout(timeoutId);
+    if (timeoutId) clearTimeout(timeoutId);
     if (err instanceof DOMException && err.name === "AbortError") {
       throw new ApiError("La solicitud tardo demasiado. Intenta de nuevo.", 408);
     }
     throw err;
   }
-  clearTimeout(timeoutId);
+  if (timeoutId) clearTimeout(timeoutId);
 
   // If we get a 403, the CSRF token may be stale — refresh and retry once
   if (response.status === 403 && httpMethod === "POST") {
@@ -218,7 +221,7 @@ async function rawFrappeCall<T>(
 async function frappeCall<T>(
   method: string,
   params?: Record<string, unknown>,
-  options?: { method?: "GET" | "POST"; revalidate?: number | false }
+  options?: { method?: "GET" | "POST"; revalidate?: number | false; timeoutMs?: number }
 ): Promise<T> {
   return rawFrappeCall<T>(`merkley_web.api.${method}`, params, options);
 }
@@ -230,7 +233,7 @@ async function frappeCall<T>(
 async function frappeCallAbsolute<T>(
   method: string,
   params?: Record<string, unknown>,
-  options?: { method?: "GET" | "POST"; revalidate?: number | false }
+  options?: { method?: "GET" | "POST"; revalidate?: number | false; timeoutMs?: number }
 ): Promise<T> {
   return rawFrappeCall<T>(method, params, options);
 }
@@ -244,7 +247,9 @@ export async function login(email: string, password: string): Promise<SessionRes
 }
 
 export async function validateRnc(rnc: string): Promise<import("@/lib/types").DgiiValidationResult> {
-  return frappeCall<import("@/lib/types").DgiiValidationResult>("auth.validate_rnc", { rnc });
+  // DGII registry calls are external + occasionally slow; 15s default is
+  // too aggressive. 60s matches our other PDF/external-API call sites.
+  return frappeCall<import("@/lib/types").DgiiValidationResult>("auth.validate_rnc", { rnc }, { timeoutMs: 60_000 });
 }
 
 export async function register(data: RegistrationData): Promise<RegisterResponse> {
@@ -436,7 +441,9 @@ export async function getSeasonProducts(params: {
 export async function generateCustomerCatalogPdf(params: {
   season: string;
 }): Promise<{ file_name: string; file_url: string; item_count: number }> {
-  return frappeCall("catalogs.generate_customer_catalog_pdf", params as Record<string, unknown>);
+  // Server-side PDF rendering can take longer than the default 15s
+  // RPC timeout when the season has many items / images.
+  return frappeCall("catalogs.generate_customer_catalog_pdf", params as Record<string, unknown>, { timeoutMs: 60_000 });
 }
 
 // ── Quotations ──

@@ -34,6 +34,10 @@ export default function ForgotPasswordContent() {
     setLoading(true);
 
     try {
+      // Pre-auth flow: backend marks send_password_reset as allow_guest=True,
+      // so no CSRF token is required and no token-refresh retry is needed.
+      // Intentionally calling fetch directly instead of routing through
+      // frappeCall, which would attach an irrelevant CSRF header.
       const res = await fetch(
         `${ERP_BASE}/api/method/merkley_web.api.auth.send_password_reset`,
         {

@@ -115,7 +115,7 @@ function stripHtml(value: string): string {
 async function rawFrappeCall<T>(
   fullPath: string,
   params?: Record<string, unknown>,
-  options?: { method?: "GET" | "POST"; revalidate?: number | false; timeoutMs?: number }
+  options?: { method?: "GET" | "POST"; revalidate?: number | false; timeoutMs?: number; signal?: AbortSignal }
 ): Promise<T> {
   const httpMethod = options?.method || "POST";
   // Default 15s for typical RPCs; PDF generation and DGII verification
@@ -140,6 +140,13 @@ async function rawFrappeCall<T>(
 
   const controller = new AbortController();
   const timeoutId = timeoutMs > 0 ? setTimeout(() => controller.abort(), timeoutMs) : null;
+  // If the caller passes an external signal (e.g. to cancel a stale
+  // DGII verify when a newer one starts), forward its abort into our
+  // internal controller so fetch() observes a single signal.
+  if (options?.signal) {
+    if (options.signal.aborted) controller.abort();
+    else options.signal.addEventListener("abort", () => controller.abort(), { once: true });
+  }
 
   const fetchOptions: RequestInit & { next?: { revalidate?: number | false } } = {
     method: httpMethod,
@@ -221,7 +228,7 @@ async function rawFrappeCall<T>(
 async function frappeCall<T>(
   method: string,
   params?: Record<string, unknown>,
-  options?: { method?: "GET" | "POST"; revalidate?: number | false; timeoutMs?: number }
+  options?: { method?: "GET" | "POST"; revalidate?: number | false; timeoutMs?: number; signal?: AbortSignal }
 ): Promise<T> {
   return rawFrappeCall<T>(`merkley_web.api.${method}`, params, options);
 }
@@ -233,7 +240,7 @@ async function frappeCall<T>(
 async function frappeCallAbsolute<T>(
   method: string,
   params?: Record<string, unknown>,
-  options?: { method?: "GET" | "POST"; revalidate?: number | false; timeoutMs?: number }
+  options?: { method?: "GET" | "POST"; revalidate?: number | false; timeoutMs?: number; signal?: AbortSignal }
 ): Promise<T> {
   return rawFrappeCall<T>(method, params, options);
 }
@@ -246,10 +253,17 @@ export async function login(email: string, password: string): Promise<SessionRes
   return session;
 }
 
-export async function validateRnc(rnc: string): Promise<import("@/lib/types").DgiiValidationResult> {
+export async function validateRnc(
+  rnc: string,
+  options?: { signal?: AbortSignal },
+): Promise<import("@/lib/types").DgiiValidationResult> {
   // DGII registry calls are external + occasionally slow; 15s default is
   // too aggressive. 60s matches our other PDF/external-API call sites.
-  return frappeCall<import("@/lib/types").DgiiValidationResult>("auth.validate_rnc", { rnc }, { timeoutMs: 60_000 });
+  return frappeCall<import("@/lib/types").DgiiValidationResult>(
+    "auth.validate_rnc",
+    { rnc },
+    { timeoutMs: 60_000, signal: options?.signal },
+  );
 }
 
 export async function register(data: RegistrationData): Promise<RegisterResponse> {

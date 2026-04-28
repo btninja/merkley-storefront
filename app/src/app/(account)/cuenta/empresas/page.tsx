@@ -238,6 +238,9 @@ function RequestAccessDialog({
   const [dgiiChecked, setDgiiChecked] = useState(false);
   // Prevent racing requests if the user re-blurs the same value.
   const lastValidatedRnc = useRef<string | null>(null);
+  // Abort any in-flight DGII verify when a newer one starts so a stale
+  // (slow) response can't overwrite a fresher result.
+  const dgiiAbortRef = useRef<AbortController | null>(null);
 
   const cleanedRnc = rnc.replace(/\D/g, "");
   const rncLongEnough = cleanedRnc.length >= 9;
@@ -264,11 +267,18 @@ function RequestAccessDialog({
   }, [cleanedRnc]);
 
   const runDgiiValidation = useCallback(async () => {
-    if (!rncLongEnough || dgiiLoading) return;
+    if (!rncLongEnough) return;
     if (cleanedRnc === lastValidatedRnc.current && dgiiChecked) return;
+    // Cancel any in-flight previous request so a stale (slow) DGII
+    // response can't overwrite a fresher result.
+    dgiiAbortRef.current?.abort();
+    const controller = new AbortController();
+    dgiiAbortRef.current = controller;
     setDgiiLoading(true);
     try {
-      const result = await api.validateRnc(cleanedRnc);
+      const result = await api.validateRnc(cleanedRnc, { signal: controller.signal });
+      // Drop result if a newer request superseded this one.
+      if (dgiiAbortRef.current !== controller) return;
       setDgiiResult(result);
       setDgiiChecked(true);
       lastValidatedRnc.current = cleanedRnc;
@@ -288,14 +298,15 @@ function RequestAccessDialog({
         });
       }
     } catch {
+      if (controller.signal.aborted) return; // ignore aborted requests
       // Network / CORS failure — let user retry via the "Verificar"
       // button. No toast on silent blur failures to avoid spam.
       setDgiiChecked(false);
       setDgiiResult(null);
     } finally {
-      setDgiiLoading(false);
+      if (dgiiAbortRef.current === controller) setDgiiLoading(false);
     }
-  }, [cleanedRnc, rncLongEnough, dgiiLoading, dgiiChecked, companyName, toast]);
+  }, [cleanedRnc, rncLongEnough, dgiiChecked, companyName, toast]);
 
   const handleRncBlur = useCallback(() => {
     if (rncLongEnough && !dgiiChecked && !dgiiLoading) {

@@ -4,6 +4,7 @@ import { useCallback, useRef, useState } from "react";
 import { cn } from "@/lib/utils";
 import { Paperclip, Upload, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { convertHeicToJpegIfNeeded } from "@/lib/convert-heic";
 
 export interface FileDropzoneFile {
   name: string;
@@ -60,6 +61,7 @@ export function FileDropzone({
 }: FileDropzoneProps) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [isDragOver, setIsDragOver] = useState(false);
+  const [isConverting, setIsConverting] = useState(false);
 
   const matchesAccept = useCallback(
     (file: File) => {
@@ -103,7 +105,25 @@ export function FileDropzone({
       const arr = Array.from(raw);
       if (!arr.length) return;
       const picked = multiple ? arr : arr.slice(0, 1);
-      const valid = validate(picked);
+      // iPhone HEIC/HEIF → JPEG before any other processing. Chrome/Firefox
+      // can't render HEIC, so the CRM preview lightbox would be blank.
+      // Pass-through for non-HEIC files (no re-encode of JPEG/PNG/PDF).
+      const needsConversion = picked.some((f) => /\.(heic|heif)$/i.test(f.name));
+      let converted = picked;
+      if (needsConversion) {
+        setIsConverting(true);
+        try {
+          converted = await Promise.all(picked.map((f) => convertHeicToJpegIfNeeded(f)));
+        } catch {
+          // Fall through with the original files; the backend allowlist
+          // accepts HEIC/HEIF, so the upload still succeeds even if
+          // conversion fails (e.g. older browsers, very large files).
+          converted = picked;
+        } finally {
+          setIsConverting(false);
+        }
+      }
+      const valid = validate(converted);
       if (valid.length) {
         await onFiles(valid);
       }
@@ -188,9 +208,9 @@ export function FileDropzone({
         )}
         <div className={cn(compactLayout ? "flex-1 text-left" : "text-center")}>
           <p className={cn("text-sm font-medium", compactLayout && "text-xs")}>
-            {isUploading ? "Subiendo..." : label}
+            {isConverting ? "Convirtiendo..." : isUploading ? "Subiendo..." : label}
           </p>
-          {helperText && !isUploading && (
+          {helperText && !isUploading && !isConverting && (
             <p className="text-xs text-muted-foreground">{helperText}</p>
           )}
         </div>

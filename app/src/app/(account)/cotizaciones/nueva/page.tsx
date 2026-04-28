@@ -25,6 +25,7 @@ import {
   Check,
 } from "lucide-react";
 import Image from "next/image";
+import Link from "next/link";
 import { useProducts, useBootstrap } from "@/hooks/use-catalog";
 import { useCart } from "@/context/cart-context";
 import { PageHeader } from "@/components/layout/page-header";
@@ -1155,6 +1156,30 @@ export default function NewQuotationPage() {
                   onChange={(e) => setGeneralNotes(e.target.value)}
                 />
               </div>
+
+              {/* Single-company case: read-only display of the active
+                  company plus a link to /cuenta/empresas so users can
+                  discover the "Solicitar otra empresa" flow even when
+                  they currently have just one linked Customer. */}
+              {!isMultiCompany && availableCustomers.length === 1 && (
+                <div className="space-y-2 rounded-lg border border-border p-3 bg-surface-muted/40">
+                  <div className="flex items-center gap-2">
+                    <Building2 className="h-4 w-4 text-muted" />
+                    <Label className="m-0 text-sm font-semibold">Empresa</Label>
+                  </div>
+                  <div className="flex items-center justify-between gap-3">
+                    <span className="text-sm font-medium truncate">
+                      {availableCustomers[0].customer_name || availableCustomers[0].name}
+                    </span>
+                    <Link
+                      href="/cuenta/empresas"
+                      className="text-xs text-primary hover:underline whitespace-nowrap"
+                    >
+                      Solicitar acceso a otra empresa →
+                    </Link>
+                  </div>
+                </div>
+              )}
 
               {/* Multi-company selector — only shown for users with 2+
                   linked Customers. Nothing pre-selected; user must tick

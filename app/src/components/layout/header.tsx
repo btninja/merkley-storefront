@@ -245,7 +245,7 @@ export function Header({ showMobileMenu = true }: { showMobileMenu?: boolean } =
                       <DropdownMenuItem asChild>
                         <Link href="/cuenta/empresas" className="flex items-center gap-2">
                           <Building2 className="h-4 w-4" />
-                          Mis empresas
+                          Mis empresas / Cambiar empresa
                         </Link>
                       </DropdownMenuItem>
                       <DropdownMenuItem asChild>

@@ -20,7 +20,7 @@ interface CartDrawerProps {
 
 export function CartDrawer({ open, onOpenChange }: CartDrawerProps) {
   const { items, itemCount, updateQty, removeItem } = useCart();
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, customer } = useAuth();
   const router = useRouter();
 
   const subtotal = items.reduce((sum, item) => sum + item.qty * item.rate, 0);
@@ -84,6 +84,22 @@ export function CartDrawer({ open, onOpenChange }: CartDrawerProps) {
               <p className="text-[10px] text-muted-foreground">
                 ITBIS y envío se calculan al crear la cotización.
               </p>
+              {isAuthenticated && customer?.company_name && (
+                <p className="text-xs text-muted-foreground">
+                  Vas a cotizar como{" "}
+                  <span className="font-medium text-foreground">
+                    {customer.company_name}
+                  </span>
+                  . ¿Otra empresa?{" "}
+                  <Link
+                    href="/cuenta/empresas"
+                    onClick={() => onOpenChange(false)}
+                    className="text-primary hover:underline"
+                  >
+                    Solicita acceso →
+                  </Link>
+                </p>
+              )}
               <Button className="w-full" size="lg" onClick={handleProceed}>
                 {isAuthenticated ? "Continuar a cotización" : "Iniciar sesión para cotizar"}
                 <ArrowRight className="ml-2 h-4 w-4" />

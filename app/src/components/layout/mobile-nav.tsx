@@ -32,7 +32,7 @@ const ACCOUNT_LINKS = [
   // mobile clients had no path from the top-level nav to the
   // request-access screen — they'd have to tap "Mi Cuenta" first
   // and then find the "Mis empresas" button on the dashboard.
-  { href: "/cuenta/empresas", label: "Mis empresas" },
+  { href: "/cuenta/empresas", label: "Mis empresas / Cambiar empresa" },
   { href: "/cuenta/perfil", label: "Perfil" },
 ];
 

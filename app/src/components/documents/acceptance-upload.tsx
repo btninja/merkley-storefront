@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import {
   FileText,
   AlertTriangle,
@@ -58,12 +58,17 @@ export function ApprovalUpload({
   const [logoFile, setLogoFile] = useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
   const [cartaDialogOpen, setCartaDialogOpen] = useState(false);
+  const logoSectionRef = useRef<HTMLDivElement | null>(null);
 
   const rejectionNotes = documents?.rejection_notes;
   const isCartaMethod = approvalMethod === "Carta de responsabilidad firmada y sellada";
   const isVoucherMethod = approvalMethod === "Voucher de pago del 50%";
 
-  const canSubmit = approvalMethod && approvalDoc && (!hasPersonalizableItems || logoFile);
+  // Submit button is unblocked when method + approval doc are filled.
+  // Logo is validated separately on click so the missing-logo error is
+  // visible (toast + scroll to dropzone) instead of silently disabling
+  // the action.
+  const canSubmit = approvalMethod && approvalDoc;
 
   function handleOversize() {
     toast({
@@ -85,6 +90,15 @@ export function ApprovalUpload({
 
   async function handleSubmit() {
     if (!approvalMethod || !approvalDoc) return;
+    if (hasPersonalizableItems && !logoFile) {
+      toast({
+        title: "Logo requerido",
+        description: "Falta subir el logo de tu empresa para personalizar los productos.",
+        variant: "destructive",
+      });
+      logoSectionRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+      return;
+    }
     setUploading(true);
     try {
       // Upload files first (uses custom endpoint that verifies ownership)
@@ -293,7 +307,7 @@ export function ApprovalUpload({
         {approvalMethod && hasPersonalizableItems && (
           <>
             <Separator />
-            <div className="space-y-3">
+            <div className="space-y-3" ref={logoSectionRef}>
               <div className="flex items-center gap-2">
                 <ImagePlus className="h-4 w-4 text-muted" />
                 <p className="text-sm font-semibold">3. Logo de tu empresa</p>

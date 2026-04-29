@@ -59,7 +59,10 @@ function VerificarContent() {
         // Invited users (no self-set password) go to profile to set password
         const isInvited = searchParams.get("invited") === "1";
         setTimeout(() => {
-          router.push(isInvited ? "/cuenta/perfil?setup=1" : "/cuenta");
+          // Full reload (not router.push) so middleware re-evaluates with the
+          // freshly-set mw_session cookie. See sibling /verificar-correo for
+          // why router.push strands the user on /auth/login until F5.
+          window.location.href = isInvited ? "/cuenta/perfil?setup=1" : "/cuenta";
         }, 2000);
       } catch (err: unknown) {
         const message =

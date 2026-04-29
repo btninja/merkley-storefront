@@ -65,7 +65,14 @@ export async function middleware(request: NextRequest) {
     const loginUrl = new URL("/auth/login", origin);
     const { search } = request.nextUrl;
     loginUrl.searchParams.set("next", pathname + search);
-    return NextResponse.redirect(loginUrl);
+    const redirect = NextResponse.redirect(loginUrl);
+    // Prevent the Next.js App Router from caching this redirect on the
+    // client. Without this, a user who verifies their email (flipping them
+    // from logged-out to logged-in) can get stuck bouncing through /auth/login
+    // because router.push serves the previously-cached redirect instead of
+    // hitting middleware with the fresh mw_session cookie. See verify flow.
+    redirect.headers.set("Cache-Control", "no-store, must-revalidate");
+    return redirect;
   }
 
   return applySecurityHeaders(NextResponse.next());

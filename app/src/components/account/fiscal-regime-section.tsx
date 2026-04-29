@@ -100,7 +100,7 @@ export function FiscalRegimeSection({ customer, customerName }: Props) {
               <button
                 type="button"
                 onClick={() => setDialogOpen(true)}
-                className="text-primary underline-offset-2 hover:underline"
+                className="cursor-pointer text-primary underline-offset-2 hover:underline"
               >
                 Renovar carné
               </button>
@@ -116,7 +116,7 @@ export function FiscalRegimeSection({ customer, customerName }: Props) {
               <button
                 type="button"
                 onClick={() => setDialogOpen(true)}
-                className="font-medium text-primary underline-offset-2 hover:underline"
+                className="cursor-pointer font-medium text-primary underline-offset-2 hover:underline"
               >
                 Renovar carné
               </button>
@@ -129,7 +129,7 @@ export function FiscalRegimeSection({ customer, customerName }: Props) {
               <button
                 type="button"
                 onClick={() => setDialogOpen(true)}
-                className="text-primary underline-offset-2 hover:underline"
+                className="cursor-pointer text-primary underline-offset-2 hover:underline"
               >
                 Solicitar exención fiscal
               </button>
@@ -147,7 +147,7 @@ export function FiscalRegimeSection({ customer, customerName }: Props) {
                 type="button"
                 onClick={() => handleCancel(status.pending_request!.name)}
                 disabled={cancelling}
-                className="text-destructive underline-offset-2 hover:underline disabled:opacity-50"
+                className="cursor-pointer text-destructive underline-offset-2 hover:underline disabled:cursor-not-allowed disabled:opacity-50"
               >
                 Cancelar solicitud
               </button>

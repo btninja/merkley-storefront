@@ -27,6 +27,7 @@ import * as api from "@/lib/api";
 import { formatCurrency, formatDate } from "@/lib/format";
 import type { InvoiceStage } from "@/lib/types";
 import { CompanyFilterChips, CompanyBadge } from "@/components/account/company-filter";
+import { useActiveCustomerFilter } from "@/lib/active-customer-filter";
 
 const STATUS_FILTERS = [
   { value: "", label: "Todas" },
@@ -71,7 +72,7 @@ function ListSkeleton() {
 
 export default function FacturasPage() {
   const [statusFilter, setStatusFilter] = useState("");
-  const [companyFilter, setCompanyFilter] = useState<string | null>(null);
+  const { customer: companyFilter } = useActiveCustomerFilter();
   const [limit, setLimit] = useState(20);
   const { data, isLoading, error } = useMyInvoices(
     { status: statusFilter || undefined, customer: companyFilter, page_length: limit }
@@ -106,7 +107,7 @@ export default function FacturasPage() {
       />
 
       {/* Company filter (multi-company users only) */}
-      <CompanyFilterChips value={companyFilter} onChange={setCompanyFilter} />
+      <CompanyFilterChips />
 
       {/* Status filters */}
       <div className="flex flex-wrap items-center gap-2">

@@ -15,6 +15,7 @@ import {
 import { useOrderPipeline } from "@/hooks/use-portal";
 import { PageHeader } from "@/components/layout/page-header";
 import { CompanyFilterChips, CompanyBadge } from "@/components/account/company-filter";
+import { useActiveCustomerFilter } from "@/lib/active-customer-filter";
 import {
   Card,
   CardHeader,
@@ -216,7 +217,7 @@ function ListSkeleton() {
 }
 
 export default function PedidosPage() {
-  const [companyFilter, setCompanyFilter] = useState<string | null>(null);
+  const { customer: companyFilter } = useActiveCustomerFilter();
   const { data, isLoading, error } = useOrderPipeline(companyFilter);
 
   return (
@@ -227,7 +228,7 @@ export default function PedidosPage() {
       />
 
       {/* Company filter row — auto-hidden for single-company users. */}
-      <CompanyFilterChips value={companyFilter} onChange={setCompanyFilter} />
+      <CompanyFilterChips />
 
       {isLoading ? (
         <ListSkeleton />

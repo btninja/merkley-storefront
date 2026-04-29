@@ -13,6 +13,7 @@ import {
 import { useDownloadCenter } from "@/hooks/use-portal";
 import { PageHeader } from "@/components/layout/page-header";
 import { CompanyFilterChips, CompanyBadge } from "@/components/account/company-filter";
+import { useActiveCustomerFilter } from "@/lib/active-customer-filter";
 import {
   Card,
   CardHeader,
@@ -165,7 +166,7 @@ function MonthGroup({
 
 export default function DescargasPage() {
   const [year, setYear] = useState<number | undefined>(undefined);
-  const [companyFilter, setCompanyFilter] = useState<string | null>(null);
+  const { customer: companyFilter } = useActiveCustomerFilter();
   const { data, isLoading } = useDownloadCenter(year, companyFilter);
 
   // Group documents by month
@@ -207,7 +208,7 @@ export default function DescargasPage() {
       </PageHeader>
 
       {/* Company filter row — auto-hidden for single-company users. */}
-      <CompanyFilterChips value={companyFilter} onChange={setCompanyFilter} />
+      <CompanyFilterChips />
 
       {isLoading ? (
         <ListSkeleton />

@@ -19,6 +19,7 @@ import { QUOTE_STAGE_COLORS } from "@/lib/constants";
 import type { QuoteStage } from "@/lib/constants";
 import type { QuotationSummary } from "@/lib/types";
 import { CompanyFilterChips, CompanyBadge } from "@/components/account/company-filter";
+import { useActiveCustomerFilter } from "@/lib/active-customer-filter";
 
 const FILTER_TABS = [
   { value: "todas", label: "Todas", stage: undefined },
@@ -106,7 +107,7 @@ function QuotationRow({ quote }: { quote: QuotationSummary }) {
   );
 }
 
-function QuotationFilteredList({ stage, customer }: { stage?: string; customer: string | null }) {
+function QuotationFilteredList({ stage, customer }: { stage?: string; customer?: string }) {
   const { data, isLoading, error } = useMyQuotations(stage, customer);
   const quotations = data?.quotes ?? [];
 
@@ -129,7 +130,7 @@ function QuotationFilteredList({ stage, customer }: { stage?: string; customer: 
 
 export default function QuotationsPage() {
   const [activeTab, setActiveTab] = useState("todas");
-  const [companyFilter, setCompanyFilter] = useState<string | null>(null);
+  const { customer: companyFilter } = useActiveCustomerFilter();
 
   return (
     <div className="space-y-6">
@@ -145,7 +146,7 @@ export default function QuotationsPage() {
       {/* Company filter row — auto-hidden for single-company users.
           Chips sit below the title, above the stage tabs so the user
           reads "which company" → "which stage" top-down. */}
-      <CompanyFilterChips value={companyFilter} onChange={setCompanyFilter} />
+      <CompanyFilterChips />
 
       <Tabs value={activeTab} onValueChange={setActiveTab}>
         {/* w-max + inline-flex on the list so it can grow past the viewport

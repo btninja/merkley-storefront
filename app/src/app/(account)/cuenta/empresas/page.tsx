@@ -24,6 +24,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 import * as api from "@/lib/api";
 import { RequestAccessDialog } from "@/components/account/request-access-dialog";
+import { FiscalRegimeSection } from "@/components/account/fiscal-regime-section";
 import type { CustomerAccessRequest } from "@/lib/types";
 
 const STATUS_META: Record<CustomerAccessRequest["status"], { label: string; icon: React.ComponentType<{ className?: string }>; className: string }> = {
@@ -108,6 +109,10 @@ export default function MisEmpresasPage() {
                       )}
                     </div>
                   </div>
+                  <FiscalRegimeSection
+                    customer={c.name}
+                    customerName={c.customer_name || c.name}
+                  />
                 </CardContent>
               </Card>
             ))}

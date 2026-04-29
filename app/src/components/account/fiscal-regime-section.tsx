@@ -3,13 +3,21 @@
 import { useState } from "react";
 import useSWR, { useSWRConfig } from "swr";
 import { CheckCircle2, AlertTriangle, Clock, FileText } from "lucide-react";
-import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import * as api from "@/lib/api";
 import { CarneRequestDialog } from "./carne-request-dialog";
 
 type Props = { customer: string; customerName: string };
 
+/**
+ * Subtle, single-row fiscal-regime block rendered inside a Customer card.
+ *
+ * Visual goal: this should READ as a status line attached to the company,
+ * not as a sub-card competing with it. No border, no card background — just
+ * a thin separator above and compact typography. The CTA is text-link sized
+ * for the most common state (Normal → request) and only escalates to a
+ * proper button when the action is urgent (renew on expiring/expired carné).
+ */
 export function FiscalRegimeSection({ customer, customerName }: Props) {
   const { toast } = useToast();
   const { mutate } = useSWRConfig();
@@ -50,99 +58,112 @@ export function FiscalRegimeSection({ customer, customerName }: Props) {
   const isPending = !!status.pending_request;
 
   return (
-    <div className="rounded-lg border bg-card p-3 text-sm">
-      <p className="font-medium mb-1">Régimen fiscal</p>
+    <>
+      <div className="mt-3 border-t border-border/60 pt-2 text-xs">
+        <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+          <span className="font-medium uppercase tracking-wide text-muted-foreground">
+            Régimen fiscal
+          </span>
+          <span className="text-muted-foreground/60">·</span>
 
-      {isExento && !expiringSoon && (
-        <div className="flex items-start gap-2">
-          <CheckCircle2 className="h-4 w-4 text-success mt-0.5" />
-          <div className="flex-1">
-            <p>Exento</p>
-            <p className="text-xs text-muted-foreground">
-              Carné #{status.cert_number} · vence {status.cert_expiry}
-            </p>
-            {status.cert_file_url && (
-              <a
-                href={status.cert_file_url}
-                target="_blank"
-                rel="noreferrer"
-                className="inline-flex items-center gap-1 text-xs underline"
-              >
-                <FileText className="h-3 w-3" /> Ver carné
-              </a>
-            )}
-          </div>
-        </div>
-      )}
-
-      {isExento && expiringSoon && (
-        <div className="flex items-start gap-2">
-          <AlertTriangle className="h-4 w-4 text-amber-600 mt-0.5" />
-          <div className="flex-1">
-            <p>Tu carné vence en {status.days_until_expiry} días</p>
-            <Button
-              variant="outline"
-              size="sm"
-              className="mt-1"
-              onClick={() => setDialogOpen(true)}
-            >
-              Renovar carné
-            </Button>
-          </div>
-        </div>
-      )}
-
-      {justExpired && (
-        <div className="flex items-start gap-2 rounded border border-destructive/30 bg-destructive/5 p-2">
-          <AlertTriangle className="h-4 w-4 text-destructive mt-0.5" />
-          <div className="flex-1">
-            <p>Tu carné venció. El régimen volvió a Normal.</p>
-            <Button
-              variant="default"
-              size="sm"
-              className="mt-1"
-              onClick={() => setDialogOpen(true)}
-            >
-              Renovar carné
-            </Button>
-          </div>
-        </div>
-      )}
-
-      {!isExento && !justExpired && !isPending && (
-        <div className="space-y-1.5">
-          <p>Régimen: Normal</p>
-          {status.last_rejection_reason && (
-            <div className="rounded border border-amber-500/30 bg-amber-50 p-2 text-xs text-amber-900">
-              Tu última solicitud fue rechazada:{" "}
-              <strong>{status.last_rejection_reason}</strong>. Puedes enviar una nueva.
-            </div>
+          {/* State branches — compact inline layout. */}
+          {isExento && !expiringSoon && (
+            <>
+              <span className="inline-flex items-center gap-1 text-foreground">
+                <CheckCircle2 className="h-3 w-3 text-success" />
+                Exento
+              </span>
+              {status.cert_number && (
+                <span className="text-muted-foreground">
+                  · Carné #{status.cert_number} vence {status.cert_expiry}
+                </span>
+              )}
+              {status.cert_file_url && (
+                <a
+                  href={status.cert_file_url}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="inline-flex items-center gap-0.5 text-primary underline-offset-2 hover:underline"
+                >
+                  <FileText className="h-3 w-3" /> Ver carné
+                </a>
+              )}
+            </>
           )}
-          <Button variant="outline" size="sm" onClick={() => setDialogOpen(true)}>
-            Solicitar exención fiscal
-          </Button>
-        </div>
-      )}
 
-      {isPending && status.pending_request && (
-        <div className="flex items-start gap-2">
-          <Clock className="h-4 w-4 text-amber-500 mt-0.5" />
-          <div className="flex-1">
-            <p className="text-xs text-muted-foreground">
-              Solicitud enviada{" "}
-              {new Date(status.pending_request.requested_at).toLocaleDateString("es-DO")}.
-              Pendiente de aprobación.
-            </p>
-            <button
-              className="mt-1 text-xs text-destructive underline"
-              onClick={() => handleCancel(status.pending_request!.name)}
-              disabled={cancelling}
-            >
-              Cancelar solicitud
-            </button>
-          </div>
+          {isExento && expiringSoon && (
+            <>
+              <span className="inline-flex items-center gap-1 text-amber-700">
+                <AlertTriangle className="h-3 w-3" />
+                Exento — vence en {status.days_until_expiry} días
+              </span>
+              <button
+                type="button"
+                onClick={() => setDialogOpen(true)}
+                className="text-primary underline-offset-2 hover:underline"
+              >
+                Renovar carné
+              </button>
+            </>
+          )}
+
+          {justExpired && (
+            <>
+              <span className="inline-flex items-center gap-1 text-destructive">
+                <AlertTriangle className="h-3 w-3" />
+                Carné venció — régimen revertido a Normal
+              </span>
+              <button
+                type="button"
+                onClick={() => setDialogOpen(true)}
+                className="font-medium text-primary underline-offset-2 hover:underline"
+              >
+                Renovar carné
+              </button>
+            </>
+          )}
+
+          {!isExento && !justExpired && !isPending && (
+            <>
+              <span className="text-foreground">Normal</span>
+              <button
+                type="button"
+                onClick={() => setDialogOpen(true)}
+                className="text-primary underline-offset-2 hover:underline"
+              >
+                Solicitar exención fiscal
+              </button>
+            </>
+          )}
+
+          {isPending && status.pending_request && (
+            <>
+              <span className="inline-flex items-center gap-1 text-amber-700">
+                <Clock className="h-3 w-3" />
+                Solicitud pendiente desde{" "}
+                {new Date(status.pending_request.requested_at).toLocaleDateString("es-DO")}
+              </span>
+              <button
+                type="button"
+                onClick={() => handleCancel(status.pending_request!.name)}
+                disabled={cancelling}
+                className="text-destructive underline-offset-2 hover:underline disabled:opacity-50"
+              >
+                Cancelar solicitud
+              </button>
+            </>
+          )}
         </div>
-      )}
+
+        {/* Rejection reason gets its own line — too long to inline cleanly. */}
+        {!isExento && !justExpired && !isPending && status.last_rejection_reason && (
+          <p className="mt-1 text-muted-foreground">
+            Última solicitud rechazada:{" "}
+            <span className="text-foreground">{status.last_rejection_reason}</span>. Puedes
+            enviar una nueva.
+          </p>
+        )}
+      </div>
 
       <CarneRequestDialog
         open={dialogOpen}
@@ -150,6 +171,6 @@ export function FiscalRegimeSection({ customer, customerName }: Props) {
         customer={customer}
         customerName={customerName}
       />
-    </div>
+    </>
   );
 }

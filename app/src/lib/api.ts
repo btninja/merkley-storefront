@@ -1093,6 +1093,63 @@ export async function getDownloadCenter(year?: number, customer?: string): Promi
   );
 }
 
+// ── Carné de Exención ──
+
+export async function getCarneStatus(
+  customer: string,
+): Promise<import("@/types/carne").CarneStatus> {
+  return api.frappeCall<import("@/types/carne").CarneStatus>(
+    "merkley_web.api.storefront_session.get_carne_status",
+    { customer },
+    { method: "GET" },
+  );
+}
+
+export async function submitCarneRequest(payload: {
+  customer: string;
+  cert_number: string;
+  cert_expiry: string;
+  cert_file_url: string;
+}): Promise<{ name: string }> {
+  return api.frappeCall<{ name: string }>(
+    "merkley_web.api.storefront_session.submit_carne_request",
+    payload as unknown as Record<string, unknown>,
+  );
+}
+
+export async function cancelCarneRequest(request_name: string): Promise<void> {
+  await api.frappeCall<void>(
+    "merkley_web.api.storefront_session.cancel_carne_request",
+    { request_name },
+  );
+}
+
+/**
+ * Upload a carné de exención file. Wraps the existing private brand-asset
+ * endpoint, which attaches the file to the active Customer (no quotation
+ * scope) and forces is_private=1. Returns the resulting file_url, which
+ * the caller then passes to submitCarneRequest.
+ */
+export async function uploadCarneFile(file: File): Promise<string> {
+  const content = await new Promise<string>((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => {
+      const result = reader.result as string;
+      // Strip "data:<mime>;base64," prefix — backend expects raw base64.
+      const idx = result.indexOf(",");
+      resolve(idx >= 0 ? result.slice(idx + 1) : result);
+    };
+    reader.onerror = () => reject(new ApiError("No se pudo leer el archivo.", 0));
+    reader.readAsDataURL(file);
+  });
+
+  const result = await api.frappeCall<{ file_url: string }>(
+    "merkley_web.api.files.upload_brand_asset",
+    { filename: file.name, content, is_private: 1 },
+  );
+  return result.file_url;
+}
+
 export { ApiError };
 
 // ── Generic RPC bridge ──

@@ -6,6 +6,7 @@ import { CheckCircle2, AlertTriangle, Clock, FileText } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import * as api from "@/lib/api";
 import { CarneRequestDialog } from "./carne-request-dialog";
+import { CarneViewerDialog } from "./carne-viewer-dialog";
 
 type Props = { customer: string; customerName: string };
 
@@ -22,6 +23,7 @@ export function FiscalRegimeSection({ customer, customerName }: Props) {
   const { toast } = useToast();
   const { mutate } = useSWRConfig();
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [viewerOpen, setViewerOpen] = useState(false);
   const [cancelling, setCancelling] = useState(false);
 
   const { data: status, isLoading } = useSWR(
@@ -79,14 +81,13 @@ export function FiscalRegimeSection({ customer, customerName }: Props) {
                 </span>
               )}
               {status.cert_file_url && (
-                <a
-                  href={status.cert_file_url}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="inline-flex items-center gap-0.5 text-primary underline-offset-2 hover:underline"
+                <button
+                  type="button"
+                  onClick={() => setViewerOpen(true)}
+                  className="inline-flex cursor-pointer items-center gap-0.5 text-primary underline-offset-2 hover:underline"
                 >
                   <FileText className="h-3 w-3" /> Ver carné
-                </a>
+                </button>
               )}
             </>
           )}
@@ -168,6 +169,12 @@ export function FiscalRegimeSection({ customer, customerName }: Props) {
       <CarneRequestDialog
         open={dialogOpen}
         onOpenChange={setDialogOpen}
+        customer={customer}
+        customerName={customerName}
+      />
+      <CarneViewerDialog
+        open={viewerOpen}
+        onOpenChange={setViewerOpen}
         customer={customer}
         customerName={customerName}
       />

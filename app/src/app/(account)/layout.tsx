@@ -23,6 +23,7 @@ import {
 } from "lucide-react";
 import { useAuth } from "@/context/auth-context";
 import { Header } from "@/components/layout/header";
+import { AccountTopBar } from "@/components/layout/account-topbar";
 import { Footer } from "@/components/layout/footer";
 import { Container } from "@/components/layout/container";
 import { Sidebar } from "@/components/layout/sidebar";
@@ -280,6 +281,7 @@ export default function AccountLayout({
   return (
     <div className="flex min-h-screen flex-col">
       <Header showMobileMenu={false} />
+      <AccountTopBar />
       <Container className="flex flex-1 gap-8 py-8">
         <Sidebar />
         <main className="min-w-0 flex-1 pb-20 lg:pb-0">{children}</main>

@@ -642,7 +642,7 @@ export default function NewQuotationPage() {
                                     e.stopPropagation();
                                     toggleCategoryExpand(cat.name);
                                   }}
-                                  className="mr-1 flex h-4 w-4 shrink-0 items-center justify-center rounded hover:bg-foreground/10"
+                                  className="mr-1 flex h-4 w-4 shrink-0 cursor-pointer items-center justify-center rounded hover:bg-foreground/10"
                                 >
                                   <ChevronDown
                                     className={`h-3 w-3 text-muted transition-transform ${
@@ -710,7 +710,7 @@ export default function NewQuotationPage() {
                       {filterCategory}
                       <button
                         onClick={() => setFilterCategory("")}
-                        className="ml-0.5 rounded-full p-0.5 hover:bg-foreground/10"
+                        className="ml-0.5 cursor-pointer rounded-full p-0.5 hover:bg-foreground/10"
                       >
                         <X className="h-3 w-3" />
                       </button>
@@ -721,7 +721,7 @@ export default function NewQuotationPage() {
                       {filterTier}
                       <button
                         onClick={() => setFilterTier("")}
-                        className="ml-0.5 rounded-full p-0.5 hover:bg-foreground/10"
+                        className="ml-0.5 cursor-pointer rounded-full p-0.5 hover:bg-foreground/10"
                       >
                         <X className="h-3 w-3" />
                       </button>
@@ -732,7 +732,7 @@ export default function NewQuotationPage() {
                       {SORT_OPTIONS.find((o) => o.value === filterSort)?.label}
                       <button
                         onClick={() => setFilterSort("")}
-                        className="ml-0.5 rounded-full p-0.5 hover:bg-foreground/10"
+                        className="ml-0.5 cursor-pointer rounded-full p-0.5 hover:bg-foreground/10"
                       >
                         <X className="h-3 w-3" />
                       </button>
@@ -744,7 +744,7 @@ export default function NewQuotationPage() {
                       setFilterTier("");
                       setFilterSort("");
                     }}
-                    className="text-xs text-muted hover:text-foreground transition-colors"
+                    className="cursor-pointer text-xs text-muted hover:text-foreground transition-colors"
                   >
                     Limpiar filtros
                   </button>
@@ -1095,7 +1095,7 @@ export default function NewQuotationPage() {
                       <button
                         type="button"
                         onClick={() => { setDeliveryMethod("pickup"); setSelectedZone(""); setShippingCalc(null); }}
-                        className={`rounded-lg border p-3 text-left text-sm transition-colors ${
+                        className={`cursor-pointer rounded-lg border p-3 text-left text-sm transition-colors ${
                           deliveryMethod === "pickup"
                             ? "border-primary bg-primary-soft text-foreground"
                             : "border-border hover:bg-surface-muted"
@@ -1108,7 +1108,7 @@ export default function NewQuotationPage() {
                       <button
                         type="button"
                         onClick={() => setDeliveryMethod("shipping")}
-                        className={`rounded-lg border p-3 text-left text-sm transition-colors ${
+                        className={`cursor-pointer rounded-lg border p-3 text-left text-sm transition-colors ${
                           deliveryMethod === "shipping"
                             ? "border-primary bg-primary-soft text-foreground"
                             : "border-border hover:bg-surface-muted"
@@ -1251,7 +1251,7 @@ export default function NewQuotationPage() {
                           type="button"
                           onClick={() => toggleCustomerSelection(c.name)}
                           className={cn(
-                            "w-full flex items-center gap-3 rounded-md border px-3 py-2 text-left transition-colors",
+                            "w-full flex cursor-pointer items-center gap-3 rounded-md border px-3 py-2 text-left transition-colors",
                             checked
                               ? "border-primary bg-primary-soft"
                               : "border-border bg-surface hover:bg-surface-muted/50"

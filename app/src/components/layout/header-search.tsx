@@ -119,7 +119,7 @@ export function HeaderSearch({ autoFocus }: { autoFocus?: boolean }) {
               setQuery("");
               inputRef.current?.focus();
             }}
-            className="absolute right-3 top-1/2 -translate-y-1/2 text-muted hover:text-foreground transition-colors"
+            className="absolute right-3 top-1/2 -translate-y-1/2 cursor-pointer text-muted hover:text-foreground transition-colors"
           >
             <X className="h-3.5 w-3.5" />
           </button>
@@ -167,7 +167,7 @@ export function HeaderSearch({ autoFocus }: { autoFocus?: boolean }) {
                 <div className="border-t border-border">
                   <button
                     onClick={goToCatalog}
-                    className="flex w-full items-center justify-center gap-2 px-4 py-2.5 text-xs font-medium text-primary hover:bg-primary-soft transition-colors"
+                    className="flex w-full cursor-pointer items-center justify-center gap-2 px-4 py-2.5 text-xs font-medium text-primary hover:bg-primary-soft transition-colors"
                   >
                     Ver los {totalCount} resultados en el catálogo
                     <ArrowRight className="h-3 w-3" />
@@ -196,7 +196,7 @@ function SearchResultItem({
   return (
     <button
       onClick={() => onSelect(product.slug)}
-      className="flex w-full items-center gap-3 px-3 py-2.5 text-left transition-colors hover:bg-surface-muted"
+      className="flex w-full cursor-pointer items-center gap-3 px-3 py-2.5 text-left transition-colors hover:bg-surface-muted"
     >
       {/* Thumbnail */}
       <div className="relative h-12 w-12 flex-shrink-0 overflow-hidden rounded-lg bg-surface-muted">
@@ -260,7 +260,7 @@ export function MobileSearchToggle({
   return (
     <button
       onClick={onOpen}
-      className="flex h-9 w-9 items-center justify-center rounded-full text-muted hover:text-foreground hover:bg-surface-muted transition-colors"
+      className="flex h-9 w-9 cursor-pointer items-center justify-center rounded-full text-muted hover:text-foreground hover:bg-surface-muted transition-colors"
       aria-label="Buscar"
     >
       <Search className="h-5 w-5" />

@@ -141,7 +141,7 @@ function MobileAccountNav() {
             type="button"
             onClick={() => setMenuOpen(true)}
             className={cn(
-              "flex flex-1 flex-col items-center gap-1 py-2.5 text-[10px] font-medium transition-colors",
+              "flex flex-1 cursor-pointer flex-col items-center gap-1 py-2.5 text-[10px] font-medium transition-colors",
               isMenuPathActive
                 ? "text-primary"
                 : "text-muted hover:text-foreground"
@@ -224,7 +224,7 @@ function MobileAccountNav() {
                 logout();
                 setMenuOpen(false);
               }}
-              className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-left text-sm font-medium text-destructive transition-colors hover:bg-destructive-soft"
+              className="flex cursor-pointer items-center gap-3 rounded-lg px-3 py-2.5 text-left text-sm font-medium text-destructive transition-colors hover:bg-destructive-soft"
             >
               <LogOut className="h-4 w-4 shrink-0" />
               <span>Cerrar Sesión</span>

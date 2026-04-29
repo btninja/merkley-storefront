@@ -133,7 +133,7 @@ export function CartDrawer({ open, onOpenChange }: CartDrawerProps) {
               </Button>
               <button
                 type="button"
-                className="w-full text-center text-xs text-muted-foreground hover:text-foreground transition-colors py-1"
+                className="w-full cursor-pointer text-center text-xs text-muted-foreground hover:text-foreground transition-colors py-1"
                 onClick={() => onOpenChange(false)}
               >
                 Seguir comprando

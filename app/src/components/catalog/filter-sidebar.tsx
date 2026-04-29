@@ -76,7 +76,7 @@ function CategoryItem({
       <button
         onClick={() => onCategoryChange(node.name)}
         className={cn(
-          "flex w-full items-center justify-between rounded-md px-2 py-1.5 text-sm transition-colors",
+          "flex w-full cursor-pointer items-center justify-between rounded-md px-2 py-1.5 text-sm transition-colors",
           isActive
             ? "bg-primary-soft font-medium text-primary"
             : "text-foreground hover:bg-surface-muted"
@@ -123,7 +123,7 @@ function CategoryBranch({
         <button
           onClick={() => onCategoryChange(node.name)}
           className={cn(
-            "flex-1 truncate rounded-md px-2 py-1.5 text-left text-sm transition-colors",
+            "flex-1 cursor-pointer truncate rounded-md px-2 py-1.5 text-left text-sm transition-colors",
             isActive
               ? "bg-primary-soft font-medium text-primary"
               : "text-foreground hover:bg-surface-muted"
@@ -212,7 +212,7 @@ export function FilterSidebar({
         <button
           onClick={() => { onCategoryChange(""); setCategorySearch(""); }}
           className={cn(
-            "mb-1 w-full rounded-md px-2 py-1.5 text-left text-sm transition-colors",
+            "mb-1 w-full cursor-pointer rounded-md px-2 py-1.5 text-left text-sm transition-colors",
             !activeCategory
               ? "bg-primary-soft font-medium text-primary"
               : "text-foreground hover:bg-surface-muted"

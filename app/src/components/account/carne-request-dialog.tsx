@@ -123,7 +123,7 @@ export function CarneRequestDialog({ open, onOpenChange, customer, customerName 
                 Archivo cargado ✓
                 <button
                   onClick={() => setFileUrl(null)}
-                  className="ml-2 text-xs underline"
+                  className="ml-2 cursor-pointer text-xs underline"
                 >
                   Cambiar
                 </button>

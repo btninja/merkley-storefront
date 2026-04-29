@@ -259,7 +259,7 @@ function CatalogoContent() {
               <button
                 type="button"
                 onClick={clearSearch}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-muted hover:text-foreground"
+                className="absolute right-3 top-1/2 -translate-y-1/2 cursor-pointer text-muted hover:text-foreground"
               >
                 <X className="h-4 w-4" />
               </button>
@@ -305,7 +305,7 @@ function CatalogoContent() {
                 {category}
                 <button
                   onClick={() => handleCategoryChange("")}
-                  className="ml-1 rounded-full p-0.5 hover:bg-primary/20"
+                  className="ml-1 cursor-pointer rounded-full p-0.5 hover:bg-primary/20"
                 >
                   <X className="h-3 w-3" />
                 </button>
@@ -316,7 +316,7 @@ function CatalogoContent() {
                 {tier}
                 <button
                   onClick={() => handleTierChange("")}
-                  className="ml-1 rounded-full p-0.5 hover:bg-info/20"
+                  className="ml-1 cursor-pointer rounded-full p-0.5 hover:bg-info/20"
                 >
                   <X className="h-3 w-3" />
                 </button>
@@ -327,7 +327,7 @@ function CatalogoContent() {
                 {availability}
                 <button
                   onClick={() => handleAvailabilityChange("")}
-                  className="ml-1 rounded-full p-0.5 hover:bg-surface-hover"
+                  className="ml-1 cursor-pointer rounded-full p-0.5 hover:bg-surface-hover"
                 >
                   <X className="h-3 w-3" />
                 </button>
@@ -338,7 +338,7 @@ function CatalogoContent() {
                 &ldquo;{debouncedSearch}&rdquo;
                 <button
                   onClick={clearSearch}
-                  className="ml-1 rounded-full p-0.5 hover:bg-surface-hover"
+                  className="ml-1 cursor-pointer rounded-full p-0.5 hover:bg-surface-hover"
                 >
                   <X className="h-3 w-3" />
                 </button>
@@ -346,7 +346,7 @@ function CatalogoContent() {
             )}
             <button
               onClick={clearAll}
-              className="text-xs font-medium text-muted hover:text-foreground"
+              className="cursor-pointer text-xs font-medium text-muted hover:text-foreground"
             >
               Limpiar filtros
             </button>

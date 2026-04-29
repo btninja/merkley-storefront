@@ -19,7 +19,7 @@ export default function GlobalError({
       <body>
         <div style={{ padding: "2rem", textAlign: "center" }}>
           <h2>Algo salio mal</h2>
-          <button onClick={() => reset()} style={{ marginTop: "1rem" }}>
+          <button onClick={() => reset()} style={{ marginTop: "1rem", cursor: "pointer" }}>
             Intentar de nuevo
           </button>
         </div>

@@ -123,7 +123,7 @@ export function MobileNav() {
                     logout();
                     setOpen(false);
                   }}
-                  className="rounded-lg px-3 py-2.5 text-left text-sm font-medium text-destructive transition-colors hover:bg-destructive-soft"
+                  className="cursor-pointer rounded-lg px-3 py-2.5 text-left text-sm font-medium text-destructive transition-colors hover:bg-destructive-soft"
                 >
                   Cerrar Sesión
                 </button>

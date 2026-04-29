@@ -498,7 +498,7 @@ export function ChatWidget() {
             }
           }}
           className={cn(
-            "group flex h-14 w-14 items-center justify-center rounded-full",
+            "group flex h-14 w-14 cursor-pointer items-center justify-center rounded-full",
             "bg-[#c4808c] text-white shadow-lg",
             "transition-all duration-200 hover:scale-105 hover:shadow-xl",
             "focus:outline-none focus:ring-2 focus:ring-[#c4808c]/50 focus:ring-offset-2"
@@ -523,7 +523,7 @@ export function ChatWidget() {
               </div>
               <button
                 onClick={() => setScreen("bubble")}
-                className="rounded-full p-1 hover:bg-white/20 transition-colors"
+                className="cursor-pointer rounded-full p-1 hover:bg-white/20 transition-colors"
                 aria-label="Cerrar"
               >
                 <CloseIcon className="h-5 w-5" />
@@ -582,7 +582,7 @@ export function ChatWidget() {
               className={cn(
                 "w-full rounded-lg py-2.5 text-sm font-medium text-white transition-colors",
                 name.trim() && !starting
-                  ? "bg-[#c4808c] hover:bg-[#a66d77]"
+                  ? "cursor-pointer bg-[#c4808c] hover:bg-[#a66d77]"
                   : "bg-gray-300 cursor-not-allowed"
               )}
             >
@@ -642,14 +642,14 @@ export function ChatWidget() {
               )}
               <button
                 onClick={() => setScreen("bubble")}
-                className="rounded-full p-1.5 hover:bg-white/20 transition-colors"
+                className="cursor-pointer rounded-full p-1.5 hover:bg-white/20 transition-colors"
                 title="Minimizar"
               >
                 <MinimizeIcon className="h-4 w-4" />
               </button>
               <button
                 onClick={handleEndSession}
-                className="rounded-full p-1.5 hover:bg-white/20 transition-colors"
+                className="cursor-pointer rounded-full p-1.5 hover:bg-white/20 transition-colors"
                 title="Cerrar chat"
               >
                 <CloseIcon className="h-4 w-4" />
@@ -713,7 +713,7 @@ export function ChatWidget() {
                 className={cn(
                   "flex h-9 w-9 shrink-0 items-center justify-center rounded-lg transition-colors",
                   input.trim() && !sending
-                    ? "bg-[#c4808c] text-white hover:bg-[#a66d77]"
+                    ? "cursor-pointer bg-[#c4808c] text-white hover:bg-[#a66d77]"
                     : "bg-gray-100 text-gray-400"
                 )}
                 aria-label="Enviar"

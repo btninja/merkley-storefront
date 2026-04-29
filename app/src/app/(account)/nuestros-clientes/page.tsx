@@ -71,7 +71,7 @@ function ImageLightbox({
         {/* Close button */}
         <button
           onClick={onClose}
-          className="absolute -top-12 right-0 flex h-8 w-8 items-center justify-center rounded-full bg-white/10 text-white transition-colors hover:bg-white/20"
+          className="absolute -top-12 right-0 flex h-8 w-8 cursor-pointer items-center justify-center rounded-full bg-white/10 text-white transition-colors hover:bg-white/20"
         >
           <X className="h-5 w-5" />
         </button>
@@ -97,13 +97,13 @@ function ImageLightbox({
           <>
             <button
               onClick={onPrev}
-              className="absolute left-2 top-1/2 -translate-y-1/2 flex h-10 w-10 items-center justify-center rounded-full bg-white/10 text-white transition-colors hover:bg-white/20"
+              className="absolute left-2 top-1/2 -translate-y-1/2 flex h-10 w-10 cursor-pointer items-center justify-center rounded-full bg-white/10 text-white transition-colors hover:bg-white/20"
             >
               <ChevronLeft className="h-5 w-5" />
             </button>
             <button
               onClick={onNext}
-              className="absolute right-2 top-1/2 -translate-y-1/2 flex h-10 w-10 items-center justify-center rounded-full bg-white/10 text-white transition-colors hover:bg-white/20"
+              className="absolute right-2 top-1/2 -translate-y-1/2 flex h-10 w-10 cursor-pointer items-center justify-center rounded-full bg-white/10 text-white transition-colors hover:bg-white/20"
             >
               <ChevronRight className="h-5 w-5" />
             </button>

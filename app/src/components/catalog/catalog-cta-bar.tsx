@@ -125,7 +125,7 @@ export function CatalogCtaBar() {
             <h3 className="text-sm font-semibold">Solicitar información</h3>
             <button
               onClick={() => setFormState("idle")}
-              className="rounded-full p-1 text-muted hover:text-foreground"
+              className="cursor-pointer rounded-full p-1 text-muted hover:text-foreground"
             >
               <X className="h-4 w-4" />
             </button>
@@ -181,7 +181,7 @@ export function CatalogCtaBar() {
             <h3 className="text-sm font-semibold">Solicitar información</h3>
             <button
               onClick={() => setFormState("idle")}
-              className="rounded-full p-1 text-muted hover:text-foreground"
+              className="cursor-pointer rounded-full p-1 text-muted hover:text-foreground"
             >
               <X className="h-4 w-4" />
             </button>
@@ -255,7 +255,7 @@ export function CatalogCtaBar() {
               setFormState("open");
               trackEvent("quick_lead_form_opened", { source: "catalog_cta_mobile" });
             }}
-            className="flex flex-1 items-center justify-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
+            className="flex flex-1 cursor-pointer items-center justify-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
           >
             <MessageCircle className="h-4 w-4" />
             Solicitar Info
@@ -287,7 +287,7 @@ export function CatalogCtaBar() {
               setFormState("open");
               trackEvent("quick_lead_form_opened", { source: "catalog_cta_desktop" });
             }}
-            className="flex w-full items-center justify-center gap-2 rounded-lg border border-border bg-white px-4 py-2.5 text-sm font-medium text-foreground transition-colors hover:bg-surface-muted"
+            className="flex w-full cursor-pointer items-center justify-center gap-2 rounded-lg border border-border bg-white px-4 py-2.5 text-sm font-medium text-foreground transition-colors hover:bg-surface-muted"
           >
             <MessageCircle className="h-4 w-4" />
             Solicitar información

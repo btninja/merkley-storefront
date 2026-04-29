@@ -87,7 +87,7 @@ export function CartItemRow({ item, onUpdateQty, onRemove }: CartItemRowProps) {
         <button
           type="button"
           onClick={onRemove}
-          className="text-muted-foreground/60 hover:text-destructive transition-colors"
+          className="cursor-pointer text-muted-foreground/60 hover:text-destructive transition-colors"
           aria-label={`Eliminar ${item.item_name}`}
         >
           <Trash2 className="h-3.5 w-3.5" />

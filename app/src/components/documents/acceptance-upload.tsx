@@ -323,7 +323,7 @@ export function ApprovalUpload({
                   <button
                     type="button"
                     onClick={() => setApprovalDoc(null)}
-                    className="shrink-0 rounded-md p-1 text-muted hover:text-foreground"
+                    className="shrink-0 cursor-pointer rounded-md p-1 text-muted hover:text-foreground"
                   >
                     <X className="h-4 w-4" />
                   </button>
@@ -368,7 +368,7 @@ export function ApprovalUpload({
                   <button
                     type="button"
                     onClick={() => setLogoFile(null)}
-                    className="shrink-0 rounded-md p-1 text-muted hover:text-foreground"
+                    className="shrink-0 cursor-pointer rounded-md p-1 text-muted hover:text-foreground"
                   >
                     <X className="h-4 w-4" />
                   </button>

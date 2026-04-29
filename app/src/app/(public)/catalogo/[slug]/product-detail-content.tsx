@@ -188,7 +188,7 @@ export default function ProductDetailPage() {
                   <button
                     key={idx}
                     onClick={() => setActiveImageIdx(idx)}
-                    className={`relative h-16 w-16 shrink-0 overflow-hidden rounded-lg border-2 transition-colors ${
+                    className={`relative h-16 w-16 shrink-0 cursor-pointer overflow-hidden rounded-lg border-2 transition-colors ${
                       idx === activeImageIdx
                         ? "border-primary"
                         : "border-border hover:border-muted"

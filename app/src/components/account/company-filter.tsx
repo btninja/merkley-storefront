@@ -62,7 +62,7 @@ export function CompanyFilterChips({ className }: { className?: string }) {
         type="button"
         onClick={() => setFilter("all")}
         className={cn(
-          "px-2.5 py-1 rounded-full border text-xs font-medium transition-colors",
+          "px-2.5 py-1 rounded-full border text-xs font-medium transition-colors cursor-pointer",
           isAll
             ? "bg-primary text-primary-foreground border-primary"
             : "bg-surface border-border text-muted hover:text-foreground hover:border-foreground/20"
@@ -76,7 +76,7 @@ export function CompanyFilterChips({ className }: { className?: string }) {
           type="button"
           onClick={() => setFilter(c.name)}
           className={cn(
-            "px-2.5 py-1 rounded-full border text-xs font-medium transition-colors",
+            "px-2.5 py-1 rounded-full border text-xs font-medium transition-colors cursor-pointer",
             customer === c.name
               ? "bg-primary text-primary-foreground border-primary"
               : "bg-surface border-border text-muted hover:text-foreground hover:border-foreground/20"

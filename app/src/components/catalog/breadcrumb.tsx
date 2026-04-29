@@ -38,7 +38,7 @@ export function CatalogBreadcrumb({
     <nav className="flex items-center gap-1 text-sm text-muted">
       <button
         onClick={() => onCategoryChange("")}
-        className="hover:text-foreground transition-colors"
+        className="cursor-pointer hover:text-foreground transition-colors"
       >
         Catálogo
       </button>
@@ -52,7 +52,7 @@ export function CatalogBreadcrumb({
             ) : (
               <button
                 onClick={() => onCategoryChange(node.name)}
-                className="hover:text-foreground transition-colors"
+                className="cursor-pointer hover:text-foreground transition-colors"
               >
                 {node.name}
               </button>

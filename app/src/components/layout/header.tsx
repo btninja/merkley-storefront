@@ -298,7 +298,7 @@ export function Header({ showMobileMenu = true }: { showMobileMenu?: boolean } =
           </div>
           <button
             onClick={() => setMobileSearchOpen(false)}
-            className="flex h-9 w-9 items-center justify-center rounded-full text-muted hover:text-foreground hover:bg-surface-muted transition-colors"
+            className="flex h-9 w-9 cursor-pointer items-center justify-center rounded-full text-muted hover:text-foreground hover:bg-surface-muted transition-colors"
           >
             <X className="h-5 w-5" />
           </button>

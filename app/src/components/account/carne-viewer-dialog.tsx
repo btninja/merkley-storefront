@@ -3,6 +3,7 @@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Download } from "lucide-react";
+import { ERP_BASE_URL as ERP_BASE } from "@/lib/env";
 
 type Props = {
   open: boolean;
@@ -12,10 +13,12 @@ type Props = {
 };
 
 export function CarneViewerDialog({ open, onOpenChange, customer, customerName }: Props) {
-  // Streams via the storefront proxy endpoint. The encoded-customer query
-  // param is needed because Customer names can contain spaces and special
-  // chars (e.g., "Portal Test Co").
-  const fileUrl = `/api/method/merkley_web.api.storefront_session.get_carne_file?customer=${encodeURIComponent(customer)}`;
+  // Cross-domain to erp.merkleydetails.com: the storefront customer's
+  // Frappe session cookie is on that domain, and the iframe needs to send
+  // it for the permission check. Same pattern every other API call uses
+  // (see api.ts callFrappe). A relative path would hit the storefront's
+  // Next.js (404, no proxy) instead of Frappe.
+  const fileUrl = `${ERP_BASE}/api/method/merkley_web.api.storefront_session.get_carne_file?customer=${encodeURIComponent(customer)}`;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>

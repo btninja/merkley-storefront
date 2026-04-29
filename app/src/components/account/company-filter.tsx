@@ -16,6 +16,7 @@
  */
 
 import { useAuth } from "@/context/auth-context";
+import { useActiveCustomerFilter } from "@/lib/active-customer-filter";
 import { cn } from "@/lib/utils";
 import { Building2 } from "lucide-react";
 import type { AvailableCustomer } from "@/lib/types";
@@ -44,17 +45,9 @@ function hashColor(name: string): string {
   return BADGE_PALETTE[Math.abs(h) % BADGE_PALETTE.length];
 }
 
-export function CompanyFilterChips({
-  value,
-  onChange,
-  className,
-}: {
-  /** null = "Todas" (no filter). A customer.name = filter to that one. */
-  value: string | null;
-  onChange: (customerName: string | null) => void;
-  className?: string;
-}) {
+export function CompanyFilterChips({ className }: { className?: string }) {
   const { availableCustomers } = useAuth();
+  const { customer, isAll, setFilter } = useActiveCustomerFilter();
 
   if (!availableCustomers || availableCustomers.length <= 1) {
     // Single-company users don't need a filter — they'd always have
@@ -67,10 +60,10 @@ export function CompanyFilterChips({
       <span className="text-xs font-medium text-muted pr-1">Empresa:</span>
       <button
         type="button"
-        onClick={() => onChange(null)}
+        onClick={() => setFilter("all")}
         className={cn(
           "px-2.5 py-1 rounded-full border text-xs font-medium transition-colors",
-          value === null
+          isAll
             ? "bg-primary text-primary-foreground border-primary"
             : "bg-surface border-border text-muted hover:text-foreground hover:border-foreground/20"
         )}
@@ -81,10 +74,10 @@ export function CompanyFilterChips({
         <button
           key={c.name}
           type="button"
-          onClick={() => onChange(c.name)}
+          onClick={() => setFilter(c.name)}
           className={cn(
             "px-2.5 py-1 rounded-full border text-xs font-medium transition-colors",
-            value === c.name
+            customer === c.name
               ? "bg-primary text-primary-foreground border-primary"
               : "bg-surface border-border text-muted hover:text-foreground hover:border-foreground/20"
           )}

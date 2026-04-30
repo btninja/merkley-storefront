@@ -22,6 +22,7 @@ import type {
   ShippingCalculation,
   ShippingZonesResponse,
 } from "./types";
+import type { NotificationListResponse } from "@/types/notifications";
 
 import { ERP_BASE_URL as ERP_BASE } from "./env";
 // Re-exported for callers that still import ERP_BASE from this module.
@@ -1148,6 +1149,19 @@ export async function uploadCarneFile(file: File): Promise<string> {
     { filename: file.name, content, is_private: 1 },
   );
   return result.file_url;
+}
+
+// ── Notifications ──
+
+export async function getCustomerNotifications(): Promise<NotificationListResponse> {
+  return frappeCall<NotificationListResponse>("notifications.get_customer_notifications");
+}
+
+export async function markNotificationRead(args: {
+  name?: string;
+  mark_all?: boolean;
+}): Promise<{ ok: true }> {
+  return frappeCall<{ ok: true }>("notifications.mark_notification_read", args as Record<string, unknown>);
 }
 
 export { ApiError };

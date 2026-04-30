@@ -22,6 +22,7 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Container } from "./container";
 import { MobileNav } from "./mobile-nav";
 import { HeaderSearch, MobileSearchToggle } from "./header-search";
+import { NotificationBell } from "./notification-bell";
 import { cn } from "@/lib/utils";
 
 const NAV_LINKS = [
@@ -207,6 +208,8 @@ export function Header({ showMobileMenu = true }: { showMobileMenu?: boolean } =
               )}
             </Button>
             <CartDrawer open={cartOpen} onOpenChange={setCartOpen} />
+
+            <NotificationBell />
 
             {!isLoading && (
               <>

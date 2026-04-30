@@ -103,7 +103,13 @@ function ensureMetaPixel(): Promise<void> {
     const t = b.getElementsByTagName("script")[0];
     t.parentNode?.insertBefore(s, t);
 
-    window.fbq!("init", pixelId);
+    // Init with Automatic Advanced Matching enabled — lets Meta auto-detect
+    // form fields (email, phone, name) on the page and pass them as hashed
+    // identifiers. Pairs with the dashboard-side "Automatic event
+    // enrichment" setting (Events Manager → Settings → Automatic Advanced
+    // Matching) for the strongest match-quality boost. Safe by default:
+    // Meta hashes all PII before transmission.
+    window.fbq!("init", pixelId, {}, { autoConfig: true });
     window.fbq!("track", "PageView");
   });
 }

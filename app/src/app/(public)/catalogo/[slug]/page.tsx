@@ -36,6 +36,27 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
     const ogImage = product.images?.[0]?.url || undefined;
 
+    // Product-specific OG tags so Meta Pixel auto-event-enrichment (the
+    // dashboard-side AI feature that backfills page/product context onto
+    // Pixel events) can match price + availability + SKU back to our
+    // catalog. Without og:type=product + product:price:* tags, Meta can
+    // only enrich title/description.
+    const priceAmount = product.price?.amount;
+    const availability = product.availability?.label?.toLowerCase().includes("disponible")
+      ? "instock"
+      : product.availability?.label?.toLowerCase().includes("pedido")
+        ? "preorder"
+        : "outofstock";
+    const productOg: Record<string, string> = {
+      "og:type": "product",
+      ...(priceAmount ? { "product:price:amount": String(priceAmount) } : {}),
+      ...(priceAmount ? { "product:price:currency": "DOP" } : {}),
+      "product:availability": availability,
+      ...(product.sku ? { "product:retailer_item_id": product.sku } : {}),
+      ...(product.category ? { "product:category": product.category } : {}),
+      "product:brand": "Merkley Details",
+    };
+
     return {
       title: product.name,
       description: plainDescription,
@@ -47,6 +68,9 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
         description: plainDescription,
         ...(ogImage ? { images: [{ url: ogImage }] } : {}),
       },
+      // Next.js doesn't surface og:type=product directly, so we register the
+      // product-specific tags via `other` which renders them as <meta>.
+      other: productOg,
       twitter: {
         card: "summary_large_image",
         title: `${product.name} | Merkley Details`,

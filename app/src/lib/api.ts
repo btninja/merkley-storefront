@@ -1153,13 +1153,19 @@ export async function uploadCarneFile(file: File): Promise<string> {
 
 // ── Notifications ──
 
-export async function getCustomerNotifications(): Promise<NotificationListResponse> {
-  return frappeCall<NotificationListResponse>("notifications.get_customer_notifications");
+export async function getCustomerNotifications(
+  args: { customer?: string } = {}
+): Promise<NotificationListResponse> {
+  return frappeCall<NotificationListResponse>(
+    "notifications.get_customer_notifications",
+    args.customer ? { customer: args.customer } : {}
+  );
 }
 
 export async function markNotificationRead(args: {
   name?: string;
   mark_all?: boolean;
+  customer?: string;
 }): Promise<{ ok: true }> {
   return frappeCall<{ ok: true }>("notifications.mark_notification_read", args as Record<string, unknown>);
 }

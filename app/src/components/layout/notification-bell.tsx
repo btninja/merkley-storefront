@@ -8,6 +8,7 @@ import { toast } from "@/hooks/use-toast";
 
 import { getCustomerNotifications, markNotificationRead } from "@/lib/api";
 import { useAuth } from "@/context/auth-context";
+import { useActiveCustomerFilter } from "@/lib/active-customer-filter";
 import type { NotificationItem } from "@/types/notifications";
 
 function relativeTime(iso: string): string {
@@ -25,13 +26,14 @@ export function NotificationBell() {
   const auth = useAuth();
   const { mutate } = useSWRConfig();
   const [open, setOpen] = useState(false);
+  const { customer: activeCustomer } = useActiveCustomerFilter();
 
-  const customerId = auth.customer?.name;
+  const customerId = activeCustomer ?? auth.customer?.name ?? null;
   const cacheKey = auth.isAuthenticated && customerId ? ["customer-notifications", customerId] : null;
 
   const { data } = useSWR(
     cacheKey,
-    () => getCustomerNotifications(),
+    () => getCustomerNotifications(customerId ? { customer: customerId } : {}),
     { refreshInterval: 60_000, dedupingInterval: 30_000 },
   );
 
@@ -43,7 +45,7 @@ export function NotificationBell() {
 
   const doMarkRead = async (args: { name?: string; mark_all?: boolean }) => {
     try {
-      await markNotificationRead(args);
+      await markNotificationRead({ ...args, ...(customerId ? { customer: customerId } : {}) });
       mutate(cacheKey);
     } catch {
       toast({ title: "Error", description: "No se pudo marcar como leída", variant: "destructive" });

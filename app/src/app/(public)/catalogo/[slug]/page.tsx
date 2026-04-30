@@ -1,6 +1,7 @@
 import { cache } from "react";
 import type { Metadata } from "next";
 import { permanentRedirect } from "next/navigation";
+import { isRedirectError } from "next/dist/client/components/redirect-error";
 import { getProductDetail } from "@/lib/api";
 import ProductDetailPage from "./product-detail-content";
 
@@ -53,7 +54,9 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
         images: ogImage ? [ogImage] : ["https://merkleydetails.com/og-image.jpg"],
       },
     };
-  } catch {
+  } catch (err) {
+    // Re-throw Next.js's redirect signal so the framework can issue 308
+    if (isRedirectError(err)) throw err;
     return {
       title: "Producto",
       description: "Detalle de producto en Merkley Details.",
@@ -71,10 +74,16 @@ function getAvailabilityUrl(label?: string): string {
 export default async function Page({ params }: Props) {
   const { slug } = await params;
 
+  // Defense-in-depth: if generateMetadata's redirect didn't fire (cached at
+  // build-time, etc.), fire from the Page component too.
+  const data = await getCachedProductDetail(slug);
+  if (data && "redirect_to" in data && data.redirect_to) {
+    permanentRedirect(`/catalogo/${data.redirect_to}`);
+  }
+
   let productJsonLd = null;
   let breadcrumbJsonLd = null;
   try {
-    const data = await getCachedProductDetail(slug);
     const product = data?.item;
     if (product) {
       const plainDesc =

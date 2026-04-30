@@ -11,7 +11,9 @@ import { useAuth } from "@/context/auth-context";
 import type { NotificationItem } from "@/types/notifications";
 
 function relativeTime(iso: string): string {
-  const seconds = Math.floor((Date.now() - new Date(iso).getTime()) / 1000);
+  // Frappe returns "YYYY-MM-DD HH:MM:SS" (space). Safari/iOS need "T" to parse reliably.
+  const safe = iso.replace(" ", "T");
+  const seconds = Math.floor((Date.now() - new Date(safe).getTime()) / 1000);
   if (seconds < 60) return "ahora";
   if (seconds < 3600) return `hace ${Math.floor(seconds / 60)} min`;
   if (seconds < 86400) return `hace ${Math.floor(seconds / 3600)} h`;
@@ -33,6 +35,7 @@ export function NotificationBell() {
     { refreshInterval: 60_000, dedupingInterval: 30_000 },
   );
 
+  if (auth.isLoading) return null;
   if (!auth.isAuthenticated) return null;
 
   const unread = data?.unread_count ?? 0;

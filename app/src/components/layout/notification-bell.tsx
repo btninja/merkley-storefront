@@ -63,7 +63,7 @@ export function NotificationBell() {
       <button
         onClick={() => setOpen(!open)}
         aria-label={unread > 0 ? `Notificaciones (${unread} sin leer)` : "Notificaciones"}
-        className="relative flex h-10 w-10 items-center justify-center rounded-lg hover:bg-muted active:bg-muted/80 transition-colors"
+        className="relative flex h-10 w-10 items-center justify-center rounded-lg hover:bg-surface-hover active:bg-surface-muted transition-colors"
       >
         {unread > 0 ? <BellRing className="h-4 w-4" /> : <Bell className="h-4 w-4 text-muted-foreground" />}
         {unread > 0 && (
@@ -76,8 +76,8 @@ export function NotificationBell() {
       {open && (
         <>
           <div className="fixed inset-0 z-40" onClick={() => setOpen(false)} />
-          <div className="absolute right-0 top-full mt-2 z-50 w-72 max-w-[calc(100vw-2rem)] rounded-lg border bg-card shadow-lg">
-            <div className="flex items-center justify-between border-b px-4 py-3">
+          <div className="absolute right-0 top-full mt-2 z-50 w-72 max-w-[calc(100vw-2rem)] rounded-lg border border-border bg-surface shadow-lg">
+            <div className="flex items-center justify-between border-b border-border px-4 py-3">
               <h3 className="text-sm font-semibold">Notificaciones</h3>
               {unread > 0 && (
                 <button
@@ -96,7 +96,7 @@ export function NotificationBell() {
                   <button
                     key={item.name}
                     onClick={() => onItemClick(item)}
-                    className="flex w-full flex-col gap-1 border-b px-4 py-3 text-left hover:bg-muted/50"
+                    className="flex w-full flex-col gap-1 border-b border-border px-4 py-3 text-left hover:bg-surface-hover"
                   >
                     <p className={`text-sm ${item.is_read ? "text-foreground" : "font-semibold"}`}>{item.title}</p>
                     {item.body && <p className="text-xs text-muted-foreground">{item.body}</p>}

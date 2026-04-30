@@ -28,12 +28,17 @@ export function NotificationBell() {
   const [open, setOpen] = useState(false);
   const { customer: activeCustomer } = useActiveCustomerFilter();
 
-  const customerId = activeCustomer ?? auth.customer?.name ?? null;
-  const cacheKey = auth.isAuthenticated && customerId ? ["customer-notifications", customerId] : null;
+  // activeCustomer is undefined when CompanySelector is "Todas" — leave it
+  // unset and let the backend return notifications across ALL the user's
+  // accessible Customers. Only filter when the user has explicitly picked
+  // one.
+  const cacheKey = auth.isAuthenticated
+    ? ["customer-notifications", activeCustomer ?? "__all__"]
+    : null;
 
   const { data } = useSWR(
     cacheKey,
-    () => getCustomerNotifications(customerId ? { customer: customerId } : {}),
+    () => getCustomerNotifications(activeCustomer ? { customer: activeCustomer } : {}),
     { refreshInterval: 60_000, dedupingInterval: 30_000 },
   );
 
@@ -45,7 +50,10 @@ export function NotificationBell() {
 
   const doMarkRead = async (args: { name?: string; mark_all?: boolean }) => {
     try {
-      await markNotificationRead({ ...args, ...(customerId ? { customer: customerId } : {}) });
+      await markNotificationRead({
+        ...args,
+        ...(activeCustomer ? { customer: activeCustomer } : {}),
+      });
       mutate(cacheKey);
     } catch {
       toast({ title: "Error", description: "No se pudo marcar como leída", variant: "destructive" });

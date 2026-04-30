@@ -243,6 +243,7 @@ export interface ProductListResponse {
 export interface ProductDetailResponse {
   item: Product;
   price_context: PriceContext;
+  redirect_to?: string;
 }
 
 // ── Quotation ──

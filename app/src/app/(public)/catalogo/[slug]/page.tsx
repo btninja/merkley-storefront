@@ -1,5 +1,6 @@
 import { cache } from "react";
 import type { Metadata } from "next";
+import { permanentRedirect } from "next/navigation";
 import { getProductDetail } from "@/lib/api";
 import ProductDetailPage from "./product-detail-content";
 
@@ -15,6 +16,9 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
   try {
     const data = await getCachedProductDetail(slug);
+    if (data && "redirect_to" in data && data.redirect_to) {
+      permanentRedirect(`/catalogo/${data.redirect_to}`);
+    }
     const product = data?.item;
 
     if (!product) {
